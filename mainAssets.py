@@ -10,21 +10,23 @@ class mainCharacter:
         self.rect.topleft = (x, y)
 
     def move(self, dx, dy, obstacles=None):
-        # Store old position
         old_x, old_y = self.rect.x, self.rect.y
         
-        # Move horizontally first
+        
         self.rect.x += dx
         if obstacles and self.check_collision(obstacles):
-            self.rect.x = old_x  # Undo horizontal movement
+            self.rect.x = old_x
+
         
-        # Move vertically second
         self.rect.y += dy
         if obstacles and self.check_collision(obstacles):
-            self.rect.y = old_y  # Undo vertical movement
-    
+            self.rect.y = old_y
+
+    def jump(self):
+        self.rect.y -= 100
+
     def check_collision(self, obstacles):
-        """Simple collision check - returns True if colliding with any obstacle"""
+        
         for obstacle in obstacles:
             if self.rect.colliderect(obstacle.rect):
                 return True
@@ -35,10 +37,15 @@ class mainCharacter:
         
     def get_position(self):
         return self.rect.topleft
-
-    def startGrav(self, gravLine):
+    
+    def startGrav(self):
         self.gravEnabled = True
-        self.gravLine = gravLine
+        while self.gravEnabled:
+            self.rect.y += 1
+            if self.check_collision(obstacles):
+                self.rect.y -= 1
+                break
+            
 
 
 class block:
@@ -48,7 +55,7 @@ class block:
         self.image = pygame.image.load("block.png")
         
         self.rect = self.image.get_rect()
-        self.image = pygame.transform.scale(self.image, (self.rect.width // 4, self.rect.height // 4))
+        self.image = pygame.transform.scale(self.image, (self.rect.width // 10, self.rect.height // 10))
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
     
@@ -56,7 +63,7 @@ class block:
         surface.blit(self.image, self.rect)
 
     def is_colliding_with(self, player):
-        """Simple collision check - just returns True/False"""
+        
         return self.rect.colliderect(player.rect)
 
     
