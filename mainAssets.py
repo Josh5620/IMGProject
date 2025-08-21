@@ -1,4 +1,5 @@
 import pygame
+import random
 
 class mainCharacter:
     
@@ -20,22 +21,37 @@ class mainCharacter:
     def move(self, dx, dy, obstacles=None):
         old_x, old_y = self.rect.x, self.rect.y
         
-        
-        self.rect.x += dx
-        if obstacles and self.check_collision(obstacles):
-            self.rect.x = old_x
+        # Handle horizontal movement
+        if dx != 0:
+            self.rect.x += dx
+            if obstacles and self.check_horizontal_collision(obstacles):
+                self.rect.x = old_x
+        # Handle vertical movement
+        if dy != 0:
+            self.rect.y += dy
+            if obstacles and self.check_vertical_collision(obstacles):
+                self.rect.y = old_y
 
-        
-        self.rect.y += dy
-        if obstacles and self.check_collision(obstacles):
-            self.rect.y = old_y
+    def check_horizontal_collision(self, obstacles):
+        for block in obstacles:
+            if self.rect.colliderect(block.get_rect()):
+                print("Horizontal collision detected")
+                return True
+        return False
+    
+    def check_vertical_collision(self, obstacles):
+        for block in obstacles:
+            if self.rect.colliderect(block.get_rect()):
+                print("Vertical collision detected")
+                return True
+        return False
 
     def jump(self):
-        if not self.jumping:
-            print("Jumping")
-            self.jumping = True
-            self.y_velocity = self.jump_height
-            print("JUmping at velocity of:" + str(self.y_velocity))
+        #if not self.jumping and self.on_ground: I turn off 
+        self.jumping = True
+        self.on_ground = False
+        self.y_velocity = -self.jump_height  
+        
 
     def update(self, keys, obstacles):
         if keys[pygame.K_LEFT]:
@@ -46,41 +62,62 @@ class mainCharacter:
             self.jump()
         if keys[pygame.K_DOWN]:
             self.move(0, 5, obstacles)
-            
         
-       
-        
-        if self.jumping:
-            
+        if self.jumping:            
             self.image = self.jumpimage
-            self.rect.y -= self.y_velocity
-            self.y_velocity -= self.y_gravity
-            
-            if self.y_velocity < -self.jump_height:
-                jumping = False
-                self.y_velocity = self.jump_height
-        self.check_collision(obstacles)
-        self.applyGrav()
         
+        # Apply physics (gravity and movement)
+        self.applyGrav(obstacles)
         
-
+    
     def check_collision(self, obstacles):    
         for block in obstacles:
             if self.rect.colliderect(block.get_rect()):
+                # Check if falling down and hitting top of block (landing)
                 if self.y_velocity > 0:
-                    print("1")
+                    print("Touched Ground")
                     self.rect.bottom = block.get_rect().top
                     self.jumping = False
                     self.on_ground = True
                     self.y_velocity = 0
                     self.image = pygame.image.load("mc.png")
-
-    def applyGrav(self):
-        if not self.on_ground:
+                    return True
+                
+                # Check if moving up and hitting bottom of block (head bump)
+                elif self.y_velocity < 0:
+                    print("Hit ceiling")
+                    self.rect.top = block.get_rect().bottom
+                    self.y_velocity = 0
+                    return True
+        
+        # If no collision detected and player was on ground, they're now falling
+        if self.on_ground:
+            # Check if player is still touching ground
+            ground_check = pygame.Rect(self.rect.x, self.rect.y + 1, self.rect.width, self.rect.height)
+            still_on_ground = False
+            for block in obstacles:
+                if ground_check.colliderect(block.get_rect()):
+                    still_on_ground = True
+                    break
             
+            if not still_on_ground:
+                print("Started falling")
+                self.on_ground = False
+        
+        return False
+
+    def applyGrav(self, obstacles):
+        # Apply gravity to velocity
+        if not self.on_ground:
             self.y_velocity += self.y_gravity
+        
+        # Apply velocity to position
+        if self.y_velocity != 0:
             self.rect.y += self.y_velocity
-            print(self.y_velocity)
+            self.check_collision(obstacles)
+            
+        
+            
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -88,10 +125,6 @@ class mainCharacter:
     def get_position(self):
         return self.rect.topleft
     
-    
-            
-
-
 class block:
     def __init__(self, x, y):
         self.x = x
@@ -112,4 +145,88 @@ class block:
     def get_rect(self):
         return self.rect
 
+class pickUps:
+    def __init__(self, x, y):
+        self.image = None  # Will be set by subclasses
+        self.rect = None   # Will be set after image is loaded
+        self.x = x
+        self.y = y
+        self.name = ""
     
+    def setName(self, name):
+        self.name = name
+
+    def draw(self, surface):
+        if self.image and self.rect:
+            surface.blit(self.image, self.rect)
+
+    def is_colliding_with(self, player):
+        if self.rect and self.rect.colliderect(player.rect):
+            print("You have picked up a " + self.name + "!")
+            return True
+        return False
+
+    def get_rect(self):
+        return self.rect    
+
+
+class Coin(pickUps):
+    def __init__(self, x, y, screen_width=800, screen_height=600):
+        super().__init__(x, y)
+        self.image = pygame.image.load("coin.png")
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.setName("Coin")
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.collected = False
+
+    def update(self, player):
+        if not self.collected and self.is_colliding_with(player):
+            self.collected = True
+            return True
+        return False
+    
+    def respawn(self, obstacles=None):
+        """Respawn the coin at a random location within the screen bounds"""
+        max_attempts = 100  # Prevent infinite loop
+        attempts = 0
+        
+        while attempts < max_attempts:
+            # Generate random position within screen bounds (with some margin)
+            margin = 50
+            new_x = random.randint(margin, self.screen_width - margin - self.rect.width)
+            new_y = random.randint(margin, self.screen_height - margin - self.rect.height)
+            
+            # Create a temporary rect to test the new position
+            temp_rect = pygame.Rect(new_x, new_y, self.rect.width, self.rect.height)
+            
+            # Check if the new position collides with any obstacles
+            collision_found = False
+            if obstacles:
+                for obstacle in obstacles:
+                    if temp_rect.colliderect(obstacle.get_rect()):
+                        collision_found = True
+                        break
+            
+            # If no collision, use this position
+            if not collision_found:
+                self.rect.topleft = (new_x, new_y)
+                self.x = new_x
+                self.y = new_y
+                self.collected = False
+                print(f"Coin respawned at ({new_x}, {new_y})")
+                return
+            
+            attempts += 1
+        
+        # If we couldn't find a safe spot after max_attempts, just place it at a default location
+        print("Could not find safe respawn location, using default")
+        self.rect.topleft = (self.screen_width // 2, self.screen_height // 2)
+        self.x = self.screen_width // 2
+        self.y = self.screen_height // 2
+        self.collected = False
+
+    def draw(self, surface):
+        if not self.collected:
+            surface.blit(self.image, self.rect)

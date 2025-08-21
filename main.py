@@ -10,6 +10,9 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainAssets.mainCharacter(300, 70)
 
+# Create a coin
+coin = mainAssets.Coin(400, 300, WIDTH, HEIGHT)
+
 
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
@@ -40,6 +43,8 @@ for row in range(rows):
             obstacles.append(block)
 
 running = True
+coin_count = 0
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -48,11 +53,18 @@ while running:
     
 
     screen.fill((0, 0, 0))
-    # lags code change it to just pixels 
+    
     for block in obstacles:
         block.draw(screen)
     player.draw(screen)
+    coin.draw(screen)
     
+    # Check if player collected the coin
+    if coin.update(player):
+        coin_count += 1
+        coin.respawn(obstacles)  # Respawn at random location
+        print("Coin count: ", coin_count)
+
     pygame.display.flip()
 
     keys = pygame.key.get_pressed()
