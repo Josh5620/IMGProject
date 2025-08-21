@@ -8,17 +8,14 @@ pygame.init()
 clock = pygame.time.Clock()
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-player = mainAssets.mainCharacter(300, 300)
+player = mainAssets.mainCharacter(300, 70)
 
 
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
     return (scaledObject)
 
-player.image = rescaleObject(player.image, 0.2)
-old_pos = player.rect.topleft
-player.rect = player.image.get_rect()
-player.rect.topleft = old_pos
+
 
 TILE_SIZE = 20
 cols = WIDTH // TILE_SIZE   # 40
@@ -55,23 +52,13 @@ while running:
     for block in obstacles:
         block.draw(screen)
     player.draw(screen)
+    
     pygame.display.flip()
 
-    if player.check_collision(obstacles):
-        print("Collision detected!")
-    
-    
-
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player.move(-5, 0, obstacles)
-    if keys[pygame.K_RIGHT]:
-        player.move(5, 0, obstacles)
-    if keys[pygame.K_UP]:
-        player.move(0, -5, obstacles)
-    if keys[pygame.K_DOWN]:
-        player.move(0, 5, obstacles)
-    clock.tick(60)
+    player.update(keys, obstacles)
+
+    clock.tick(30)
 
     
         
