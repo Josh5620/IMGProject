@@ -17,7 +17,8 @@ coin = mainAssets.Coin(400, 300)
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
     return (scaledObject)
-def updateLives(lives):
+
+def updateLives(player):
     # Update the lives display
     heart = pygame.image.load('heart.png')
     heart = rescaleObject(heart, 0.05)
@@ -25,12 +26,11 @@ def updateLives(lives):
     heart_rect.topleft = (10, 10)
     
     # Draw the lives counter
-    for i in range(lives):
+    for i in range(player.lives):
         screen.blit(heart, (10 + i * 30, 10))
     
     
 
-life_counter = 3
 TILE_SIZE = 20
 cols = WIDTH // TILE_SIZE   # 40
 rows = HEIGHT // TILE_SIZE  # 3
@@ -50,8 +50,13 @@ obstacles = []
 for row in range(rows):
     for col in range(cols):
         if tilemap[row][col] == 1:
-            block = mainAssets.block(col * TILE_SIZE, row * TILE_SIZE)
-            obstacles.append(block)
+            # Create spikes for the left wall (col == 0), blocks for other walls
+            if col == 0:
+                spike = mainAssets.Spikes(col * TILE_SIZE, row * TILE_SIZE)
+                obstacles.append(spike)
+            else:
+                block = mainAssets.block(col * TILE_SIZE, row * TILE_SIZE)
+                obstacles.append(block)
 
 running = True
 coin_count = 0
@@ -77,8 +82,8 @@ while running:
         coin.respawn(obstacles)  # Respawn at random location
         print("Coin count: ", coin_count)
     
-    updateLives(life_counter)
-    if life_counter <= 0:
+    updateLives(player)
+    if player.lives <= 0:
         print("Game Over")
         running = False
 
@@ -89,6 +94,8 @@ while running:
         if not player.invulnerable:
             life_counter -= 1
             player.iFrame()
+    
+    
     player.update(keys, obstacles)
     
 

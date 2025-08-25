@@ -1,6 +1,9 @@
 import pygame
 import random
 
+def rescaleObject(object, scale_factor):
+    scaledObject = pygame.transform.scale_by(object, scale_factor)
+    return scaledObject
 class mainCharacter:
     
     def __init__(self, x, y):
@@ -19,6 +22,7 @@ class mainCharacter:
         self.on_ground = False
         self.visible = True
         self.invulnerable = False
+        self.lives = 3 
     
     def move(self, dx, dy, obstacles=None):
         old_x, old_y = self.rect.x, self.rect.y
@@ -36,8 +40,10 @@ class mainCharacter:
 
     def check_horizontal_collision(self, obstacles):
         for block in obstacles:
+            if isinstance(block, Spikes):
+                block.collideHurt(self)
             if self.rect.colliderect(block.get_rect()):
-                print("Horizontal collision detected")
+                
                 return True
         return False
     
@@ -145,18 +151,15 @@ class block:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.image = pygame.image.load("block.png")
-        
-        self.rect = self.image.get_rect()
-        self.image = pygame.transform.scale(self.image, (self.rect.width // 10, self.rect.height // 10))
+        self.image = rescaleObject(pygame.image.load("block.png"), 0.1)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
     
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
-    def is_colliding_with(self, player):
-        return self.rect.colliderect(player.rect)
+    def collideHurt(self, player):
+        return 0
     
     def get_rect(self):
         return self.rect
@@ -184,7 +187,6 @@ class pickUps:
 
     def get_rect(self):
         return self.rect    
-
 
 class Coin(pickUps):
     def __init__(self, x, y):
@@ -249,4 +251,20 @@ class Coin(pickUps):
             surface.blit(self.image, self.rect)
     
 class Spikes(block):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image = rescaleObject(pygame.image.load("spike.png"), 0.1)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        
     
+    def collideHurt(self, player):
+        if self.rect.colliderect(player.rect):
+            if not player.invulnerable:
+                print("Ouch! Hit Spikes!")
+                player.lives -= 1
+                player.iFrame()
+        return 0
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
