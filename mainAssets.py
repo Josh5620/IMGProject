@@ -17,6 +17,8 @@ class mainCharacter:
         self.y_velocity = 0
         self.jumping = False
         self.on_ground = False
+        self.visible = True
+        self.invulnerable = False
     
     def move(self, dx, dy, obstacles=None):
         old_x, old_y = self.rect.x, self.rect.y
@@ -52,7 +54,6 @@ class mainCharacter:
         self.on_ground = False
         self.y_velocity = -self.jump_height  
         
-
     def update(self, keys, obstacles):
         if keys[pygame.K_LEFT]:
             self.move(-5, 0, obstacles)
@@ -69,7 +70,6 @@ class mainCharacter:
         # Apply physics (gravity and movement)
         self.applyGrav(obstacles)
         
-    
     def check_collision(self, obstacles):    
         for block in obstacles:
             if self.rect.colliderect(block.get_rect()):
@@ -116,12 +116,28 @@ class mainCharacter:
             self.rect.y += self.y_velocity
             self.check_collision(obstacles)
             
-        
-            
+    def iFrame(self):
+        print("You've been hit!!")
+        self.invulnerable = True
+        self.invulnerable_start = pygame.time.get_ticks()
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect)
-        
+        # Handle invulnerability timing
+        if self.invulnerable:
+            now = pygame.time.get_ticks()
+            if now - self.invulnerable_start >= 2000:  # CHANGE INVI TIMING HERE
+                self.invulnerable = False
+            
+            blink_interval = 100
+            time_since_start = now - self.invulnerable_start
+            should_show = (time_since_start // blink_interval) % 2 == 0
+            
+            if should_show and self.visible:
+                surface.blit(self.image, self.rect)
+        else:
+            if self.visible:
+                surface.blit(self.image, self.rect)
+            
     def get_position(self):
         return self.rect.topleft
     
@@ -171,14 +187,15 @@ class pickUps:
 
 
 class Coin(pickUps):
-    def __init__(self, x, y, screen_width=800, screen_height=600):
+    def __init__(self, x, y):
         super().__init__(x, y)
         self.image = pygame.image.load("coin.png")
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         self.setName("Coin")
-        self.screen_width = screen_width
-        self.screen_height = screen_height
+        # CHANGE THIS IF THE SDCREEN SIZE CHANGES###############
+        self.screen_width = 800
+        self.screen_height = 600
         self.collected = False
 
     def update(self, player):
@@ -230,3 +247,6 @@ class Coin(pickUps):
     def draw(self, surface):
         if not self.collected:
             surface.blit(self.image, self.rect)
+    
+class Spikes(block):
+    

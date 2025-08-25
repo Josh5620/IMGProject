@@ -11,15 +11,26 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainAssets.mainCharacter(300, 70)
 
 # Create a coin
-coin = mainAssets.Coin(400, 300, WIDTH, HEIGHT)
+coin = mainAssets.Coin(400, 300)
 
 
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
     return (scaledObject)
+def updateLives(lives):
+    # Update the lives display
+    heart = pygame.image.load('heart.png')
+    heart = rescaleObject(heart, 0.05)
+    heart_rect = heart.get_rect()
+    heart_rect.topleft = (10, 10)
+    
+    # Draw the lives counter
+    for i in range(lives):
+        screen.blit(heart, (10 + i * 30, 10))
+    
+    
 
-
-
+life_counter = 3
 TILE_SIZE = 20
 cols = WIDTH // TILE_SIZE   # 40
 rows = HEIGHT // TILE_SIZE  # 3
@@ -54,6 +65,7 @@ while running:
 
     screen.fill((0, 0, 0))
     
+    
     for block in obstacles:
         block.draw(screen)
     player.draw(screen)
@@ -64,11 +76,21 @@ while running:
         coin_count += 1
         coin.respawn(obstacles)  # Respawn at random location
         print("Coin count: ", coin_count)
+    
+    updateLives(life_counter)
+    if life_counter <= 0:
+        print("Game Over")
+        running = False
 
     pygame.display.flip()
 
     keys = pygame.key.get_pressed()
+    if keys[pygame.K_w]:
+        if not player.invulnerable:
+            life_counter -= 1
+            player.iFrame()
     player.update(keys, obstacles)
+    
 
     clock.tick(30)
 
