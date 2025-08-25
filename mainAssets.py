@@ -171,6 +171,9 @@ class pickUps:
         self.x = x
         self.y = y
         self.name = ""
+                # CHANGE THIS IF THE SDCREEN SIZE CHANGES###############
+        self.screen_width = 800
+        self.screen_height = 600
     
     def setName(self, name):
         self.name = name
@@ -188,24 +191,6 @@ class pickUps:
     def get_rect(self):
         return self.rect    
 
-class Coin(pickUps):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.image = pygame.image.load("coin.png")
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
-        self.setName("Coin")
-        # CHANGE THIS IF THE SDCREEN SIZE CHANGES###############
-        self.screen_width = 800
-        self.screen_height = 600
-        self.collected = False
-
-    def update(self, player):
-        if not self.collected and self.is_colliding_with(player):
-            self.collected = True
-            return True
-        return False
-    
     def respawn(self, obstacles=None):
         """Respawn the coin at a random location within the screen bounds"""
         max_attempts = 100  # Prevent infinite loop
@@ -234,7 +219,7 @@ class Coin(pickUps):
                 self.x = new_x
                 self.y = new_y
                 self.collected = False
-                print(f"Coin respawned at ({new_x}, {new_y})")
+                
                 return
             
             attempts += 1
@@ -246,10 +231,25 @@ class Coin(pickUps):
         self.y = self.screen_height // 2
         self.collected = False
 
-    def draw(self, surface):
-        if not self.collected:
-            surface.blit(self.image, self.rect)
+class Coin(pickUps):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image = pygame.image.load("coin.png")
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.setName("Coin")
+        self.collected = False
+
+    def update(self, player):
+        if not self.collected and self.is_colliding_with(player):
+            self.collected = True
+            return True
+        return False
     
+    def respawn(self, obstacles=None):
+        super().respawn(obstacles)
+        print(f"Coin respawned at ({self.x}, {self.y})")
+
 class Spikes(block):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -268,3 +268,19 @@ class Spikes(block):
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+class Meat(pickUps):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image = rescaleObject(pygame.image.load("meat.png"), 0.1)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.setName("Meat")
+
+    def draw(self, surface):
+        if self.image and self.rect:
+            surface.blit(self.image, self.rect)
+
+    def update(self, player):
+        if self.is_colliding_with(player):
+            return True
+        return False

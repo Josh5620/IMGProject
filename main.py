@@ -13,6 +13,8 @@ player = mainAssets.mainCharacter(300, 70)
 # Create a coin
 coin = mainAssets.Coin(400, 300)
 
+# Create a meat
+meat = mainAssets.Meat(200, 300)
 
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
@@ -75,12 +77,17 @@ while running:
         block.draw(screen)
     player.draw(screen)
     coin.draw(screen)
+    meat.draw(screen)
     
     # Check if player collected the coin
     if coin.update(player):
         coin_count += 1
         coin.respawn(obstacles)  # Respawn at random location
         print("Coin count: ", coin_count)
+    
+    if meat.update(player):
+        player.lives += 1
+        meat.respawn(obstacles)
     
     updateLives(player)
     if player.lives <= 0:
