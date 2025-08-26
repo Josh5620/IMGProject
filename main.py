@@ -1,6 +1,6 @@
 import mainAssets
 import pygame
-
+import pytmx
 
     
     
@@ -9,6 +9,7 @@ clock = pygame.time.Clock()
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainAssets.mainCharacter(300, 70)
+tmx_data = pytmx.util_pygame.load_pygame("tilemap.tmx")
 
 # Create a coin
 coin = mainAssets.Coin(400, 300)
@@ -34,31 +35,38 @@ def updateLives(player):
     
 
 TILE_SIZE = 20
-cols = WIDTH // TILE_SIZE   # 40
-rows = HEIGHT // TILE_SIZE  # 3
+tile_w = TILE_SIZE
+tile_h = TILE_SIZE
 
+TILE_FACTORIES = { # change the tile IDs to match your TMX file
+    1: lambda x, y: mainAssets.block(x, y),  
+    2: lambda x, y: mainAssets.Spikes(x, y),   
+    3: lambda x, y: mainAssets.Spikes(x, y),    
+}
 
-tilemap = []
-for r in range(rows):
-    row = []
-    for c in range(cols):
-        if r == 0 or r == rows - 1 or c == 0 or c == cols - 1:
-            row.append(1)  # wall
-        else:
-            row.append(0)  # empty
-    tilemap.append(row)
-
+# Load obstacles from tilemap
 obstacles = []
-for row in range(rows):
-    for col in range(cols):
-        if tilemap[row][col] == 1:
-            # Create spikes for the left wall (col == 0), blocks for other walls
-            if col == 0:
-                spike = mainAssets.Spikes(col * TILE_SIZE, row * TILE_SIZE)
-                obstacles.append(spike)
-            else:
-                block = mainAssets.block(col * TILE_SIZE, row * TILE_SIZE)
-                obstacles.append(block)
+found_gids = set()
+for layer in tmx_data.visible_layers:
+    if isinstance(layer, pytmx.TiledTileLayer):
+        
+        for x, y, gid in layer:
+            if gid != 0:  # Skip empty tiles
+                found_gids.add(gid)
+            if gid in TILE_FACTORIES:
+                obstacle = TILE_FACTORIES[gid](x * tile_w, y * tile_h)
+                obstacles.append(obstacle)
+
+print(f"All tile IDs found in tilemap: {sorted(found_gids)}")
+print(f"Number of obstacles created: {len(obstacles)}")
+
+def draw_map(surface):
+    for layer in tmx_data.visible_layers:
+        if isinstance(layer, pytmx.TiledTileLayer):
+            for x, y, gid in layer:
+                tile = tmx_data.get_tile_image_by_gid(gid)
+                if tile:
+                    surface.blit(tile, (x * tile_w, y * tile_h))
 
 running = True
 coin_count = 0
@@ -72,12 +80,14 @@ while running:
 
     screen.fill((0, 0, 0))
     
-    
-    for block in obstacles:
-        block.draw(screen)
-    player.draw(screen)
+    # Draw all obstacle objects (blocks, spikes, etc.)
+    for obstacle in obstacles:
+        obstacle.draw(screen)
+    draw_map(screen)
+    # Draw game objects
     coin.draw(screen)
     meat.draw(screen)
+    player.draw(screen)
     
     # Check if player collected the coin
     if coin.update(player):
@@ -99,7 +109,7 @@ while running:
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         if not player.invulnerable:
-            life_counter -= 1
+            player.lives -= 1
             player.iFrame()
     
     

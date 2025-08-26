@@ -253,7 +253,7 @@ class Coin(pickUps):
 class Spikes(block):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.image = rescaleObject(pygame.image.load("spike.png"), 0.1)
+        self.image = rescaleObject(pygame.image.load("spike.png"),1 )
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         
@@ -271,7 +271,7 @@ class Spikes(block):
 class Meat(pickUps):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.image = rescaleObject(pygame.image.load("meat.png"), 0.1)
+        self.image = rescaleObject(pygame.image.load("meat.png"), 1)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         self.setName("Meat")
