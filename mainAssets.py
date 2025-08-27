@@ -49,8 +49,10 @@ class mainCharacter:
     
     def check_vertical_collision(self, obstacles):
         for block in obstacles:
+            if isinstance(block, Spikes):
+                block.collideHurt(self)
             if self.rect.colliderect(block.get_rect()):
-                print("Vertical collision detected")
+                
                 return True
         return False
 
@@ -78,10 +80,12 @@ class mainCharacter:
         
     def check_collision(self, obstacles):    
         for block in obstacles:
+            if isinstance(block, Spikes):
+                block.collideHurt(self)
             if self.rect.colliderect(block.get_rect()):
                 # Check if falling down and hitting top of block (landing)
                 if self.y_velocity > 0:
-                    print("Touched Ground")
+                    # print("Touched Ground")
                     self.rect.bottom = block.get_rect().top
                     self.jumping = False
                     self.on_ground = True
@@ -114,6 +118,8 @@ class mainCharacter:
 
     def applyGrav(self, obstacles):
         # Apply gravity to velocity
+        if not self.check_vertical_collision(obstacles):
+            self.on_ground = False
         if not self.on_ground:
             self.y_velocity += self.y_gravity
         
@@ -172,8 +178,8 @@ class pickUps:
         self.y = y
         self.name = ""
                 # CHANGE THIS IF THE SDCREEN SIZE CHANGES###############
-        self.screen_width = 800
-        self.screen_height = 600
+        self.screen_width = 960
+        self.screen_height = 640
     
     def setName(self, name):
         self.name = name

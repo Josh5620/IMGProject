@@ -6,7 +6,7 @@ import pytmx
     
 pygame.init()
 clock = pygame.time.Clock()
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 960, 640
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainAssets.mainCharacter(300, 70)
 tmx_data = pytmx.util_pygame.load_pygame("tilemap.tmx")
@@ -34,14 +34,16 @@ def updateLives(player):
     
     
 
-TILE_SIZE = 20
+TILE_SIZE = 32
 tile_w = TILE_SIZE
 tile_h = TILE_SIZE
 
 TILE_FACTORIES = { # change the tile IDs to match your TMX file
     1: lambda x, y: mainAssets.block(x, y),  
-    2: lambda x, y: mainAssets.Spikes(x, y),   
-    3: lambda x, y: mainAssets.Spikes(x, y),    
+    2: lambda x, y: mainAssets.block(x, y),   
+    3: lambda x, y: mainAssets.Spikes(x, y),  
+    4: lambda x, y: mainAssets.block(x, y),  
+    5: lambda x, y: mainAssets.block(x, y)    
 }
 
 # Load obstacles from tilemap
@@ -49,10 +51,12 @@ obstacles = []
 found_gids = set()
 for layer in tmx_data.visible_layers:
     if isinstance(layer, pytmx.TiledTileLayer):
-        
+        #print(f"Processing layer: {layer.name}")  # Debug line
         for x, y, gid in layer:
             if gid != 0:  # Skip empty tiles
                 found_gids.add(gid)
+                #print(f"Found tile at ({x}, {y}) with GID: {gid}")  
+                #Debug line and used to find corrosponding tileID until we find better method
             if gid in TILE_FACTORIES:
                 obstacle = TILE_FACTORIES[gid](x * tile_w, y * tile_h)
                 obstacles.append(obstacle)
