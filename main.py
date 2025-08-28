@@ -1,39 +1,45 @@
-import mainAssets
 import pygame
 import pytmx
+from entities import mainCharacter
+from blocks import block, Spikes
+from pickups import Coin, Meat
 
-    
-    
 pygame.init()
 clock = pygame.time.Clock()
 WIDTH, HEIGHT = 960, 640
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-player = mainAssets.mainCharacter(300, 70)
+player = mainCharacter(300, 70)
 tmx_data = pytmx.util_pygame.load_pygame("tilemap.tmx")
 pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
 
 # Add font for FPS counter
 font = pygame.font.Font(None, 36)
 
+scroll = 0
+
 bg_images = []
-for i in range(2,11):
+for i in range(0,11):
     bg_image = pygame.image.load(f'assets/BGL/Layer_{i}.png').convert_alpha()
-    bg_image = pygame.transform.smoothscale(bg_image, (960, 640))
-    bg_images.append(bg_image)  
+    bg_image = pygame.transform.scale(bg_image, (960, 640))
+    bg_images.append(bg_image)
+
+bg_width = bg_images[0].get_width()
 
 def draw_bg():
-    for i in bg_images:
-        screen.blit(i, (0, 0))
-
+    for x in range(5):
+        speed = 0 
+        for i in bg_images:
+            screen.blit(i, ((x * bg_width) - scroll * speed, 0))
+            speed += 0
 
 # Create a coin
-coin = mainAssets.Coin(400, 300)
+coin = Coin(400, 300)
 
 # Create a meat
-meat = mainAssets.Meat(200, 300)
+meat = Meat(200, 300)
 
 # Load heart image once at startup to prevent lag
-heart = pygame.image.load('heart.png').convert_alpha()
+heart = pygame.image.load('assets/heart.png').convert_alpha()
 
 def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
@@ -46,22 +52,17 @@ def updateLives(player):
     # Draw the lives counter using pre-loaded heart
     for i in range(player.lives):
         screen.blit(heart, (10 + i * 30, 10))
-    
-    
 
 TILE_SIZE = 32
 tile_w = TILE_SIZE
 tile_h = TILE_SIZE
 
 TILE_FACTORIES = { # change the tile IDs to match your TMX file
-    1: lambda x, y: mainAssets.block(x, y),  
-    2: lambda x, y: mainAssets.block(x, y),   
-    3: lambda x, y: mainAssets.Spikes(x, y),  
-    4: lambda x, y: mainAssets.block(x, y),  
-    5: lambda x, y: mainAssets.block(x, y)    
+    1: lambda x, y: Spikes(x, y),  
+    2: lambda x, y: block(x, y),   
+    3: lambda x, y: block(x, y)
 }
 
-# Load obstacles from tilemap
 obstacles = []
 found_gids = set()
 for layer in tmx_data.visible_layers:
@@ -98,8 +99,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             
-    
-
     screen.fill((0, 0, 0))
     draw_bg()
     
@@ -111,6 +110,7 @@ while running:
     coin.draw(screen)
     meat.draw(screen)
     player.draw(screen)
+    scroll += 1 
     
     # Check if player collected the coin
     if coin.update(player):
@@ -140,14 +140,8 @@ while running:
             player.lives -= 1
             player.iFrame()
     
-    
     player.update(keys, obstacles)
     
-
     clock.tick(60)
-
-    
-        
-        
 
 pygame.quit()
