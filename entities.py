@@ -69,6 +69,7 @@ class mainCharacter:
         self.anim_tick = 0
         self.anim_speed = 10
         self.facing_right = True
+        self.scroll_speed = 0
         
         # Physics variables
         self.y_gravity = 0.7
@@ -107,6 +108,7 @@ class mainCharacter:
                     self.facing_right = True
             else:
                 state = "idle"
+                self.scroll_speed = 0
         
 
         idx = self._anim_index(state)
@@ -122,11 +124,13 @@ class mainCharacter:
             self.rect.x += dx
             if obstacles and self.check_horizontal_collision(obstacles):
                 self.rect.x = old_x
+                
         # Handle vertical movement
         if dy != 0:
             self.rect.y += dy
             if obstacles and self.check_vertical_collision(obstacles):
                 self.rect.y = old_y
+                
 
     def check_horizontal_collision(self, obstacles):
         for block in obstacles:
@@ -157,8 +161,10 @@ class mainCharacter:
     def update(self, keys, obstacles):
         if keys[pygame.K_LEFT]:
             self.move(-3.5, 0, obstacles)
+            self.scroll_speed = -0.5
         if keys[pygame.K_RIGHT]:
             self.move(3.5, 0, obstacles)
+            self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
         if keys[pygame.K_DOWN]:
@@ -169,6 +175,8 @@ class mainCharacter:
         
         # Apply physics (gravity and movement)
         self.applyGrav(obstacles)
+        
+
         
     def check_collision(self, obstacles):    
         for block in obstacles:

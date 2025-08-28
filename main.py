@@ -27,10 +27,11 @@ bg_width = bg_images[0].get_width()
 
 def draw_bg():
     for x in range(5):
-        speed = 0 
+        speed = 1
         for i in bg_images:
             screen.blit(i, ((x * bg_width) - scroll * speed, 0))
-            speed += 0
+            speed += 0.1
+            
 
 # Create a coin
 coin = Coin(400, 300)
@@ -101,7 +102,8 @@ while running:
             
     screen.fill((0, 0, 0))
     draw_bg()
-    
+    print(player.scroll_speed)
+
     # Draw all obstacle objects (blocks, spikes, etc.)
     for obstacle in obstacles:
         obstacle.draw(screen)
@@ -110,8 +112,7 @@ while running:
     coin.draw(screen)
     meat.draw(screen)
     player.draw(screen)
-    scroll += 1 
-    
+    scroll += player.scroll_speed
     # Check if player collected the coin
     if coin.update(player):
         coin_count += 1
