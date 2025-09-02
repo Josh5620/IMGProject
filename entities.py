@@ -15,9 +15,9 @@ CELL_MAP = {
     "run": (1, 0),
     "jump_start": (2, 0),
     "jump": (3, 0),
-    "jump_to_fall": (1, 1),
-    "fall": (2, 1),
-    "wall_jump": (3, 1),
+    "jump_to_fall": (0, 1),
+    "fall": (1, 1),
+    "wall_jump": (2, 1),
 }
 
 def load_surface(path: str) -> pygame.Surface:

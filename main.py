@@ -8,7 +8,7 @@ pygame.init()
 clock = pygame.time.Clock()
 WIDTH, HEIGHT = 960, 640
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-player = mainCharacter(300, 70)
+player = mainCharacter(300, 300)
 tmx_data = pytmx.util_pygame.load_pygame("tilemap.tmx")
 pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
 
@@ -102,7 +102,7 @@ while running:
             
     screen.fill((0, 0, 0))
     draw_bg()
-    print(player.scroll_speed)
+    
 
     # Draw all obstacle objects (blocks, spikes, etc.)
     for obstacle in obstacles:
@@ -112,7 +112,9 @@ while running:
     coin.draw(screen)
     meat.draw(screen)
     player.draw(screen)
-    scroll += player.scroll_speed
+    
+
+    
     # Check if player collected the coin
     if coin.update(player):
         coin_count += 1
