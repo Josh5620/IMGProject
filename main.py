@@ -7,6 +7,7 @@ from pickups import Coin, Meat
 pygame.init()
 clock = pygame.time.Clock()
 WIDTH, HEIGHT = 960, 640
+scroll_threshold = WIDTH/4
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainCharacter(300, 300)
 tmx_data = pytmx.util_pygame.load_pygame("tilemap.tmx")
@@ -16,6 +17,7 @@ pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
 font = pygame.font.Font(None, 36)
 
 scroll = 0
+player_prev_x = player.x  # Track player's previous x position
 
 bg_images = []
 for i in range(0,11):
@@ -26,10 +28,17 @@ for i in range(0,11):
 bg_width = bg_images[0].get_width()
 
 def draw_bg():
-    for x in range(5):
+
+    start_bg_x = int(scroll // bg_width) - 1
+    end_bg_x = int((scroll + WIDTH) // bg_width) + 2
+    
+    for x in range(start_bg_x, end_bg_x):
         speed = 1
         for i in bg_images:
-            screen.blit(i, ((x * bg_width) - scroll * speed, 0))
+            bg_pos_x = (x * bg_width) - scroll * speed
+
+            if bg_pos_x > -bg_width and bg_pos_x < WIDTH:
+                screen.blit(i, (bg_pos_x, 0))
             speed += 0.1
             
 
@@ -46,7 +55,7 @@ def rescaleObject(obj, scale_factor):
     scaledObject = pygame.transform.scale_by(obj, scale_factor)
     return (scaledObject)
 
-# Scale heart once at startup
+
 heart = rescaleObject(heart, 0.05)
 
 def updateLives(player):
@@ -112,6 +121,21 @@ while running:
     coin.draw(screen)
     meat.draw(screen)
     player.draw(screen)
+    
+    # Only scroll when player has moved and is past the thresholds
+    current_player_x = player.rect.x
+    if current_player_x != player_prev_x:  # Player has moved
+        if current_player_x > (WIDTH - scroll_threshold):  # Player is past right threshold
+            if player.scroll_speed > 0:  # Only allow rightward scrolling
+                scroll += player.scroll_speed
+        elif current_player_x < scroll_threshold:  # Player is past left threshold
+            if player.scroll_speed < 0 and scroll > 0:  # Only allow leftward scrolling if not at left edge
+                scroll += player.scroll_speed
+    
+    player_prev_x = current_player_x  # Update previous position
+    
+    pygame.draw.line(screen, (255, 0, 0), (scroll_threshold, 0), (scroll_threshold, HEIGHT))
+    pygame.draw.line(screen, (255, 0, 0), (WIDTH - scroll_threshold, 0), (WIDTH - scroll_threshold, HEIGHT))
     
 
     
