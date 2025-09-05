@@ -28,7 +28,7 @@ def slice_cell(sheet: pygame.Surface, col: int, row: int) -> pygame.Surface:
     h = sheet.get_height() // ROWS
     rect = pygame.Rect(col * w, row * h, w, h)
     cell = sheet.subsurface(rect).copy()
-    return pygame.transform.scale(cell, (64, 64 ))
+    return pygame.transform.scale(cell, (72, 72 ))
 
 def build_state_animations(pattern: str):
     paths = glob.glob(pattern)
@@ -72,7 +72,7 @@ class mainCharacter:
         self.scroll_speed = 0
         
         # Physics variables
-        self.y_gravity = 0.5
+        self.y_gravity = 0.7
         self.jump_height = 12
         self.y_velocity = 0
         self.jumping = False

@@ -7,21 +7,41 @@ def rescaleObject(object, scale_factor):
 
 class pickUps:
     def __init__(self, x, y):
-        self.image = None  # Will be set by subclasses
-        self.rect = None   # Will be set after image is loaded
+        self.image = None
+        self.rect = None
+        self.original_x = x
+        self.original_y = y
         self.x = x
         self.y = y
         self.name = ""
-                # CHANGE THIS IF THE SDCREEN SIZE CHANGES###############
+        # CHANGE THIS IF THE SCREEN SIZE CHANGES
         self.screen_width = 960
         self.screen_height = 640
     
     def setName(self, name):
         self.name = name
 
+    def update_position(self, scroll):
+        if self.rect:
+            self.rect.x = self.original_x - scroll
+            self.rect.y = self.original_y
+
+    def is_offscreen(self, surface, margin=100):
+        if not self.rect:
+            return False
+        
+        if self.rect.x + self.rect.width < -margin:
+            return True
+        
+        if self.rect.x > surface.get_width() + margin:
+            return True
+            
+        return False
+
     def draw(self, surface):
         if self.image and self.rect:
-            surface.blit(self.image, self.rect)
+            if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
+                surface.blit(self.image, self.rect.topleft)
 
     def is_colliding_with(self, player):
         if self.rect and self.rect.colliderect(player.rect):
@@ -32,31 +52,37 @@ class pickUps:
     def get_rect(self):
         return self.rect    
 
-    def respawn(self, obstacles=None):
-        """Respawn the coin at a random location within the screen bounds"""
-        max_attempts = 100  # Prevent infinite loop
+    def respawn(self, obstacles=None, scroll=0):
+        max_attempts = 100
         attempts = 0
         
         while attempts < max_attempts:
-            # Generate random position within screen bounds (with some margin)
             margin = 50
-            new_x = random.randint(margin, self.screen_width - margin - self.rect.width)
+            buffer_ahead = 200
+            
+            visible_world_left = scroll
+            visible_world_right = scroll + self.screen_width
+            
+            spawn_left = visible_world_left + margin
+            spawn_right = visible_world_right + buffer_ahead - margin
+            
+            new_x = random.randint(int(spawn_left), int(spawn_right - self.rect.width))
             new_y = random.randint(margin, self.screen_height - margin - self.rect.height)
             
-            # Create a temporary rect to test the new position
             temp_rect = pygame.Rect(new_x, new_y, self.rect.width, self.rect.height)
             
-            # Check if the new position collides with any obstacles
             collision_found = False
             if obstacles:
                 for obstacle in obstacles:
-                    if temp_rect.colliderect(obstacle.get_rect()):
+                    obstacle_original_rect = pygame.Rect(obstacle.original_x, obstacle.original_y, 
+                                                       obstacle.rect.width, obstacle.rect.height)
+                    if temp_rect.colliderect(obstacle_original_rect):
                         collision_found = True
                         break
             
-            # If no collision, use this position
             if not collision_found:
-                self.rect.topleft = (new_x, new_y)
+                self.original_x = new_x
+                self.original_y = new_y
                 self.x = new_x
                 self.y = new_y
                 self.collected = False
@@ -65,10 +91,11 @@ class pickUps:
             
             attempts += 1
         
-        # If we couldn't find a safe spot after max_attempts, just place it at a default location
         print("Could not find safe respawn location, using default")
-        self.rect.topleft = (self.screen_width // 2, self.screen_height // 2)
-        self.x = self.screen_width // 2
+        default_x = scroll + self.screen_width // 2
+        self.original_x = default_x
+        self.original_y = self.screen_height // 2
+        self.x = default_x
         self.y = self.screen_height // 2
         self.collected = False
 
@@ -87,8 +114,8 @@ class Coin(pickUps):
             return True
         return False
     
-    def respawn(self, obstacles=None):
-        super().respawn(obstacles)
+    def respawn(self, obstacles=None, scroll=0):
+        super().respawn(obstacles, scroll)
         print(f"Coin respawned at ({self.x}, {self.y})")
 
 class Meat(pickUps):
@@ -98,12 +125,14 @@ class Meat(pickUps):
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         self.setName("Meat")
-
-    def draw(self, surface):
-        if self.image and self.rect:
-            surface.blit(self.image, self.rect)
+        self.collected = False
 
     def update(self, player):
-        if self.is_colliding_with(player):
+        if not self.collected and self.is_colliding_with(player):
+            self.collected = True
             return True
         return False
+    
+    def respawn(self, obstacles=None, scroll=0):
+        super().respawn(obstacles, scroll)
+        self.collected = False

@@ -6,14 +6,21 @@ def rescaleObject(object, scale_factor):
 
 class block:
     def __init__(self, x, y):
+        self.original_x = x
+        self.original_y = y
         self.x = x
         self.y = y
         self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
     
+    def update_position(self, scroll):
+        self.rect.x = self.original_x - scroll
+        self.rect.y = self.original_y
+    
     def draw(self, surface):
-        surface.blit(self.image, self.rect)
+        if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
+            surface.blit(self.image, self.rect.topleft)
 
     def collideHurt(self, player):
         return 0
@@ -39,4 +46,5 @@ class Spikes(block):
         return 0
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect)
+        if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
+            surface.blit(self.image, self.rect.topleft)
