@@ -203,7 +203,7 @@ def start_game():
         
         clock.tick(60)
 
-def main_menu():
+def start_menu():
     running = True
     start_button = Button(
         images=(pygame.image.load('assets/button.png').convert_alpha(),
@@ -231,11 +231,11 @@ def main_menu():
         font=pygame.font.Font(None, 50),
         on_activate=pygame.quit
     )
-    main_menu = MainMenu(screen, [start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), None)
+    main_menu = MainMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow.png').convert_alpha())  # Load an actual arrow image
     while running:
         
         
-        main_menu.draw()
+        main_menu.draw(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -252,5 +252,5 @@ def main_menu():
 
         pygame.display.flip()
 
-main_menu()
+start_menu()
 pygame.quit()
