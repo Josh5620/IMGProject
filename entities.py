@@ -2,7 +2,7 @@ import pygame
 import random
 import glob
 import os
-from blocks import Spikes
+from blocks import Spikes, block
 
 def rescaleObject(object, scale_factor):
     scaledObject = pygame.transform.scale_by(object, scale_factor)
@@ -81,7 +81,8 @@ class mainCharacter:
         # Game variables
         self.visible = True
         self.invulnerable = False
-        self.lives = 3 
+        self.lives = 10
+        self.won = False
 
     def _anim_index(self, state: str) -> int:
         if not self.anims or state not in self.anims:
@@ -133,19 +134,21 @@ class mainCharacter:
                 
 
     def check_horizontal_collision(self, obstacles):
-        for block in obstacles:
-            if isinstance(block, Spikes):
-                block.collideHurt(self)
-            if self.rect.colliderect(block.get_rect()):
+        from blocks import block, Spikes, end
+        for obstacle in obstacles:
+            if isinstance(obstacle, (Spikes, end)):
+                obstacle.collideHurt(self)
+            if self.rect.colliderect(obstacle.get_rect()):
                 
                 return True
         return False
     
     def check_vertical_collision(self, obstacles):
-        for block in obstacles:
-            if isinstance(block, Spikes):
-                block.collideHurt(self)
-            if self.rect.colliderect(block.get_rect()):
+        from blocks import block, Spikes, end
+        for obstacle in obstacles:
+            if isinstance(obstacle, (Spikes, end)):
+                obstacle.collideHurt(self)
+            if self.rect.colliderect(obstacle.get_rect()):
                 
                 return True
         return False

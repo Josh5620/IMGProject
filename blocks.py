@@ -48,3 +48,32 @@ class Spikes(block):
     def draw(self, surface):
         if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
             surface.blit(self.image, self.rect.topleft)
+
+
+class start(block):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        
+        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+    
+    def collideHurt(self, player):
+        return 0
+
+
+class end(block):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        # Use a different color or image for end block (red tinted block for example)
+        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+    
+    def collideHurt(self, player):
+        if self.rect.colliderect(player.rect):
+            print("You Win!")
+            player.won = True
+            return 0

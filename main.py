@@ -1,9 +1,9 @@
 import pygame
 import pytmx
 from entities import mainCharacter
-from blocks import block, Spikes
+from blocks import block, Spikes, start, end
 from pickups import Coin, Meat
-from button import Button, MainMenu
+from menus import Button, baseMenu,  retry_menu, start_menu
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -13,6 +13,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 player = mainCharacter(300, 300)
 tmx_data = pytmx.util_pygame.load_pygame("bigMap.tmx")
 pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
+game_state = "start"
+
 
 # Add font for FPS counter
 font = pygame.font.Font(None, 36)
@@ -47,7 +49,7 @@ def draw_bg():
 coin = Coin(400, 300)
 meat = Meat(200, 300)
 
-# Load heart image once at startup to prevent lag
+
 heart = pygame.image.load('assets/heart.png').convert_alpha()
 
 def rescaleObject(obj, scale_factor):
@@ -68,6 +70,8 @@ tile_h = TILE_SIZE
 
 obstacles = []
 found_gids = set()
+start_position = (300, 300)  # Default start position
+
 for layer in tmx_data.visible_layers:
     if isinstance(layer, pytmx.TiledTileLayer):
         for x, y, gid in layer:
@@ -77,6 +81,11 @@ for layer in tmx_data.visible_layers:
                 props = tmx_data.get_tile_properties_by_gid(gid)
                 if props and props.get("type") == "tombstone":
                     obstacle = Spikes(x * tile_w, y * tile_h)
+                elif props and props.get("type") == "start":
+                    obstacle = start(x * tile_w, y * tile_h)
+                    start_position = (x * tile_w + 30, y * tile_h - 70)  # Spawn above the start block
+                elif props and props.get("type") == "end":
+                    obstacle = end(x * tile_w, y * tile_h)
                 else:
                     obstacle = block(x * tile_w, y * tile_h)
                 
@@ -95,7 +104,7 @@ def draw_map(surface):
                     surface.blit(tile, (x * tile_w, y * tile_h))
 
 def start_game():
-    global scroll, ground_scroll, player_prev_x, obstacles, player
+    global game_state,scroll, ground_scroll, player_prev_x, obstacles, player
     print("Game Started")
     running = True
     coin_count = 0
@@ -106,6 +115,7 @@ def start_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                pygame.quit()
                 
         screen.fill((0, 0, 0))
         draw_bg()
@@ -190,8 +200,18 @@ def start_game():
         if player.lives <= 0:
             print("Game Over")
             running = False
+            game_state = "retry"
+            return  # Exit the function when game over
+        
+        if player.won:
+
+            running = False
+            game_state = "start"
+            return  # Exit the function when game is won
 
         pygame.display.flip()
+        
+        
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
@@ -203,54 +223,36 @@ def start_game():
         
         clock.tick(60)
 
-def start_menu():
-    running = True
-    start_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2),
-        text="Start Game",
-        font=pygame.font.Font(None, 50),
-        on_activate=start_game
-    )
-    
-    level_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 100),
-        text="Select Level",
-        font=pygame.font.Font(None, 50),
-        on_activate=lambda: print("Level Select - Not Implemented")
-    )
-    
-    quit_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 200),
-        text="Quit",
-        font=pygame.font.Font(None, 50),
-        on_activate=pygame.quit
-    )
-    main_menu = MainMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow.png').convert_alpha())  # Load an actual arrow image
-    while running:
-        
-        
-        main_menu.draw(screen)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-        
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    main_menu.move_selection(-1)
-                    print("up")
-                if event.key == pygame.K_DOWN:
-                    main_menu.move_selection(1)
-                    print("down")
-                if event.key == pygame.K_SPACE:
-                    main_menu.buttons[main_menu.selected_index].activate()
+def quit_to_start():
+    global game_state
+    game_state = "start"
 
-        pygame.display.flip()
+def start_game_wrapper():
+    global game_state, scroll, ground_scroll, player_prev_x, player, start_position
+    # Reset game values
+    player.lives = 35
+    player.x = start_position[0]
+    player.y = start_position[1]
+    player.rect.x = start_position[0]
+    player.rect.y = start_position[1]
+    scroll = 0
+    ground_scroll = 0
+    player_prev_x = player.x
+    
+    game_state = "playing"
+    start_game()
 
-start_menu()
+# Main game loop
+running = True
+while running:
+    if game_state == "start":
+        start_menu(WIDTH, HEIGHT, screen, start_game_wrapper)
+    elif game_state == "retry":
+        retry_menu(WIDTH, HEIGHT, screen, start_game_wrapper, quit_to_start)
+    elif game_state == "playing":
+        
+        pass
+    else:
+        running = False
+
 pygame.quit()
