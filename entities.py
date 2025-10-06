@@ -569,7 +569,6 @@ class Enemy:
                 pygame.draw.circle(surface, (255, 255, 0), self.rect.center, self.melee_range, 1)
                 pygame.draw.circle(surface, (255, 100, 100), self.rect.center, self.attack_range, 1)
 
-
 class Powerup:
     """Base powerup class"""
     

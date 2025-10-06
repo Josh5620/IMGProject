@@ -1,5 +1,6 @@
 import pygame
 
+game_level = 1
 class baseMenu():
     def __init__(self,  buttons, title_img, selected_img):
         self.title_image = title_img
@@ -68,14 +69,24 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         on_activate=start_game
     )
     
+    def open_level_select():
+        nonlocal running
+        level_select_menu(WIDTH, HEIGHT, screen)
+    
     level_button = Button(
         images=(pygame.image.load('assets/button.png').convert_alpha(),
                 pygame.image.load('assets/highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Select Level",
         font=pygame.font.Font(None, 50),
-        on_activate=lambda: print("Level Select - Not Implemented")
+        on_activate=open_level_select
     )
+    
+    def quit_game():
+        nonlocal running
+        running = False
+        pygame.quit()
+        exit()
     
     quit_button = Button(
         images=(pygame.image.load('assets/button.png').convert_alpha(),
@@ -83,7 +94,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         pos=(WIDTH // 2, HEIGHT // 2 + 200),
         text="Quit",
         font=pygame.font.Font(None, 50),
-        on_activate=pygame.quit
+        on_activate=quit_game
     )
     main_menu = baseMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow.png').convert_alpha())  # Load an actual arrow image
     while running:
@@ -106,6 +117,71 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
                     running = False  # Exit menu after button press
                 if event.key == pygame.K_p:  # Press P to access sandbox
                     setattr(pygame, '_game_state', 'sandbox')
+                    running = False
+
+        pygame.display.flip()
+
+def set_level(level_num):
+    global game_level
+    game_level = level_num
+    print(f"Level selected is {level_num}")
+
+def level_select_menu(WIDTH, HEIGHT, screen):
+    running = True
+    
+    def select_level_and_exit(level_num):
+        nonlocal running
+        set_level(level_num)
+        running = False
+    
+    def go_back():
+        nonlocal running
+        running = False
+    
+    level1_button = Button(
+        images=(pygame.image.load('assets/button.png').convert_alpha(),
+                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 - 50),
+        text="Level 1",
+        font=pygame.font.Font(None, 50),
+        on_activate=lambda: select_level_and_exit(1)
+    )
+    
+    level2_button = Button(
+        images=(pygame.image.load('assets/button.png').convert_alpha(),
+                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        text="Level 2",
+        font=pygame.font.Font(None, 50),
+        on_activate=lambda: select_level_and_exit(2)
+    )
+    
+    back_button = Button(
+        images=(pygame.image.load('assets/button.png').convert_alpha(),
+                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        text="Back",
+        font=pygame.font.Font(None, 50),
+        on_activate=go_back
+    )
+    
+    level_menu = baseMenu([level1_button, level2_button, back_button],
+                         pygame.image.load('assets/diedtitle.png').convert_alpha(),
+                         pygame.image.load('assets/arrow.png').convert_alpha())
+    
+    while running:
+        level_menu.draw(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    level_menu.move_selection(-1)
+                if event.key == pygame.K_DOWN:
+                    level_menu.move_selection(1)
+                if event.key == pygame.K_SPACE:
+                    level_menu.buttons[level_menu.selected_index].activate()
                     running = False
 
         pygame.display.flip()
