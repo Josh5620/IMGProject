@@ -16,9 +16,7 @@ class WeaponSystem:
     
     def init_weapon_system(self):
         """Call this in your mainCharacter.__init__() method"""
-        # Weapon properties
-        self.health = 100
-        self.max_health = 100
+        # Weapon properties (using your existing lives system instead of health)
         self.melee_cooldown = 0
         self.projectile_cooldown = 0
         self.charge_cooldown = 0
@@ -369,9 +367,6 @@ class WeaponSystem:
         # Draw melee range indicator when attacking (for debugging)
         if self.is_attacking and False:  # Set to True for debugging
             self._draw_melee_range(screen, draw_x, draw_y, camera_offset)
-        
-        # Draw health bar (you might want to move this to your UI system)
-        self._draw_health_bar(screen, draw_x, draw_y)
     
     def _draw_charging_effects(self, screen, draw_x, draw_y):
         """Draw charging visual effects"""
@@ -439,18 +434,7 @@ class WeaponSystem:
         
         pygame.draw.rect(screen, (255, 255, 255), (range_x, range_y, MELEE_RANGE, MELEE_RANGE), 2)
     
-    def _draw_health_bar(self, screen, draw_x, draw_y):
-        """Draw health bar above character"""
-        health_bar_width = 60
-        health_bar_height = 6
-        health_bar_x = draw_x
-        health_bar_y = draw_y - 15
-        
-        # Background (red)
-        pygame.draw.rect(screen, (255, 0, 0), (health_bar_x, health_bar_y, health_bar_width, health_bar_height))
-        # Health (green)
-        health_width = int((self.health / self.max_health) * health_bar_width)
-        pygame.draw.rect(screen, (0, 255, 0), (health_bar_x, health_bar_y, health_width, health_bar_height))
+
 
 def handle_projectile_collisions(projectile_manager, player, enemies, blocks):
     """

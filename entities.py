@@ -205,18 +205,18 @@ class mainCharacter(WeaponSystem):
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, obstacles)
 
-        # Weapon controls (handled internally)
-        if keys[pygame.K_f]:  # Melee attack
+        # Weapon controls (updated bindings: A-melee, W-straight, D-aimed)
+        if keys[pygame.K_a]:  # Melee attack
             hit_enemies = self.melee_attack(self.enemies, obstacles)
             if hit_enemies:
                 print(f"Hit {len(hit_enemies)} enemies!")
         
-        if keys[pygame.K_g]:  # Shoot fish projectile
+        if keys[pygame.K_w]:  # Straight projectile
             projectile = self.shoot_projectile()
             if projectile:
                 self.projectile_manager.add_projectile(projectile)
         
-        if keys[pygame.K_j]:  # Charge attack
+        if keys[pygame.K_c]:  # Aimed projectile
             if not self.is_charging:
                 self.start_charging()
         else:
@@ -332,4 +332,301 @@ class mainCharacter(WeaponSystem):
             
     def get_position(self):
         return self.rect.topleft
+
+
+# ===== ENEMY CLASSES =====
+
+class Enemy:
+    """Base enemy class with different AI behaviors"""
     
+    def __init__(self, x, y, ai_type="idle"):
+        self.rect = pygame.Rect(x, y, 48, 48)
+        self.x = x
+        self.y = y
+        self.health = 100
+        self.max_health = 100
+        self.speed = 2
+        self.ai_type = ai_type
+        self.alive = True
+        self.direction = 1
+        self.ai_timer = 0
+        self.target = None
+        self.patrol_start = x
+        self.patrol_range = 200
+        self.attack_range = 150
+        self.attack_cooldown = 0
+        self.melee_range = 60
+        self.color = (255, 100, 100)  # Red color for now
+        
+        # Enemy projectiles
+        self.projectiles = []
+        
+        # Create a simple colored surface as placeholder
+        self.image = pygame.Surface((48, 48))
+        self.image.fill(self.color)
+        
+    def update(self, player, dt=1.0):
+        """Update enemy based on AI type"""
+        if not self.alive:
+            return
+            
+        self.ai_timer += dt
+        self.attack_cooldown = max(0, self.attack_cooldown - dt)
+        
+        # Different AI behaviors
+        if self.ai_type == "idle":
+            self._ai_idle(player, dt)
+        elif self.ai_type == "patrol":
+            self._ai_patrol(player, dt)
+        elif self.ai_type == "chase":
+            self._ai_chase(player, dt)
+        elif self.ai_type == "ranged":
+            self._ai_ranged(player, dt)
+        elif self.ai_type == "boss":
+            self._ai_boss(player, dt)
+        
+        # Update enemy projectiles
+        for projectile in self.projectiles[:]:
+            projectile['x'] += projectile['dx'] * dt
+            projectile['y'] += projectile['dy'] * dt
+            
+            # Remove projectiles that go off screen
+            if (projectile['x'] < -50 or projectile['x'] > 1010 or 
+                projectile['y'] < -50 or projectile['y'] > 700):
+                self.projectiles.remove(projectile)
+                continue
+            
+            # Check collision with player
+            proj_rect = pygame.Rect(projectile['x'], projectile['y'], 8, 8)
+            if proj_rect.colliderect(player.rect):
+                self.damage_player(player)
+                self.projectiles.remove(projectile)
+    
+    def _ai_idle(self, player, dt):
+        """Enemy stays in place, occasionally looks around"""
+        if self.ai_timer > 120:  # Every 2 seconds at 60fps
+            self.direction *= -1
+            self.ai_timer = 0
+    
+    def _ai_patrol(self, player, dt):
+        """Enemy patrols back and forth"""
+        self.rect.x += self.speed * self.direction * dt
+        
+        # Turn around at patrol boundaries
+        if self.rect.x <= self.patrol_start - self.patrol_range or \
+           self.rect.x >= self.patrol_start + self.patrol_range:
+            self.direction *= -1
+    
+    def _ai_chase(self, player, dt):
+        """Enemy chases the player"""
+        distance = abs(player.rect.centerx - self.rect.centerx)
+        
+        if distance < 300:  # Chase range
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = -1
+                self.rect.x -= self.speed * dt
+            else:
+                self.direction = 1
+                self.rect.x += self.speed * dt
+            
+            # Melee attack if close enough
+            if distance < self.melee_range and self.attack_cooldown <= 0:
+                self._attack_melee(player)
+                self.attack_cooldown = 90  # 1.5 second cooldown
+    
+    def _ai_ranged(self, player, dt):
+        """Enemy keeps distance and attacks from range"""
+        distance = abs(player.rect.centerx - self.rect.centerx)
+        
+        if distance < 100:  # Too close, back away
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = 1
+                self.rect.x += self.speed * dt
+            else:
+                self.direction = -1
+                self.rect.x -= self.speed * dt
+        elif distance > 200:  # Too far, move closer
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = -1
+                self.rect.x -= self.speed * dt
+            else:
+                self.direction = 1
+                self.rect.x += self.speed * dt
+        
+        # Attack if in range
+        if self.attack_range < distance < 250 and self.attack_cooldown <= 0:
+            self._attack_ranged(player)
+            self.attack_cooldown = 120  # 2 second cooldown
+    
+    def _ai_boss(self, player, dt):
+        """Advanced boss AI with multiple phases"""
+        distance = abs(player.rect.centerx - self.rect.centerx)
+        
+        # Phase based on health
+        if self.health > self.max_health * 0.7:
+            # Phase 1: Slow chase
+            self._ai_chase(player, dt * 0.5)
+        elif self.health > self.max_health * 0.3:
+            # Phase 2: Fast ranged attacks
+            self._ai_ranged(player, dt * 1.5)
+            if self.attack_cooldown <= 0:
+                self._attack_ranged(player)
+                self.attack_cooldown = 60  # Faster attacks
+        else:
+            # Phase 3: Desperate rush
+            self._ai_chase(player, dt * 2.0)
+    
+    def _attack_ranged(self, player):
+        """Fire projectile at player"""
+        # Calculate direction to player
+        dx = player.rect.centerx - self.rect.centerx
+        dy = player.rect.centery - self.rect.centery
+        distance = (dx**2 + dy**2)**0.5
+        
+        if distance > 0:
+            # Normalize direction
+            dx /= distance
+            dy /= distance
+            
+            # Create projectile
+            projectile = {
+                'x': self.rect.centerx,
+                'y': self.rect.centery,
+                'dx': dx * 4,  # Projectile speed
+                'dy': dy * 4
+            }
+            self.projectiles.append(projectile)
+            print(f"Enemy fired projectile at player!")
+    
+    def _attack_melee(self, player):
+        """Melee attack against player"""
+        self.damage_player(player)
+        print(f"Enemy melee attack!")
+    
+    def damage_player(self, player):
+        """Deal damage to player"""
+        if not hasattr(player, 'invulnerable') or not player.invulnerable:
+            player.lives -= 1
+            if hasattr(player, 'iFrame'):
+                player.iFrame()
+            print(f"Player hit by enemy! Lives remaining: {player.lives}")
+            if player.lives <= 0:
+                print("Player defeated!")
+    
+    def set_ai_type(self, ai_type):
+        """Change enemy AI behavior"""
+        self.ai_type = ai_type
+        self.ai_timer = 0
+        print(f"Enemy AI changed to: {ai_type}")
+    
+    def take_damage(self, damage):
+        """Handle taking damage"""
+        self.health -= damage
+        if self.health <= 0:
+            self.alive = False
+            print(f"Enemy defeated!")
+    
+    def draw(self, surface, debug_mode=False):
+        """Draw enemy with optional debug info"""
+        if not self.alive:
+            return
+            
+        # Draw enemy
+        surface.blit(self.image, self.rect)
+        
+        # Draw enemy projectiles
+        for projectile in self.projectiles:
+            pygame.draw.circle(surface, (255, 0, 0), 
+                             (int(projectile['x']), int(projectile['y'])), 4)
+        
+        # Draw health bar
+        if self.health < self.max_health:
+            bar_width = 48
+            bar_height = 4
+            bar_x = self.rect.x
+            bar_y = self.rect.y - 10
+            
+            # Background (red)
+            pygame.draw.rect(surface, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+            # Foreground (green)
+            health_width = int((self.health / self.max_health) * bar_width)
+            pygame.draw.rect(surface, (0, 255, 0), (bar_x, bar_y, health_width, bar_height))
+        
+        # Debug info
+        if debug_mode:
+            # Draw AI type
+            font = pygame.font.Font(None, 24)
+            text = font.render(self.ai_type, True, (255, 255, 255))
+            surface.blit(text, (self.rect.x, self.rect.y - 30))
+            
+            # Draw direction indicator
+            pygame.draw.line(surface, (255, 255, 0), 
+                           self.rect.center, 
+                           (self.rect.centerx + self.direction * 30, self.rect.centery), 3)
+            
+            # Draw attack ranges
+            if self.ai_type in ["chase", "ranged", "boss"]:
+                pygame.draw.circle(surface, (255, 255, 0), self.rect.center, self.melee_range, 1)
+                pygame.draw.circle(surface, (255, 100, 100), self.rect.center, self.attack_range, 1)
+
+
+class Powerup:
+    """Base powerup class"""
+    
+    def __init__(self, x, y, powerup_type="health"):
+        self.rect = pygame.Rect(x, y, 32, 32)
+        self.powerup_type = powerup_type
+        self.collected = False
+        self.bob_timer = 0
+        self.original_y = y
+        
+        # Different colors for different powerup types
+        colors = {
+            "health": (255, 0, 0),      # Red
+            "speed": (0, 255, 0),       # Green
+            "damage": (255, 255, 0),    # Yellow
+            "shield": (0, 0, 255),      # Blue
+            "ammo": (255, 0, 255)       # Magenta
+        }
+        
+        self.color = colors.get(powerup_type, (255, 255, 255))
+        self.image = pygame.Surface((32, 32))
+        self.image.fill(self.color)
+    
+    def update(self, player, dt=1.0):
+        """Update powerup (bobbing animation, collision detection)"""
+        if self.collected:
+            return
+            
+        # Bobbing animation
+        self.bob_timer += dt * 0.1
+        self.rect.y = self.original_y + int(pygame.math.sin(self.bob_timer) * 5)
+        
+        # Check collision with player
+        if self.rect.colliderect(player.rect):
+            self.apply_effect(player)
+            self.collected = True
+    
+    def apply_effect(self, player):
+        """Apply powerup effect to player"""
+        print(f"Player collected {self.powerup_type} powerup!")
+        
+        if self.powerup_type == "health":
+            player.lives = min(player.lives + 1, 10)  # Max 10 lives
+        elif self.powerup_type == "speed":
+            # Apply speed boost effect
+            pass
+        elif self.powerup_type == "damage":
+            # Apply damage boost effect
+            pass
+        elif self.powerup_type == "shield":
+            # Apply shield effect
+            pass
+        elif self.powerup_type == "ammo":
+            # Restore ammo
+            pass
+    
+    def draw(self, surface):
+        """Draw powerup"""
+        if not self.collected:
+            surface.blit(self.image, self.rect)

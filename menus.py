@@ -104,6 +104,9 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
                 if event.key == pygame.K_SPACE:
                     main_menu.buttons[main_menu.selected_index].activate()
                     running = False  # Exit menu after button press
+                if event.key == pygame.K_p:  # Press P to access sandbox
+                    setattr(pygame, '_game_state', 'sandbox')
+                    running = False
 
         pygame.display.flip()
 

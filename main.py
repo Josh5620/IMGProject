@@ -4,6 +4,7 @@ from entities import mainCharacter
 from blocks import block, Spikes, start, end
 from pickups import Coin, Meat
 from menus import Button, baseMenu,  retry_menu, start_menu
+from sandbox import sandbox_mode
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -242,9 +243,18 @@ def start_game_wrapper():
     game_state = "playing"
     start_game()
 
+def sandbox_mode_wrapper():
+    global game_state
+    game_state = "sandbox"
+
 # Main game loop
 running = True
 while running:
+    # Check for sandbox mode trigger from menu
+    if hasattr(pygame, '_game_state') and pygame._game_state == 'sandbox':
+        game_state = 'sandbox'
+        delattr(pygame, '_game_state')
+    
     if game_state == "start":
         start_menu(WIDTH, HEIGHT, screen, start_game_wrapper)
     elif game_state == "retry":
@@ -252,6 +262,12 @@ while running:
     elif game_state == "playing":
         
         pass
+    elif game_state == "sandbox":
+        result = sandbox_mode()
+        if result == "menu":
+            game_state = "start"
+        elif result == "quit":
+            running = False
     else:
         running = False
 
