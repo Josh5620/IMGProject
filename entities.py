@@ -3,6 +3,9 @@ import random
 import glob
 import os
 from blocks import Spikes, block
+from weapons.weapons import WeaponSystem, handle_projectile_collisions
+from weapons.projectiles import ProjectileManager
+
 
 def rescaleObject(object, scale_factor):
     scaledObject = pygame.transform.scale_by(object, scale_factor)
@@ -18,6 +21,8 @@ CELL_MAP = {
     "jump_to_fall": (0, 1),
     "fall": (1, 1),
     "wall_jump": (2, 1),
+    "attack": [(0,0), (1,0), (2,0), (3,0), (0,1), (1,1), (2,1), (3,1)],
+    "charge": [(0,0), (1,0), (2,0), (3,0), (0,1), (1,1), (2,1), (3,1)]
 }
 
 def load_surface(path: str) -> pygame.Surface:
@@ -48,14 +53,29 @@ def build_state_animations(pattern: str):
     
     anims = {state: [] for state in CELL_MAP.keys()}
     for sh in sheets:
-        for state, (c, r) in CELL_MAP.items():
-            anims[state].append(slice_cell(sh, c, r))
+        for state, coords in CELL_MAP.items():
+            if isinstance(coords, list):
+                # Handle multi-frame animations like attack/charge
+                for (c, r) in coords:
+                    anims[state].append(slice_cell(sh, c, r))
+            else:
+                # Handle single frame animations like idle/run
+                c, r = coords
+                anims[state].append(slice_cell(sh, c, r))
     return anims
-class mainCharacter:
+
+class mainCharacter(WeaponSystem):
     
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        
+        # Initialize weapon system
+        self.init_weapon_system()
+        
+        # Initialize internal projectile manager
+        self.projectile_manager = ProjectileManager()
+        self.enemies = []  # Can be populated later
         
         # Load sprite animations
         self.anims = build_state_animations("assets/catspritesheet/*.png")
@@ -83,6 +103,8 @@ class mainCharacter:
         self.invulnerable = False
         self.lives = 10
         self.won = False
+        
+
 
     def _anim_index(self, state: str) -> int:
         if not self.anims or state not in self.anims:
@@ -95,21 +117,28 @@ class mainCharacter:
     def update_animation(self, keys):
         self.anim_tick = (self.anim_tick + 1) % 10_000_000
     
-        if not self.on_ground:
-            if self.y_velocity < 0:
-                state = "jump"
-            else:
-                state = "fall"
+        # Check if weapon should override animation
+        weapon_anim = self.get_current_weapon_animation_state()
+        if weapon_anim:
+            # Use weapon animation instead of movement animation
+            state = weapon_anim
         else:
-            if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
-                state = "run"
-                if keys[pygame.K_LEFT]:
-                    self.facing_right = False
-                elif keys[pygame.K_RIGHT]:
-                    self.facing_right = True
+            # Default movement-based animation logic
+            if not self.on_ground:
+                if self.y_velocity < 0:
+                    state = "jump"
+                else:
+                    state = "fall"
             else:
-                state = "idle"
-                self.scroll_speed = 0
+                if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
+                    state = "run"
+                    if keys[pygame.K_LEFT]:
+                        self.facing_right = False
+                    elif keys[pygame.K_RIGHT]:
+                        self.facing_right = True
+                else:
+                    state = "idle"
+                    self.scroll_speed = 0
         
 
         idx = self._anim_index(state)
@@ -162,6 +191,9 @@ class mainCharacter:
                 self.image = self.anims["jump_start"][0]  
         
     def update(self, keys, obstacles):
+        # Update weapon system before movement
+        self.update_weapon_system()
+        
         if keys[pygame.K_LEFT]:
             self.move(-3.5, 0, obstacles)
             self.scroll_speed = -0.5
@@ -173,11 +205,48 @@ class mainCharacter:
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, obstacles)
 
+        # Weapon controls (handled internally)
+        if keys[pygame.K_f]:  # Melee attack
+            hit_enemies = self.melee_attack(self.enemies, obstacles)
+            if hit_enemies:
+                print(f"Hit {len(hit_enemies)} enemies!")
+        
+        if keys[pygame.K_g]:  # Shoot fish projectile
+            projectile = self.shoot_projectile()
+            if projectile:
+                self.projectile_manager.add_projectile(projectile)
+        
+        if keys[pygame.K_j]:  # Charge attack
+            if not self.is_charging:
+                self.start_charging()
+        else:
+            if self.is_charging:
+                # Get mouse position for aiming
+                try:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    projectile = self.stop_charging_and_shoot(mouse_x, mouse_y)
+                    if projectile:
+                        self.projectile_manager.add_projectile(projectile)
+                except:
+                    # Fallback if mouse position unavailable
+                    self.stop_charging()
+
         # Update animation based on current state
         self.update_animation(keys)
         
         # Apply physics (gravity and movement)
         self.applyGrav(obstacles)
+        
+        # Update weapon system
+        self.projectile_manager.update()
+        
+        # Handle projectile collisions
+        handle_projectile_collisions(
+            self.projectile_manager,
+            self,
+            self.enemies,
+            obstacles
+        )
         
 
         
@@ -253,6 +322,13 @@ class mainCharacter:
         else:
             if self.visible:
                 surface.blit(self.image, self.rect)
+        
+        # Draw weapon effects on top of sprite
+        camera_offset = (0, 0)  # Replace with your actual camera offset if you have one
+        self.draw_weapon_effects(surface, camera_offset)
+        
+        # Draw projectiles
+        self.projectile_manager.draw(surface)
             
     def get_position(self):
         return self.rect.topleft
