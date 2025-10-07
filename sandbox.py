@@ -268,9 +268,9 @@ class SandboxMode:
         pygame.draw.rect(self.screen, border_color, (0, 0, 10, 640))  # Left
         pygame.draw.rect(self.screen, border_color, (950, 0, 10, 640))  # Right
         
-        # Draw player
+        # Draw player with powerup effects
         if self.player.visible:
-            self.screen.blit(self.player.image, self.player.rect)
+            self.draw_player_with_effects()
         
         # Draw enemies
         for enemy in self.enemies:
@@ -287,6 +287,10 @@ class SandboxMode:
         # Draw projectiles
         if hasattr(self.player, 'projectile_manager'):
             self.player.projectile_manager.draw(self.screen)
+    
+    def draw_player_with_effects(self):
+        """Draw player with enhanced powerup visual effects"""
+        self.player.draw_with_effects(self.screen)
     
     def draw_ui(self):
         """Render on-screen debug info and controls"""
@@ -306,6 +310,7 @@ class SandboxMode:
             f"🌍 Gravity: {'ON' if self.gravity_enabled else 'OFF'} | 🐌 Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
             f"🖱️ Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | 🐛 Debug: {'ON' if self.debug_mode else 'OFF'}",
             f"❤️ Player Lives: {self.player.lives} | 🔫 Ammo: {self.player.current_ammo}/{self.player.max_ammo}",
+            self.get_powerup_status_text(),
             "",
             "🎮 SANDBOX CONTROLS:",
             "E - Spawn Enemy | P - Spawn Powerup | D - Delete Nearest",
@@ -332,6 +337,26 @@ class SandboxMode:
             mouse_pos = pygame.mouse.get_pos()
             mouse_text = self.small_font.render(f"Mouse: ({mouse_pos[0]}, {mouse_pos[1]})", True, (255, 255, 0))
             self.screen.blit(mouse_text, (850, 35))
+    
+    def get_powerup_status_text(self):
+        """Get formatted text showing active powerup status"""
+        status_parts = []
+        
+        if hasattr(self.player, 'powerup_timers'):
+            for effect, timer in self.player.powerup_timers.items():
+                if timer > 0:
+                    seconds_left = timer // 60  # Assuming 60 FPS
+                    if effect == "speed" and getattr(self.player, 'speed_boost', 1.0) > 1.0:
+                        status_parts.append(f"⚡Speed({seconds_left}s)")
+                    elif effect == "damage" and getattr(self.player, 'damage_boost', 1.0) > 1.0:
+                        status_parts.append(f"🔥Damage({seconds_left}s)")
+                    elif effect == "shield" and getattr(self.player, 'shield_active', False):
+                        status_parts.append(f"🛡️Shield({seconds_left}s)")
+        
+        if status_parts:
+            return "🌟 Active: " + " | ".join(status_parts)
+        else:
+            return "🌟 No active powerups"
         
         # Active powerup effects display
         powerup_y = 60

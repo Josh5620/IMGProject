@@ -313,29 +313,35 @@ class mainCharacter(WeaponSystem):
                         print("Shield expired!")
     
     def apply_powerup(self, powerup_type):
-        """Apply powerup effect to player"""
+        """Apply powerup effect to player with enhanced feedback"""
         if powerup_type == "health":
             old_lives = self.lives
             self.lives = min(self.lives + 2, 10)  # Restore 2 lives, max 10
-            print(f"Health restored! Lives: {old_lives} → {self.lives}")
+            print(f"💖 Health restored! Lives: {old_lives} → {self.lives}")
+            # TODO: Play healing sound effect
         
         elif powerup_type == "speed":
             self.speed_boost = 1.5
             self.powerup_timers["speed"] = 600  # 10 seconds at 60 FPS
-            print("Speed boost activated for 10 seconds!")
+            print("⚡ Speed boost activated for 10 seconds!")
+            # TODO: Play speed boost sound effect
         
         elif powerup_type == "damage":
             self.damage_boost = 2.0
             self.powerup_timers["damage"] = 600  # 10 seconds at 60 FPS
-            print("Damage boost activated for 10 seconds!")
+            print("🔥 Damage boost activated for 10 seconds!")
+            # TODO: Play power up sound effect
         
         elif powerup_type == "shield":
             self.shield_active = True
             self.powerup_timers["shield"] = 300  # 5 seconds at 60 FPS
-            print("Shield activated for 5 seconds!")
+            print("🛡️ Shield activated for 5 seconds!")
+            # TODO: Play shield activation sound effect
         
         elif powerup_type == "ammo":
             self.reload_ammo(10)  # Restore 10 ammo
+            print("📦 Ammo powerup collected!")
+            # TODO: Play ammo reload sound effect
     
     def take_damage(self, damage_amount=1):
         """Take damage, with shield protection"""
@@ -356,6 +362,85 @@ class mainCharacter(WeaponSystem):
             # You might want to add a timer to reset invulnerability
         
         return True
+    
+    def draw_powerup_effects(self, surface):
+        """Draw visual effects for active powerups"""
+        player_center = self.rect.center
+        current_time = pygame.time.get_ticks()
+        
+        # Shield effect - pulsing blue protective aura
+        if hasattr(self, 'shield_active') and self.shield_active:
+            shield_pulse = math.sin(current_time * 0.01) * 0.3 + 0.7
+            shield_radius = int(40 * shield_pulse)
+            
+            # Outer shield glow
+            for i in range(3):
+                alpha = 60 - i * 15
+                radius = shield_radius + i * 3
+                shield_color = (0, 150, 255)
+                pygame.draw.circle(surface, shield_color, player_center, radius, 2)
+            
+            # Inner shield core
+            pygame.draw.circle(surface, (150, 200, 255), player_center, shield_radius - 8, 1)
+        
+        # Speed effect - motion blur and energy trails
+        if hasattr(self, 'speed_boost') and self.speed_boost > 1.0:
+            speed_intensity = min((self.speed_boost - 1.0) * 2, 1.0)
+            
+            # Energy trails behind player
+            for i in range(4):
+                trail_x = player_center[0] - (i + 1) * 10 * speed_intensity
+                trail_alpha = int(150 * speed_intensity) - i * 30
+                if trail_alpha > 0:
+                    trail_size = 8 - i * 2
+                    pygame.draw.circle(surface, (0, 255, 100), 
+                                     (trail_x, player_center[1]), trail_size, 1)
+            
+            # Speed lines effect
+            for i in range(6):
+                line_length = 15 + i * 3
+                line_y = player_center[1] + (i - 3) * 5
+                line_start = (player_center[0] - line_length, line_y)
+                line_end = (player_center[0] - 5, line_y)
+                pygame.draw.line(surface, (100, 255, 150), line_start, line_end, 2)
+        
+        # Damage effect - fiery aura and sparks
+        if hasattr(self, 'damage_boost') and self.damage_boost > 1.0:
+            damage_intensity = min((self.damage_boost - 1.0), 1.0)
+            damage_pulse = math.sin(current_time * 0.015) * 0.3 + 0.7
+            
+            # Fiery aura
+            aura_radius = int(35 * damage_pulse * damage_intensity)
+            for i in range(3):
+                alpha = int(80 * damage_intensity) - i * 20
+                if alpha > 0:
+                    radius = aura_radius - i * 5
+                    color_intensity = int(255 * damage_intensity)
+                    aura_color = (color_intensity, max(50, color_intensity - 100), 0)
+                    pygame.draw.circle(surface, aura_color, player_center, radius, 1)
+            
+            # Floating spark particles
+            for i in range(8):
+                angle = (current_time * 0.02 + i * 45) % 360
+                spark_distance = 25 + math.sin(current_time * 0.03 + i) * 8
+                spark_x = player_center[0] + int(spark_distance * math.cos(math.radians(angle)))
+                spark_y = player_center[1] + int(spark_distance * math.sin(math.radians(angle))) - 5
+                
+                # Animated spark color
+                spark_alpha = int(200 * damage_intensity * (math.sin(current_time * 0.05 + i) * 0.5 + 0.5))
+                if spark_alpha > 50:
+                    spark_colors = [(255, 200, 0), (255, 100, 0), (255, 50, 0)]
+                    spark_color = spark_colors[i % 3]
+                    pygame.draw.circle(surface, spark_color, (spark_x, spark_y), 3)
+                    pygame.draw.circle(surface, (255, 255, 100), (spark_x, spark_y), 1)
+    
+    def draw_with_effects(self, surface):
+        """Draw player with all visual effects"""
+        # Draw powerup effects behind player
+        self.draw_powerup_effects(surface)
+        
+        # Draw the player sprite
+        surface.blit(self.image, self.rect)
         
 
         
@@ -680,48 +765,188 @@ class Enemy:
 
 
 class Powerup:
-    """Base powerup class"""
+    """Enhanced powerup class with visual effects"""
     
     def __init__(self, x, y, powerup_type="health"):
-        self.rect = pygame.Rect(x, y, 32, 32)
+        self.rect = pygame.Rect(x, y, 40, 40)  # Slightly bigger
         self.powerup_type = powerup_type
         self.collected = False
         self.bob_timer = 0
         self.original_y = y
+        self.rotation = 0
+        self.pulse_timer = 0
+        self.collection_particles = []
         
-        # Different colors for different powerup types
-        colors = {
-            "health": (255, 0, 0),      # Red
-            "speed": (0, 255, 0),       # Green
-            "damage": (255, 255, 0),    # Yellow
-            "shield": (0, 0, 255),      # Blue
-            "ammo": (255, 0, 255)       # Magenta
+        # Enhanced colors with glow effects
+        self.colors = {
+            "health": {"main": (255, 50, 50), "glow": (255, 100, 100), "bright": (255, 200, 200)},
+            "speed": {"main": (50, 255, 50), "glow": (100, 255, 100), "bright": (200, 255, 200)},
+            "damage": {"main": (255, 255, 50), "glow": (255, 255, 100), "bright": (255, 255, 200)},
+            "shield": {"main": (50, 50, 255), "glow": (100, 100, 255), "bright": (200, 200, 255)},
+            "ammo": {"main": (255, 50, 255), "glow": (255, 100, 255), "bright": (255, 200, 255)}
         }
         
-        self.color = colors.get(powerup_type, (255, 255, 255))
-        self.image = pygame.Surface((32, 32))
-        self.image.fill(self.color)
+        self.color_set = self.colors.get(powerup_type, {
+            "main": (255, 255, 255), 
+            "glow": (200, 200, 200), 
+            "bright": (255, 255, 255)
+        })
     
     def update(self, player, dt=1.0):
-        """Update powerup (bobbing animation, collision detection)"""
+        """Update powerup with enhanced animations and effects"""
         if self.collected:
+            # Update collection particles
+            self.update_collection_particles(dt)
             return
             
-        # Bobbing animation
-        self.bob_timer += dt * 0.1
-        self.rect.y = self.original_y + int(math.sin(self.bob_timer) * 5)
+        # Enhanced bobbing animation
+        self.bob_timer += dt * 0.15
+        self.rect.y = self.original_y + int(math.sin(self.bob_timer) * 8)
+        
+        # Rotation animation
+        self.rotation += dt * 2
+        if self.rotation >= 360:
+            self.rotation = 0
+        
+        # Pulsing effect
+        self.pulse_timer += dt * 0.2
         
         # Check collision with player
         if self.rect.colliderect(player.rect):
+            self.create_collection_particles()
             self.apply_effect(player)
             self.collected = True
     
     def apply_effect(self, player):
         """Apply powerup effect to player"""
-        print(f"Player collected {self.powerup_type} powerup!")
+        print(f"✨ Player collected {self.powerup_type} powerup!")
         player.apply_powerup(self.powerup_type)
     
+    def create_collection_particles(self):
+        """Create particles when powerup is collected"""
+        for i in range(15):  # Create 15 particles
+            import random
+            particle = {
+                'x': self.rect.centerx + random.randint(-10, 10),
+                'y': self.rect.centery + random.randint(-10, 10),
+                'dx': random.uniform(-3, 3),
+                'dy': random.uniform(-4, 1),
+                'life': 30,  # Frames to live
+                'max_life': 30,
+                'color': self.color_set["bright"]
+            }
+            self.collection_particles.append(particle)
+    
+    def update_collection_particles(self, dt):
+        """Update collection particle effects"""
+        for particle in self.collection_particles[:]:
+            particle['x'] += particle['dx'] * dt
+            particle['y'] += particle['dy'] * dt
+            particle['dy'] += 0.2 * dt  # Gravity
+            particle['life'] -= dt
+            
+            if particle['life'] <= 0:
+                self.collection_particles.remove(particle)
+    
+    def draw_icon(self, surface, center_x, center_y, size, alpha=255):
+        """Draw powerup-specific icon"""
+        if self.powerup_type == "health":
+            # Draw heart/cross
+            cross_size = size // 3
+            pygame.draw.rect(surface, (*self.color_set["main"], alpha), 
+                           (center_x - cross_size//2, center_y - cross_size, cross_size, cross_size*2))
+            pygame.draw.rect(surface, (*self.color_set["main"], alpha), 
+                           (center_x - cross_size, center_y - cross_size//2, cross_size*2, cross_size))
+        
+        elif self.powerup_type == "speed":
+            # Draw lightning bolt
+            points = [
+                (center_x - size//3, center_y - size//2),
+                (center_x + size//6, center_y - size//6),
+                (center_x - size//6, center_y),
+                (center_x + size//3, center_y + size//2),
+                (center_x - size//6, center_y + size//6),
+                (center_x + size//6, center_y)
+            ]
+            pygame.draw.polygon(surface, (*self.color_set["main"], alpha), points)
+        
+        elif self.powerup_type == "damage":
+            # Draw sword/star
+            for i in range(8):
+                angle = i * 45
+                x1 = center_x + int((size//4) * math.cos(math.radians(angle)))
+                y1 = center_y + int((size//4) * math.sin(math.radians(angle)))
+                x2 = center_x + int((size//2) * math.cos(math.radians(angle)))
+                y2 = center_y + int((size//2) * math.sin(math.radians(angle)))
+                pygame.draw.line(surface, (*self.color_set["main"], alpha), (x1, y1), (x2, y2), 2)
+        
+        elif self.powerup_type == "shield":
+            # Draw shield
+            pygame.draw.circle(surface, (*self.color_set["main"], alpha), 
+                             (center_x, center_y), size//2, 3)
+            pygame.draw.circle(surface, (*self.color_set["glow"], alpha//2), 
+                             (center_x, center_y), size//3)
+        
+        elif self.powerup_type == "ammo":
+            # Draw bullet/arrow
+            pygame.draw.circle(surface, (*self.color_set["main"], alpha), 
+                             (center_x - size//3, center_y), size//4)
+            pygame.draw.polygon(surface, (*self.color_set["main"], alpha), [
+                (center_x - size//3, center_y - size//6),
+                (center_x + size//3, center_y),
+                (center_x - size//3, center_y + size//6)
+            ])
+    
     def draw(self, surface):
-        """Draw powerup"""
-        if not self.collected:
-            surface.blit(self.image, self.rect)
+        """Draw powerup with enhanced visual effects"""
+        if self.collected:
+            # Draw collection particles
+            for particle in self.collection_particles:
+                alpha = int(255 * (particle['life'] / particle['max_life']))
+                if alpha > 0:
+                    color = (*particle['color'], min(alpha, 255))
+                    pygame.draw.circle(surface, color[:3], 
+                                     (int(particle['x']), int(particle['y'])), 2)
+            return
+        
+        center_x = self.rect.centerx
+        center_y = self.rect.centery
+        
+        # Calculate pulsing effect
+        pulse_scale = 1.0 + math.sin(self.pulse_timer) * 0.2
+        glow_radius = int(25 * pulse_scale)
+        
+        # Draw outer glow (largest)
+        glow_color = (*self.color_set["glow"], 30)
+        for i in range(3):
+            radius = glow_radius - i * 3
+            if radius > 0:
+                pygame.draw.circle(surface, glow_color[:3], 
+                                 (center_x, center_y), radius)
+        
+        # Draw rotating background circle
+        main_radius = int(18 * pulse_scale)
+        pygame.draw.circle(surface, self.color_set["main"], 
+                         (center_x, center_y), main_radius)
+        
+        # Draw inner bright circle
+        inner_radius = int(12 * pulse_scale)
+        pygame.draw.circle(surface, self.color_set["bright"], 
+                         (center_x, center_y), inner_radius)
+        
+        # Draw rotating icon
+        icon_size = int(20 * pulse_scale)
+        self.draw_icon(surface, center_x, center_y, icon_size)
+        
+        # Draw sparkle effects around the powerup
+        sparkle_count = 4
+        for i in range(sparkle_count):
+            angle = (self.rotation + i * 90) % 360
+            sparkle_distance = 30 + math.sin(self.pulse_timer + i) * 5
+            sparkle_x = center_x + int(sparkle_distance * math.cos(math.radians(angle)))
+            sparkle_y = center_y + int(sparkle_distance * math.sin(math.radians(angle)))
+            
+            sparkle_alpha = int(128 + 127 * math.sin(self.pulse_timer * 2 + i))
+            sparkle_size = 2 + int(math.sin(self.pulse_timer * 3 + i))
+            pygame.draw.circle(surface, (*self.color_set["bright"], sparkle_alpha), 
+                             (sparkle_x, sparkle_y), sparkle_size)
