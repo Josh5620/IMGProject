@@ -39,8 +39,8 @@ class BaseProjectile:
 
 class PlayerProjectile(BaseProjectile):
     """Player's projectile - fast fish projectile"""
-    def __init__(self, x, y, direction):
-        super().__init__(x, y, direction, speed=10, damage=20)
+    def __init__(self, x, y, direction, speed=10, damage=20):
+        super().__init__(x, y, direction, speed=speed, damage=damage)
         self.owner = 'player'
         self.trail_positions = []  # For trail effect
         
@@ -128,10 +128,11 @@ class EnemyProjectile(BaseProjectile):
 
 class ChargedProjectile(BaseProjectile):
     """Charged projectile with arc trajectory based on charge level"""
-    def __init__(self, x, y, direction, charge_level, target_x=None, target_y=None):
+    def __init__(self, x, y, direction, charge_level, target_x=None, target_y=None, damage_boost=1.0):
         # Scale properties based on charge level (0.0 to 1.0)
         speed = 5 + (charge_level * 10)  # Speed: 5-15
-        damage = 15 + int(charge_level * 35)  # Damage: 15-50
+        base_damage = 15 + int(charge_level * 35)  # Base damage: 15-50
+        damage = int(base_damage * damage_boost)  # Apply damage boost
         
         super().__init__(x, y, direction, speed, damage)
         self.owner = 'player'

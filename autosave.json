@@ -1,18 +1,10 @@
 {
   "player": {
-    "x": 129,
+    "x": 176,
     "y": 508,
-    "lives": 9
+    "lives": 10
   },
-  "enemies": [
-    {
-      "x": 260,
-      "y": 530,
-      "ai_type": "patrol",
-      "health": 100,
-      "projectiles": 0
-    }
-  ],
+  "enemies": [],
   "powerups": [],
   "settings": {
     "current_ai_index": 1,

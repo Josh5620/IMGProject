@@ -213,7 +213,7 @@ class Level1(Game):
         super().__init__(width, height)
         
         self.load_background('assets/BGL', 11)
-        self.load_tilemap("bigMap.tmx")
+        self.load_tilemap("forestMap.tmx")
         self.load_ui_assets()
         
         self.process_tilemap()
@@ -223,7 +223,7 @@ class Level1(Game):
         TILE_SIZE = 32
         self.obstacles = []
         found_gids = set()
-        self.start_position = (300, 300)
+        self.start_position = (0, 100)
         
         for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
