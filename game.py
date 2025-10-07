@@ -152,10 +152,8 @@ class Game:
             enemy.draw(self.screen)
             
     def handle_input(self, keys):
-        if keys[pygame.K_w]:
-            if self.player and not self.player.invulnerable:
-                self.player.lives -= 1
-                self.player.iFrame()
+        # Input handling is now done in the player's update method
+        pass
                 
     def check_win_lose_conditions(self):
         if self.player.lives <= 0:

@@ -237,7 +237,7 @@ class mainCharacter(WeaponSystem):
             if hit_enemies:
                 print(f"Hit {len(hit_enemies)} enemies!")
         
-        if keys[pygame.K_w]:  # Straight projectile
+        if keys[pygame.K_s]:  # Straight projectile
             if self.can_shoot():
                 projectile = self.shoot_projectile()
                 if projectile:
