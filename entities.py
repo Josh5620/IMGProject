@@ -2,6 +2,7 @@ import pygame
 import random
 import glob
 import os
+import math
 from blocks import Spikes, block
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager
@@ -104,6 +105,22 @@ class mainCharacter(WeaponSystem):
         self.lives = 10
         self.won = False
         
+        # Ammo and shooting system
+        self.max_ammo = 20
+        self.current_ammo = 20
+        self.shooting_cooldown = 0
+        self.cooldown_time = 30  # 0.5 seconds at 60 FPS
+        
+        # Powerup effects
+        self.speed_boost = 1.0
+        self.damage_boost = 1.0
+        self.shield_active = False
+        self.powerup_timers = {
+            "speed": 0,
+            "damage": 0,
+            "shield": 0
+        }
+        
 
 
     def _anim_index(self, state: str) -> int:
@@ -194,30 +211,41 @@ class mainCharacter(WeaponSystem):
         # Update weapon system before movement
         self.update_weapon_system()
         
+        # Apply speed boost to movement
+        base_speed = 3.5 * self.speed_boost
         if keys[pygame.K_LEFT]:
-            self.move(-3.5, 0, obstacles)
+            self.move(-base_speed, 0, obstacles)
             self.scroll_speed = -0.5
         if keys[pygame.K_RIGHT]:
-            self.move(3.5, 0, obstacles)
+            self.move(base_speed, 0, obstacles)
             self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, obstacles)
 
-        # Weapon controls (updated bindings: A-melee, W-straight, D-aimed)
+        # Update shooting cooldown and powerup timers
+        if self.shooting_cooldown > 0:
+            self.shooting_cooldown -= 1
+        
+        # Update powerup effects
+        self.update_powerup_effects()
+        
+        # Weapon controls (updated bindings: A-melee, W-straight, C-aimed)
         if keys[pygame.K_a]:  # Melee attack
             hit_enemies = self.melee_attack(self.enemies, obstacles)
             if hit_enemies:
                 print(f"Hit {len(hit_enemies)} enemies!")
         
         if keys[pygame.K_w]:  # Straight projectile
-            projectile = self.shoot_projectile()
-            if projectile:
-                self.projectile_manager.add_projectile(projectile)
+            if self.can_shoot():
+                projectile = self.shoot_projectile()
+                if projectile:
+                    self.projectile_manager.add_projectile(projectile)
+                    self.consume_ammo()
         
         if keys[pygame.K_c]:  # Aimed projectile
-            if not self.is_charging:
+            if not self.is_charging and self.can_shoot():
                 self.start_charging()
         else:
             if self.is_charging:
@@ -227,6 +255,7 @@ class mainCharacter(WeaponSystem):
                     projectile = self.stop_charging_and_shoot(mouse_x, mouse_y)
                     if projectile:
                         self.projectile_manager.add_projectile(projectile)
+                        self.consume_ammo()
                 except:
                     # Fallback if mouse position unavailable
                     self.stop_charging()
@@ -247,6 +276,86 @@ class mainCharacter(WeaponSystem):
             self.enemies,
             obstacles
         )
+    
+    def can_shoot(self):
+        """Check if player can shoot (has ammo and not on cooldown)"""
+        return self.current_ammo > 0 and self.shooting_cooldown <= 0
+    
+    def consume_ammo(self):
+        """Consume one ammo and set cooldown"""
+        if self.current_ammo > 0:
+            self.current_ammo -= 1
+            self.shooting_cooldown = self.cooldown_time
+            print(f"Ammo: {self.current_ammo}/{self.max_ammo}")
+    
+    def reload_ammo(self, amount=None):
+        """Reload ammo (used by ammo powerups)"""
+        if amount is None:
+            amount = self.max_ammo
+        self.current_ammo = min(self.current_ammo + amount, self.max_ammo)
+        print(f"Ammo reloaded! {self.current_ammo}/{self.max_ammo}")
+    
+    def update_powerup_effects(self):
+        """Update active powerup effects"""
+        for effect, timer in self.powerup_timers.items():
+            if timer > 0:
+                self.powerup_timers[effect] -= 1
+                if self.powerup_timers[effect] <= 0:
+                    # Effect expired
+                    if effect == "speed":
+                        self.speed_boost = 1.0
+                        print("Speed boost expired!")
+                    elif effect == "damage":
+                        self.damage_boost = 1.0
+                        print("Damage boost expired!")
+                    elif effect == "shield":
+                        self.shield_active = False
+                        print("Shield expired!")
+    
+    def apply_powerup(self, powerup_type):
+        """Apply powerup effect to player"""
+        if powerup_type == "health":
+            old_lives = self.lives
+            self.lives = min(self.lives + 2, 10)  # Restore 2 lives, max 10
+            print(f"Health restored! Lives: {old_lives} → {self.lives}")
+        
+        elif powerup_type == "speed":
+            self.speed_boost = 1.5
+            self.powerup_timers["speed"] = 600  # 10 seconds at 60 FPS
+            print("Speed boost activated for 10 seconds!")
+        
+        elif powerup_type == "damage":
+            self.damage_boost = 2.0
+            self.powerup_timers["damage"] = 600  # 10 seconds at 60 FPS
+            print("Damage boost activated for 10 seconds!")
+        
+        elif powerup_type == "shield":
+            self.shield_active = True
+            self.powerup_timers["shield"] = 300  # 5 seconds at 60 FPS
+            print("Shield activated for 5 seconds!")
+        
+        elif powerup_type == "ammo":
+            self.reload_ammo(10)  # Restore 10 ammo
+    
+    def take_damage(self, damage_amount=1):
+        """Take damage, with shield protection"""
+        if self.invulnerable:
+            return False
+            
+        if self.shield_active:
+            print("Shield blocked damage!")
+            return False
+        
+        self.lives -= damage_amount
+        if self.lives <= 0:
+            self.lives = 0
+            print("Player defeated!")
+        else:
+            # Brief invulnerability after taking damage
+            self.invulnerable = True
+            # You might want to add a timer to reset invulnerability
+        
+        return True
         
 
         
@@ -569,6 +678,7 @@ class Enemy:
                 pygame.draw.circle(surface, (255, 255, 0), self.rect.center, self.melee_range, 1)
                 pygame.draw.circle(surface, (255, 100, 100), self.rect.center, self.attack_range, 1)
 
+
 class Powerup:
     """Base powerup class"""
     
@@ -599,7 +709,7 @@ class Powerup:
             
         # Bobbing animation
         self.bob_timer += dt * 0.1
-        self.rect.y = self.original_y + int(pygame.math.sin(self.bob_timer) * 5)
+        self.rect.y = self.original_y + int(math.sin(self.bob_timer) * 5)
         
         # Check collision with player
         if self.rect.colliderect(player.rect):
@@ -609,21 +719,7 @@ class Powerup:
     def apply_effect(self, player):
         """Apply powerup effect to player"""
         print(f"Player collected {self.powerup_type} powerup!")
-        
-        if self.powerup_type == "health":
-            player.lives = min(player.lives + 1, 10)  # Max 10 lives
-        elif self.powerup_type == "speed":
-            # Apply speed boost effect
-            pass
-        elif self.powerup_type == "damage":
-            # Apply damage boost effect
-            pass
-        elif self.powerup_type == "shield":
-            # Apply shield effect
-            pass
-        elif self.powerup_type == "ammo":
-            # Restore ammo
-            pass
+        player.apply_powerup(self.powerup_type)
     
     def draw(self, surface):
         """Draw powerup"""

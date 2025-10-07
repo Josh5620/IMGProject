@@ -239,10 +239,11 @@ class SandboxMode:
             # Check weapon collision with enemies
             if hasattr(self.player, 'projectile_manager'):
                 for projectile in self.player.projectile_manager.projectiles[:]:
-                    if hasattr(projectile, 'rect') and projectile.rect.colliderect(enemy.rect):
-                        enemy.take_damage(20)
+                    if projectile.active and projectile.get_rect().colliderect(enemy.rect):
+                        damage = projectile.on_hit(enemy)
+                        enemy.take_damage(damage)
                         self.player.projectile_manager.projectiles.remove(projectile)
-                        print(f"Player projectile hit enemy for 20 damage!")
+                        print(f"Player projectile hit enemy for {damage} damage!")
             
             if not enemy.alive:
                 self.enemies.remove(enemy)
@@ -304,7 +305,7 @@ class SandboxMode:
             f"👹 Enemies: {len(self.enemies)} | ⭐ Powerups: {len(self.powerups)}",
             f"🌍 Gravity: {'ON' if self.gravity_enabled else 'OFF'} | 🐌 Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
             f"🖱️ Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | 🐛 Debug: {'ON' if self.debug_mode else 'OFF'}",
-            f"❤️ Player Lives: {self.player.lives}",
+            f"❤️ Player Lives: {self.player.lives} | 🔫 Ammo: {self.player.current_ammo}/{self.player.max_ammo}",
             "",
             "🎮 SANDBOX CONTROLS:",
             "E - Spawn Enemy | P - Spawn Powerup | D - Delete Nearest",
@@ -331,6 +332,17 @@ class SandboxMode:
             mouse_pos = pygame.mouse.get_pos()
             mouse_text = self.small_font.render(f"Mouse: ({mouse_pos[0]}, {mouse_pos[1]})", True, (255, 255, 0))
             self.screen.blit(mouse_text, (850, 35))
+        
+        # Active powerup effects display
+        powerup_y = 60
+        for effect, timer in self.player.powerup_timers.items():
+            if timer > 0:
+                time_left = timer / 60
+                effect_colors = {"speed": (0, 255, 0), "damage": (255, 255, 0), "shield": (0, 0, 255)}
+                color = effect_colors.get(effect, (255, 255, 255))
+                effect_text = self.small_font.render(f"{effect.title()}: {time_left:.1f}s", True, color)
+                self.screen.blit(effect_text, (850, powerup_y))
+                powerup_y += 20
     
     def save_state(self, filename):
         """Save sandbox setup to JSON"""

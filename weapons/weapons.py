@@ -106,7 +106,7 @@ class WeaponSystem:
         
         hit_enemies = []
         MELEE_RANGE = 80
-        MELEE_DAMAGE = 20
+        MELEE_DAMAGE = int(20 * getattr(self, 'damage_boost', 1.0))
         
         # Create attack hitbox based on facing direction
         attack_rect = self.get_melee_hitbox(MELEE_RANGE)
@@ -266,7 +266,10 @@ class WeaponSystem:
         
         projectile_y = self.rect.centery
         
-        return PlayerProjectile(projectile_x, projectile_y, direction)
+        # Apply damage boost to projectile
+        base_damage = 20  # Match PlayerProjectile default
+        boosted_damage = int(base_damage * getattr(self, 'damage_boost', 1.0))
+        return PlayerProjectile(projectile_x, projectile_y, direction, speed=10, damage=boosted_damage)
     
 
     
@@ -310,7 +313,9 @@ class WeaponSystem:
         
         projectile_y = self.rect.centery
         
-        return ChargedProjectile(projectile_x, projectile_y, direction, charge_level, target_x, target_y)
+        # Apply damage boost for charged projectile
+        damage_boost = getattr(self, 'damage_boost', 1.0)
+        return ChargedProjectile(projectile_x, projectile_y, direction, charge_level, target_x, target_y, damage_boost)
     
     def cancel_charging(self):
         """Cancel charging without shooting"""
