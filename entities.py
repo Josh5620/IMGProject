@@ -3,7 +3,7 @@ import random
 import glob
 import os
 import math
-from blocks import Spikes, block
+from blocks import Ice, Spikes, block, end
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager
 
@@ -123,6 +123,10 @@ class mainCharacter(WeaponSystem):
             "shield": 0
         }
         
+        self.base_speed = 3.5 
+        self.slow_until = 0
+        
+        
 
 
     def _anim_index(self, state: str) -> int:
@@ -182,9 +186,8 @@ class mainCharacter(WeaponSystem):
                 
 
     def check_horizontal_collision(self, obstacles):
-        from blocks import block, Spikes, end
         for obstacle in obstacles:
-            if isinstance(obstacle, (Spikes, end)):
+            if isinstance(obstacle, (Spikes, end, Ice)):
                 obstacle.collideHurt(self)
             if self.rect.colliderect(obstacle.get_rect()):
                 
@@ -192,9 +195,8 @@ class mainCharacter(WeaponSystem):
         return False
     
     def check_vertical_collision(self, obstacles):
-        from blocks import block, Spikes, end
         for obstacle in obstacles:
-            if isinstance(obstacle, (Spikes, end)):
+            if isinstance(obstacle, (Spikes, end, Ice)):
                 obstacle.collideHurt(self)
             if self.rect.colliderect(obstacle.get_rect()):
                 
@@ -226,12 +228,16 @@ class mainCharacter(WeaponSystem):
         self.enemies = enemies  # Update current enemies
         
         # Apply speed boost to movement
-        base_speed = 3.5 * self.speed_boost
+        if pygame.time.get_ticks() > self.slow_until:
+            self.speed_boost = 1.0
+
+        actual_speed = self.base_speed * self.speed_boost
+
         if keys[pygame.K_LEFT]:
-            self.move(-base_speed, 0, obstacles)
+            self.move(-actual_speed, 0, obstacles)
             self.scroll_speed = -0.5
         if keys[pygame.K_RIGHT]:
-            self.move(base_speed, 0, obstacles)
+            self.move(actual_speed, 0, obstacles)
             self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
@@ -457,21 +463,22 @@ class mainCharacter(WeaponSystem):
         
         # Draw the player sprite
         surface.blit(self.image, self.rect)
-        
 
-        
-    def check_collision(self, obstacles):    
+    def check_collision(self, obstacles):
         for block in obstacles:
-            if isinstance(block, Spikes):
+            if isinstance(block, Spikes or Ice):
                 block.collideHurt(self)
             if self.rect.colliderect(block.get_rect()):
                 # Check if falling down and hitting top of block (landing)
                 if self.y_velocity > 0:
-                    # print("Touched Ground")
+ 
                     self.rect.bottom = block.get_rect().top
                     self.jumping = False
                     self.on_ground = True
                     self.y_velocity = 0
+                    
+
+                    
                     if not self.anims:
                         self.image = pygame.image.load("mc.png")
                     return True

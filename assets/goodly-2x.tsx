@@ -46,4 +46,9 @@
    <property name="enemy" value=""/>
   </properties>
  </tile>
+ <tile id="147">
+  <properties>
+   <property name="type" value="ice"/>
+  </properties>
+ </tile>
 </tileset>

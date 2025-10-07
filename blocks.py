@@ -77,3 +77,22 @@ class end(block):
             print("You Win!")
             player.won = True
             return 0
+
+class Ice(block):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+    
+    def collideHurt(self, player):
+        if self.rect.colliderect(player.rect):
+            print(self.rect, player.rect)
+            # Only apply slow effect if not already slowed
+            current_time = pygame.time.get_ticks()
+            if not hasattr(player, 'slow_until') or current_time > player.slow_until:
+                print("Slowed down by Ice!")
+                player.speed_boost = 0.5  # Reduce speed boost to 50%
+                player.slow_until = current_time + 2000  # 2 seconds
+
+        return 0

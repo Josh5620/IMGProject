@@ -2,7 +2,7 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import Level1Enemy, Archer, Warrior
-from blocks import block, Spikes, start, end
+from blocks import block, Spikes, start, end, Ice
 from pickups import Coin, Meat
 
 
@@ -273,6 +273,9 @@ class Level1(Game):
                         # Handle other tile types
                         elif props and props.get("type") == "tombstone":
                             obstacle = Spikes(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
+                        elif props and props.get("type") == "ice":
+                            obstacle = Ice(x * TILE_SIZE, y * TILE_SIZE)
                             self.obstacles.append(obstacle)
                         elif props and props.get("type") == "start":
                             obstacle = start(x * TILE_SIZE, y * TILE_SIZE)

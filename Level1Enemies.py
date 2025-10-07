@@ -342,8 +342,20 @@ class Archer(Level1Enemy):
         self.arrow_speed = 6
         self.isIdle = False
         
+        # Shooting delay after spotting player
+        self.shoot_delay = 1000  # 1 second delay after first spotting player
+        self.first_spotted_time = 0
+        self.player_spotted_recently = False
+        
     def can_shoot(self):
-        return pygame.time.get_ticks() - self.last_shot_time >= self.shoot_cooldown
+        current_time = pygame.time.get_ticks()
+        # Check if enough time has passed since last shot
+        if current_time - self.last_shot_time < self.shoot_cooldown:
+            return False
+        # Check if delay after first spotting player has elapsed
+        if self.player_spotted_recently and current_time - self.first_spotted_time < self.shoot_delay:
+            return False
+        return True
 
     def on_attack(self, player):
         spawn_x = self.rect.right if self.facing_right else self.rect.left - 16
@@ -365,6 +377,12 @@ class Archer(Level1Enemy):
             return
 
         if player and self.is_player_in_sight(player):
+            # Track when player is first spotted
+            if not self.player_spotted_recently:
+                self.player_spotted_recently = True
+                self.first_spotted_time = pygame.time.get_ticks()
+                print(f"{self.name} spotted player! Preparing to shoot...")
+            
             if self.can_shoot():
                 self.on_attack(player)
             if player.rect.centerx + self.scroll_offset > self.rect.centerx:
@@ -374,6 +392,9 @@ class Archer(Level1Enemy):
                 self.facing_right = False
                 self.direction = -1
             return
+        else:
+            # Reset spotted flag when player is no longer in sight
+            self.player_spotted_recently = False
 
         # normal patrol
         if self.on_ground:
