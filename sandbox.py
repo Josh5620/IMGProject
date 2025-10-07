@@ -11,7 +11,9 @@ import pygame
 import json
 import os
 import math
-from entities import mainCharacter, Enemy, Powerup
+from entities import mainCharacter, Powerup
+from Level1Enemies import Level1Enemy
+from Level2Enemies import Level2Enemy, Level2HunterEnemy, Level2StealthEnemy, Level2BossEnemy
 
 
 class SandboxMode:
@@ -29,9 +31,12 @@ class SandboxMode:
         self.mouse_mode = False
         self.debug_mode = True
         
-        # AI cycling
-        self.ai_types = ["idle", "patrol", "chase", "ranged", "boss"]
+        # AI cycling - Level 1 and Level 2 enemies
+        self.level1_ai_types = ["idle", "patrol", "chase", "ranged"]
+        self.level2_ai_types = ["basic", "hunter", "stealth", "boss"]
+        self.ai_types = self.level1_ai_types  # Start with Level 1
         self.current_ai_index = 0
+        self.current_level = 1  # 1 for Level 1, 2 for Level 2
         
         # Entity lists
         self.enemies = []
@@ -41,6 +46,8 @@ class SandboxMode:
         # Camera
         self.camera_x = 0
         self.camera_y = 0
+        self.screen_shake = 0
+        self.screen_shake_intensity = 0
         
         # UI
         self.font = pygame.font.Font(None, 28)
@@ -51,7 +58,7 @@ class SandboxMode:
         
     def init_sandbox(self):
         """Setup window, background, and player"""
-        print("🎮 Initializing Sandbox Mode...")
+        print("Initializing Sandbox Mode...")
         
         # Create player
         self.player = mainCharacter(100, 500)
@@ -78,7 +85,7 @@ class SandboxMode:
         # Try to auto-load last session
         self.load_state("autosave.json")
         
-        print("✅ Sandbox initialized successfully!")
+        print("Sandbox initialized successfully!")
     
     def handle_input(self):
         """Process key and mouse inputs"""
@@ -98,11 +105,23 @@ class SandboxMode:
                 
                 # Entity spawning
                 elif event.key == pygame.K_e:  # Spawn enemy
-                    spawn_pos = mouse_pos if self.mouse_mode else (self.player.rect.x + 100, 530)
+                    if self.mouse_mode:
+                        spawn_pos = mouse_pos
+                    else:
+                        # Spawn enemy near player on the ground
+                        spawn_x = self.player.rect.x + 100  # 100 pixels to the right of player
+                        spawn_y = self.player.rect.bottom - 48  # On the ground level
+                        spawn_pos = (spawn_x, spawn_y)
                     self.spawn_enemy(spawn_pos[0], spawn_pos[1])
                 
                 elif event.key == pygame.K_p:  # Spawn powerup
-                    spawn_pos = mouse_pos if self.mouse_mode else (self.player.rect.x + 50, 550)
+                    if self.mouse_mode:
+                        spawn_pos = mouse_pos
+                    else:
+                        # Spawn powerup near player on the ground
+                        spawn_x = self.player.rect.x + 50  # 50 pixels to the right of player
+                        spawn_y = self.player.rect.bottom - 32  # On the ground level
+                        spawn_pos = (spawn_x, spawn_y)
                     self.spawn_powerup(spawn_pos[0], spawn_pos[1])
                 
                 elif event.key == pygame.K_d:  # Delete nearest entity
@@ -115,41 +134,86 @@ class SandboxMode:
                 elif event.key == pygame.K_TAB:  # Cycle AI behavior
                     self.cycle_ai_behavior()
                 
+                elif event.key == pygame.K_1:  # Switch to Level 1
+                    self.switch_level(1)
+                
+                elif event.key == pygame.K_2:  # Switch to Level 2
+                    self.switch_level(2)
+                
+                
                 elif event.key == pygame.K_f:  # Toggle slow motion
                     self.slow_motion = not self.slow_motion
-                    print(f"🐌 Slow motion: {'ON' if self.slow_motion else 'OFF'}")
+                    print(f"Slow motion: {'ON' if self.slow_motion else 'OFF'}")
                 
                 elif event.key == pygame.K_g:  # Toggle gravity
                     self.gravity_enabled = not self.gravity_enabled
-                    print(f"🌍 Gravity: {'ON' if self.gravity_enabled else 'OFF'}")
+                    print(f"Gravity: {'ON' if self.gravity_enabled else 'OFF'}")
                 
                 elif event.key == pygame.K_m:  # Toggle mouse mode
                     self.mouse_mode = not self.mouse_mode
-                    print(f"🖱️ Mouse spawn mode: {'ON' if self.mouse_mode else 'OFF'}")
+                    print(f"Mouse spawn mode: {'ON' if self.mouse_mode else 'OFF'}")
                 
                 # State management
                 elif event.key == pygame.K_s:  # Save state
                     filename = f"sandbox_save_{len(os.listdir('.'))}.json"
                     self.save_state(filename)
-                    print(f"💾 Saved to {filename}")
+                    print(f"Saved to {filename}")
                 
                 elif event.key == pygame.K_l:  # Load state
                     self.load_state("autosave.json")
-                    print("📁 Loaded autosave.json")
+                    print("Loaded autosave.json")
                 
                 # Debug toggle
                 elif event.key == pygame.K_b:  # Toggle debug mode
                     self.debug_mode = not self.debug_mode
-                    print(f"🐛 Debug mode: {'ON' if self.debug_mode else 'OFF'}")
+                    print(f"Debug mode: {'ON' if self.debug_mode else 'OFF'}")
         
         return None
     
     def spawn_enemy(self, x, y):
         """Spawn enemy at specified position"""
         current_ai = self.ai_types[self.current_ai_index]
-        enemy = Enemy(x, y, current_ai)
+        
+        if self.current_level == 1:
+            # Level 1 enemies
+            enemy = Level1Enemy(x, y)
+            enemy.ai_type = current_ai
+            enemy.level = 1  # Add level attribute
+            print(f"Spawned Level 1 {current_ai} enemy at ({x}, {y})")
+        else:
+            # Level 2 enemies (BOSS level)
+            if current_ai == "basic":
+                enemy = Level2Enemy(x, y)
+            elif current_ai == "hunter":
+                enemy = Level2HunterEnemy(x, y)
+            elif current_ai == "stealth":
+                enemy = Level2StealthEnemy(x, y)
+            elif current_ai == "boss":
+                enemy = Level2BossEnemy(x, y)
+            else:
+                enemy = Level2Enemy(x, y)  # Default to basic
+            
+            enemy.level = 2  # Add level attribute
+            print(f"Spawned Level 2 {current_ai} enemy at ({x}, {y})")
+        
         self.enemies.append(enemy)
-        print(f"👹 Spawned {current_ai} enemy at ({x}, {y})")
+    
+    def switch_level(self, level):
+        """Switch between Level 1 and Level 2 enemies"""
+        self.current_level = level
+        print(f"Switched to Level {level}")
+        
+        # Clear existing enemies
+        self.enemies.clear()
+        
+        # Update AI types based on level
+        if level == 1:
+            self.ai_types = self.level1_ai_types
+        else:
+            self.ai_types = self.level2_ai_types
+        
+        self.current_ai_index = 0
+        print(f"Available AI types: {', '.join(self.ai_types)}")
     
     def spawn_powerup(self, x, y):
         """Spawn powerup at specified position"""
@@ -158,7 +222,7 @@ class SandboxMode:
         powerup_type = random.choice(powerup_types)
         powerup = Powerup(x, y, powerup_type)
         self.powerups.append(powerup)
-        print(f"⭐ Spawned {powerup_type} powerup at ({x}, {y})")
+        print(f"Spawned {powerup_type} powerup at ({x}, {y})")
     
     def delete_nearest_entity(self, pos):
         """Delete nearest entity to specified position"""
@@ -184,10 +248,10 @@ class SandboxMode:
         # Delete the nearest overall
         if min_enemy_dist < min_powerup_dist and nearest_enemy:
             self.enemies.remove(nearest_enemy)
-            print(f"🗑️ Deleted enemy at ({nearest_enemy.rect.x}, {nearest_enemy.rect.y})")
+            print(f"Deleted enemy at ({nearest_enemy.rect.x}, {nearest_enemy.rect.y})")
         elif nearest_powerup:
             self.powerups.remove(nearest_powerup)
-            print(f"🗑️ Deleted powerup at ({nearest_powerup.rect.x}, {nearest_powerup.rect.y})")
+            print(f"Deleted powerup at ({nearest_powerup.rect.x}, {nearest_powerup.rect.y})")
     
     def reset_sandbox(self):
         """Reset/clear sandbox"""
@@ -196,7 +260,7 @@ class SandboxMode:
         self.player.rect.x = 100
         self.player.rect.y = 500
         self.player.lives = 10
-        print("🔄 Sandbox reset!")
+        print("Sandbox reset!")
     
     def cycle_ai_behavior(self):
         """Cycle through enemy AI behaviors"""
@@ -205,9 +269,10 @@ class SandboxMode:
         
         # Update all existing enemies
         for enemy in self.enemies:
-            enemy.set_ai_type(new_ai)
+            if hasattr(enemy, 'ai_type'):
+                enemy.ai_type = new_ai
         
-        print(f"🧠 AI behavior changed to: {new_ai}")
+        print(f"AI behavior changed to: {new_ai} (Level {self.current_level})")
     
     def update_entities(self, dt):
         """Update all game objects based on delta time"""
@@ -217,12 +282,14 @@ class SandboxMode:
         # Set enemies list for weapon collision detection
         self.player.enemies = self.enemies
         
+        # Get keys for all updates
+        keys = pygame.key.get_pressed()
+        
         # Update player (with or without gravity)
         if self.gravity_enabled:
-            self.player.update(pygame.key.get_pressed(), self.obstacles)
+            self.player.update(keys, self.obstacles)
         else:
             # Manual movement without gravity
-            keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
                 self.player.rect.x -= 5 * effective_dt
             if keys[pygame.K_RIGHT]:
@@ -234,16 +301,23 @@ class SandboxMode:
         
         # Update enemies
         for enemy in self.enemies[:]:
-            enemy.update(self.player, effective_dt)
+            if hasattr(enemy, 'level') and enemy.level == 2:  # Level 2 enemies
+                enemy.update(self.player, self.obstacles, effective_dt)
+            else:  # Level 1 enemies
+                enemy.update(self.player, effective_dt)
             
             # Check weapon collision with enemies
             if hasattr(self.player, 'projectile_manager'):
                 for projectile in self.player.projectile_manager.projectiles[:]:
                     if projectile.active and projectile.get_rect().colliderect(enemy.rect):
-                        damage = projectile.on_hit(enemy)
+                        if hasattr(enemy, 'level'):  # Level 2 enemies
+                            damage = 20 if enemy.level == 1 else 15  # More damage to Level 2
+                        else:  # Level 1 enemies
+                            damage = 20
+                        
                         enemy.take_damage(damage)
                         self.player.projectile_manager.projectiles.remove(projectile)
-                        print(f"Player projectile hit enemy for {damage} damage!")
+                        print(f"Player projectile hit Level {getattr(enemy, 'level', 1)} enemy for {damage} damage!")
             
             if not enemy.alive:
                 self.enemies.remove(enemy)
@@ -259,6 +333,14 @@ class SandboxMode:
         # Clear screen
         self.screen.fill((50, 100, 150))  # Blue sky
         
+        # Apply screen shake
+        shake_x = 0
+        shake_y = 0
+        if self.screen_shake > 0:
+            import random
+            shake_x = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+            shake_y = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+        
         # Draw boundaries
         border_color = (100, 100, 100)
         floor_color = (80, 160, 80)
@@ -270,11 +352,32 @@ class SandboxMode:
         
         # Draw player with powerup effects
         if self.player.visible:
+            # Apply shake to player
+            original_x = self.player.rect.x
+            original_y = self.player.rect.y
+            self.player.rect.x += shake_x
+            self.player.rect.y += shake_y
+            
             self.draw_player_with_effects()
+            self.draw_player_health_bar()
+            
+            # Restore original position
+            self.player.rect.x = original_x
+            self.player.rect.y = original_y
         
         # Draw enemies
         for enemy in self.enemies:
+            # Apply shake to enemies
+            original_x = enemy.rect.x
+            original_y = enemy.rect.y
+            enemy.rect.x += shake_x
+            enemy.rect.y += shake_y
+            
             enemy.draw(self.screen, self.debug_mode)
+            
+            # Restore original position
+            enemy.rect.x = original_x
+            enemy.rect.y = original_y
         
         # Draw powerups
         for powerup in self.powerups:
@@ -292,6 +395,44 @@ class SandboxMode:
         """Draw player with enhanced powerup visual effects"""
         self.player.draw_with_effects(self.screen)
     
+    def draw_player_health_bar(self):
+        """Draw player health bar above the cat"""
+        if not hasattr(self.player, 'lives'):
+            return
+            
+        # Health bar dimensions
+        bar_width = 60
+        bar_height = 8
+        bar_x = self.player.rect.x + (self.player.rect.width - bar_width) // 2
+        bar_y = self.player.rect.y - 15
+        
+        # Background
+        pygame.draw.rect(self.screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+        
+        # Health
+        max_lives = 10  # Assuming max lives is 10
+        health_width = int((self.player.lives / max_lives) * bar_width)
+        health_color = (0, 255, 0) if self.player.lives > max_lives * 0.5 else (255, 255, 0) if self.player.lives > max_lives * 0.25 else (255, 0, 0)
+        pygame.draw.rect(self.screen, health_color, (bar_x, bar_y, health_width, bar_height))
+        
+        # Health text
+        font = pygame.font.Font(None, 16)
+        health_text = font.render(f"Cat: {self.player.lives}/{max_lives}", True, (255, 255, 255))
+        self.screen.blit(health_text, (bar_x, bar_y - 18))
+    
+    def add_screen_shake(self, intensity, duration):
+        """Add screen shake effect"""
+        self.screen_shake = duration
+        self.screen_shake_intensity = intensity
+    
+    def update_screen_shake(self, dt):
+        """Update screen shake effect"""
+        if self.screen_shake > 0:
+            self.screen_shake -= dt
+            if self.screen_shake <= 0:
+                self.screen_shake = 0
+                self.screen_shake_intensity = 0
+    
     def draw_ui(self):
         """Render on-screen debug info and controls"""
         y_offset = 10
@@ -305,25 +446,26 @@ class SandboxMode:
         
         # Current status
         status_lines = [
-            f"🧠 AI Behavior: {self.ai_types[self.current_ai_index]}",
-            f"👹 Enemies: {len(self.enemies)} | ⭐ Powerups: {len(self.powerups)}",
-            f"🌍 Gravity: {'ON' if self.gravity_enabled else 'OFF'} | 🐌 Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
-            f"🖱️ Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | 🐛 Debug: {'ON' if self.debug_mode else 'OFF'}",
-            f"❤️ Player Lives: {self.player.lives} | 🔫 Ammo: {self.player.current_ammo}/{self.player.max_ammo}",
+            f"Level: {self.current_level} | AI: {self.ai_types[self.current_ai_index]}",
+            f"Enemies: {len(self.enemies)} | Powerups: {len(self.powerups)}",
+            f"Gravity: {'ON' if self.gravity_enabled else 'OFF'} | Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
+            f"Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | Debug: {'ON' if self.debug_mode else 'OFF'}",
+            f"Player Lives: {self.player.lives} | Ammo: {self.player.current_ammo}/{self.player.max_ammo}",
             self.get_powerup_status_text(),
             "",
-            "🎮 SANDBOX CONTROLS:",
+            "SANDBOX CONTROLS:",
             "E - Spawn Enemy | P - Spawn Powerup | D - Delete Nearest",
-            "R - Reset | TAB - Cycle AI | F - Slow Motion",
+            "1/2 - Switch Level | TAB - Cycle AI | F - Slow Motion",
             "G - Toggle Gravity | M - Mouse Mode | B - Debug Mode",
             "S - Save State | L - Load State | ESC - Exit",
             "",
-            "⚔️ COMBAT CONTROLS:",
-            "A - Melee Attack | W - Straight Projectile | C - Aimed Projectile"
+            "COMBAT CONTROLS:",
+            "A - Melee Attack | W - Straight Projectile | C - Aimed Projectile",
+            "UP - Jump | SPACE - Double Jump"
         ]
         
         for i, line in enumerate(status_lines):
-            color = (255, 255, 255) if not line.startswith("🎮") else (255, 255, 0)
+            color = (255, 255, 255) if not line.startswith("SANDBOX") else (255, 255, 0)
             text = self.small_font.render(line, True, color)
             self.screen.blit(text, (20, y_offset + i * (line_height - 5)))
         
@@ -406,16 +548,16 @@ class SandboxMode:
             with open(filename, 'w') as f:
                 json.dump(state, f, indent=2)
             
-            print(f"💾 State saved to {filename}")
+            print(f"State saved to {filename}")
             
         except Exception as e:
-            print(f"❌ Failed to save state: {e}")
+            print(f"Failed to save state: {e}")
     
     def load_state(self, filename):
         """Load sandbox state from file"""
         try:
             if not os.path.exists(filename):
-                print(f"📁 No save file found: {filename}")
+                print(f"No save file found: {filename}")
                 return False
             
             with open(filename, 'r') as f:
@@ -448,16 +590,16 @@ class SandboxMode:
             self.gravity_enabled = settings.get("gravity_enabled", True)
             self.debug_mode = settings.get("debug_mode", True)
             
-            print(f"📁 State loaded from {filename}")
+            print(f"State loaded from {filename}")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to load state: {e}")
+            print(f"Failed to load state: {e}")
             return False
     
     def run(self):
         """Main sandbox loop"""
-        print("🚀 Starting Sandbox Mode...")
+        print("Starting Sandbox Mode...")
         
         while self.running:
             self.dt = self.clock.tick(60) / 16.67  # Normalize to 60fps
@@ -469,6 +611,9 @@ class SandboxMode:
             
             # Update entities
             self.update_entities(self.dt)
+            
+            # Update screen shake
+            self.update_screen_shake(self.dt)
             
             # Draw everything
             self.draw_entities()
@@ -487,3 +632,16 @@ def sandbox_mode():
     
     sandbox = SandboxMode(screen)
     return sandbox.run()
+
+
+if __name__ == "__main__":
+    """Run sandbox mode directly"""
+    pygame.init()
+    screen = pygame.display.set_mode((960, 640))
+    pygame.display.set_caption("Sandbox Mode - AI Enemy Testing")
+    
+    sandbox = SandboxMode(screen)
+    result = sandbox.run()
+    
+    pygame.quit()
+    print(f"Sandbox mode ended with result: {result}")

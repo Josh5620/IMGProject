@@ -27,6 +27,13 @@ class Level1Enemy:
         self.on_ground   = False
         self.isIdle = False
         self.player_world_rect = None
+        
+        # Jumping capabilities
+        self.jump_power = 8.0
+        self.can_jump = True
+        self.jump_cooldown = 0
+        self.max_jump_cooldown = 30  # 0.5 seconds at 60fps
+        self.jump_timer = 0
 
         # Simple AI state
         self.ai_state    = "idle"
@@ -52,6 +59,10 @@ class Level1Enemy:
         self.last_attack_time = 0
         self.attack_flash_time = 1500   # how long the filled box stays visible (ms)
         self.attack_flash_until = 0
+        
+        # Health system
+        self.health = 100
+        self.max_health = 100
 
 
 
@@ -84,13 +95,15 @@ class Level1Enemy:
   
     def update_timers(self, dt):
         self.ai_timer += dt
+        self.jump_cooldown = max(0, self.jump_cooldown - dt)
+        self.jump_timer += dt
             
     def update_ai(self, player, obstacles, dt):
         # If idle, stay at starting position and don't patrol
         if self.isIdle:
             return
         
-        # If player is spotted, stop moving and look at player
+        # If player is spotted, chase the player
         if self.player_spotted and player:
             # Face the player
             if player.rect.centerx + self.scroll_offset > self.rect.centerx:
@@ -99,13 +112,32 @@ class Level1Enemy:
             else:
                 self.facing_right = False
                 self.direction = -1
-            return  # Don't move while player is in sight
+            
+            # Try to jump to reach player if they're above
+            if (self.on_ground and self.jump_cooldown <= 0 and 
+                player.rect.centery < self.rect.centery - 50):  # Player is above
+                self.jump()
+            
+            # Move towards player
+            self.move_horizontal(self.direction * self.speed * dt, obstacles)
+            return
             
         # Normal patrol behavior when player is not in sight
         if self.ai_timer > 120:
             self.direction *= -1
             self.facing_right = (self.direction > 0)
             self.ai_timer = 0
+        
+        # Patrol movement
+        self.move_horizontal(self.direction * self.speed * dt, obstacles)
+    
+    def jump(self):
+        """Make the enemy jump"""
+        if self.on_ground and self.jump_cooldown <= 0:
+            self.y_velocity = -self.jump_power
+            self.on_ground = False
+            self.jump_cooldown = self.max_jump_cooldown
+            print(f"Level 1 enemy jumped!")
             
     def apply_physics(self, obstacles):
         if not self.on_ground:
@@ -252,7 +284,7 @@ class Level1Enemy:
         print("Enemy has spotted the player!")
         pass
         
-    def draw(self, surface):
+    def draw(self, surface, debug_mode=False):
         if not self.alive or not self.visible:
             return
         
@@ -260,16 +292,17 @@ class Level1Enemy:
         screen_x = self.rect.x - self.scroll_offset
         screen_y = self.rect.y
         
-        self.draw_line_of_sight(surface)
+        if debug_mode:
+            self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
         
         # Draw purple square above head when player is spotted
-        if self.debug_mode and self.player_spotted:
+        if debug_mode and self.player_spotted:
             purple_rect = pygame.Rect(screen_x + self.rect.width//2 - 8, screen_y - 20, 16, 16)
             pygame.draw.rect(surface, (128, 0, 128), purple_rect)  # Purple square
         
         # Draw ground detection box for debugging
-        if self.debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
+        if debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
 
             screen_ground_check = self.debug_ground_check.copy()
             screen_ground_check.x -= self.scroll_offset
@@ -278,9 +311,43 @@ class Level1Enemy:
             pygame.draw.rect(surface, (0, 255, 0), screen_ground_check, 2)
         
         # Draw attack range for debugging
-        if self.debug_mode:
+        if debug_mode:
             self.draw_debug_ranges(surface, self.scroll_offset)
-                         
+        
+        # Draw health bar
+        if hasattr(self, 'health') and hasattr(self, 'max_health'):
+            bar_width = self.rect.width
+            bar_height = 4
+            bar_x = screen_x
+            bar_y = screen_y - 8
+
+            # Background
+            pygame.draw.rect(surface, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+            # Health
+            health_width = int((self.health / self.max_health) * bar_width)
+            health_color = (0, 255, 0) if self.health > self.max_health * 0.5 else (255, 255, 0) if self.health > self.max_health * 0.25 else (255, 0, 0)
+            pygame.draw.rect(surface, health_color, (bar_x, bar_y, health_width, bar_height))
+            
+            # Health text
+            health_font = pygame.font.Font(None, 16)
+            health_text = health_font.render(f"{self.health}/{self.max_health}", True, (255, 255, 255))
+            surface.blit(health_text, (bar_x, bar_y - 18))
+
+        # Draw attack visual feedback
+        now = pygame.time.get_ticks()
+        if now < self.attack_flash_until:
+            # Flash red when attacking
+            flash_alpha = int(128 * (1 - (now - (self.attack_flash_until - self.attack_flash_time)) / self.attack_flash_time))
+            flash_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+            flash_surface.fill((255, 0, 0, flash_alpha))
+            surface.blit(flash_surface, (screen_x, screen_y))
+            
+            # Draw "ATTACK!" text above enemy
+            font = pygame.font.Font(None, 24)
+            attack_text = font.render("ATTACK!", True, (255, 0, 0))
+            text_rect = attack_text.get_rect(center=(screen_x + self.rect.width//2, screen_y - 30))
+            surface.blit(attack_text, text_rect)
+                        
     def draw_debug_ranges(self, surface, scroll_offset=0):
         attack_rect = self.get_attack_rect().move(-scroll_offset, 0)
         pygame.draw.rect(surface, (255, 100, 0), attack_rect, 1)
@@ -305,11 +372,26 @@ class Level1Enemy:
         if now - self.last_attack_time >= self.attack_cooldown:
             if self.player_in_attack:
                 self.last_attack_time = now
+                self.attack_flash_until = now + self.attack_flash_time
                 self.on_attack(player)  # call simple attack event
 
     def on_attack(self, player):
-        print(f"{self.name} attacks player!")
-        pass
+        print(f"Level 1 {self.ai_type} enemy attacks player!")
+        # Deal damage to player
+        if hasattr(player, 'lives') and not getattr(player, 'invulnerable', False):
+            player.lives -= 1
+            if hasattr(player, 'iFrame'):
+                player.iFrame()
+            print(f"Player hit! Lives remaining: {player.lives}")
+    
+    def take_damage(self, damage):
+        """Take damage and handle death"""
+        self.health -= damage
+        if self.health <= 0:
+            self.alive = False
+            print(f"Level 1 {self.ai_type} enemy defeated!")
+        else:
+            print(f"Level 1 {self.ai_type} enemy took {damage} damage! Health: {self.health}/{self.max_health}")
 
 
 

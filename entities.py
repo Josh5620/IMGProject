@@ -98,6 +98,8 @@ class mainCharacter(WeaponSystem):
         self.y_velocity = 0
         self.jumping = False
         self.on_ground = True
+        self.double_jump_available = True
+        self.double_jump_used = False
         
         # Game variables
         self.visible = True
@@ -204,8 +206,19 @@ class mainCharacter(WeaponSystem):
             self.on_ground = False
             self.jumping = True
             self.y_velocity = -self.jump_height
+            self.double_jump_used = False  # Reset double jump when landing
             if self.anims:
-                self.image = self.anims["jump_start"][0]  
+                self.image = self.anims["jump_start"][0]
+    
+    def double_jump(self):
+        """Perform a double jump if available"""
+        if not self.on_ground and self.double_jump_available and not self.double_jump_used:
+            self.y_velocity = -self.jump_height * 0.8  # Slightly weaker than first jump
+            self.double_jump_used = True
+            print("Double jump!")
+            
+            if self.anims:
+                self.image = self.anims["jump"][0]  
         
     def update(self, keys, obstacles):
         # Update weapon system before movement
@@ -221,6 +234,8 @@ class mainCharacter(WeaponSystem):
             self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
+        if keys[pygame.K_SPACE]:  # Double jump with spacebar
+            self.double_jump()
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, obstacles)
 
@@ -317,30 +332,30 @@ class mainCharacter(WeaponSystem):
         if powerup_type == "health":
             old_lives = self.lives
             self.lives = min(self.lives + 2, 10)  # Restore 2 lives, max 10
-            print(f"💖 Health restored! Lives: {old_lives} → {self.lives}")
+            print(f"Health restored! Lives: {old_lives} -> {self.lives}")
             # TODO: Play healing sound effect
         
         elif powerup_type == "speed":
             self.speed_boost = 1.5
             self.powerup_timers["speed"] = 600  # 10 seconds at 60 FPS
-            print("⚡ Speed boost activated for 10 seconds!")
+            print("Speed boost activated for 10 seconds!")
             # TODO: Play speed boost sound effect
         
         elif powerup_type == "damage":
             self.damage_boost = 2.0
             self.powerup_timers["damage"] = 600  # 10 seconds at 60 FPS
-            print("🔥 Damage boost activated for 10 seconds!")
+            print("Damage boost activated for 10 seconds!")
             # TODO: Play power up sound effect
         
         elif powerup_type == "shield":
             self.shield_active = True
             self.powerup_timers["shield"] = 300  # 5 seconds at 60 FPS
-            print("🛡️ Shield activated for 5 seconds!")
+            print("Shield activated for 5 seconds!")
             # TODO: Play shield activation sound effect
         
         elif powerup_type == "ammo":
             self.reload_ammo(10)  # Restore 10 ammo
-            print("📦 Ammo powerup collected!")
+            print("Ammo powerup collected!")
             # TODO: Play ammo reload sound effect
     
     def take_damage(self, damage_amount=1):
@@ -494,6 +509,10 @@ class mainCharacter(WeaponSystem):
         if self.y_velocity != 0:
             self.rect.y += self.y_velocity
             self.check_collision(obstacles)
+        
+        # Reset double jump when landing
+        if self.on_ground:
+            self.double_jump_used = False
             
     def iFrame(self):
         print("You've been hit!!")
@@ -819,7 +838,7 @@ class Powerup:
     
     def apply_effect(self, player):
         """Apply powerup effect to player"""
-        print(f"✨ Player collected {self.powerup_type} powerup!")
+        print(f"Player collected {self.powerup_type} powerup!")
         player.apply_powerup(self.powerup_type)
     
     def create_collection_particles(self):
