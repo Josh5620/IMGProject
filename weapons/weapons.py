@@ -453,47 +453,65 @@ def handle_projectile_collisions(projectile_manager, player, enemies, blocks):
         blocks: List of block objects
     """
     
-    # Check projectile-enemy collisions (from player projectiles)
-    player_hits = projectile_manager.check_collisions(enemies, 'enemy')
-    for hit in player_hits:
-        target = hit['target']
-        damage = hit['damage']
+    # Check projectile-enemy collisions (only player projectiles can hit enemies)
+    for projectile in projectile_manager.projectiles[:]:
+        if not projectile.active or projectile.owner != 'player':
+            continue
+            
+        projectile_rect = projectile.get_rect()
         
-        if hasattr(target, 'take_damage'):
-            target.take_damage(damage)
-        elif hasattr(target, 'collideHurt'):
-            # Use same pattern as your Spikes class
-            target.collideHurt(player, damage)
-        
-        print(f"Player projectile hit enemy for {damage} damage!")
+        for enemy in enemies:
+            if hasattr(enemy, 'get_rect'):
+                enemy_rect = enemy.get_rect()
+                if projectile_rect.colliderect(enemy_rect):
+                    damage = projectile.on_hit(enemy)
+                    
+                    if hasattr(enemy, 'take_damage'):
+                        enemy.take_damage(damage)
+                    elif hasattr(enemy, 'collideHurt'):
+                        enemy.collideHurt(player, damage)
+                    
+                    print(f"Player projectile hit enemy for {damage} damage!")
+                    break  # Projectile hits only one enemy
     
-    # Check projectile-player collisions (from enemy projectiles)
-    enemy_hits = projectile_manager.check_collisions([player], 'player')
-    for hit in enemy_hits:
-        damage = hit['damage']
+    # Check projectile-player collisions (only enemy projectiles can hit player)
+    for projectile in projectile_manager.projectiles[:]:
+        if not projectile.active or projectile.owner != 'enemy':
+            continue
+            
+        projectile_rect = projectile.get_rect()
+        player_rect = player.get_rect()
         
-        if hasattr(player, 'take_weapon_damage'):
-            player.take_weapon_damage(damage)
-        elif hasattr(player, 'iFrame'):
-            # Integrate with existing damage system
-            if not player.invulnerable:
-                player.lives -= damage
-                player.iFrame()
-        
-        print(f"Enemy projectile hit player for {damage} damage!")
+        if projectile_rect.colliderect(player_rect):
+            damage = projectile.on_hit(player)
+            
+            if hasattr(player, 'take_weapon_damage'):
+                player.take_weapon_damage(damage)
+            elif hasattr(player, 'iFrame'):
+                # Integrate with existing damage system
+                if not player.invulnerable:
+                    player.lives -= damage
+                    player.iFrame()
+            
+            print(f"Enemy projectile hit player for {damage} damage!")
     
-    # Check projectile-block collisions
-    block_hits = projectile_manager.check_collisions(blocks, None)  # Hit any projectile
-    for hit in block_hits:
-        block = hit['target']
-        projectile = hit['projectile']
+    # Check projectile-block collisions (any projectile can hit blocks)
+    for projectile in projectile_manager.projectiles[:]:
+        if not projectile.active:
+            continue
+            
+        projectile_rect = projectile.get_rect()
         
-        # Destroy projectile on block hit
-        projectile.active = False
-        
-        # Optional: Break destructible blocks
-        if hasattr(block, 'can_break') and block.can_break:
-            blocks.remove(block)
+        for block in blocks:
+            if hasattr(block, 'get_rect'):
+                block_rect = block.get_rect()
+                if projectile_rect.colliderect(block_rect):
+                    projectile.active = False
+                    
+                    # Optional: Break destructible blocks
+                    if hasattr(block, 'can_break') and block.can_break:
+                        blocks.remove(block)
+                    break  # Projectile hits only one block
 
 # Integration helper functions for your existing code
 

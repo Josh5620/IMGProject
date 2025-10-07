@@ -252,7 +252,7 @@ class mainCharacter(WeaponSystem):
             if hit_enemies:
                 print(f"Hit {len(hit_enemies)} enemies!")
         
-        if keys[pygame.K_w]:  # Straight projectile
+        if keys[pygame.K_s]:  # Straight projectile
             if self.can_shoot():
                 projectile = self.shoot_projectile()
                 if projectile:
@@ -373,7 +373,7 @@ class mainCharacter(WeaponSystem):
             print("Player defeated!")
         else:
             # Brief invulnerability after taking damage
-            self.invulnerable = True
+            self.iFrame()
             # You might want to add a timer to reset invulnerability
         
         return True
@@ -738,6 +738,7 @@ class Enemy:
         if self.health <= 0:
             self.alive = False
             print(f"Enemy defeated!")
+        
     
     def draw(self, surface, debug_mode=False):
         """Draw enemy with optional debug info"""

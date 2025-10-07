@@ -31,6 +31,7 @@ class Game:
         self.player = None
         self.pickups = []
         self.enemies = []
+        self.arrows = []
         
     def load_background(self, bg_folder, num_layers):
         self.bg_images = []
@@ -49,7 +50,7 @@ class Game:
         
     def reset_game(self):
         if self.player:
-            self.player.lives = 334
+            self.player.lives = 5
             self.player.x = self.start_position[0]
             self.player.y = self.start_position[1]
             self.player.rect.x = self.start_position[0]
@@ -154,8 +155,7 @@ class Game:
     def handle_input(self, keys):
         if keys[pygame.K_w]:
             if self.player and not self.player.invulnerable:
-                self.player.lives -= 1
-                self.player.iFrame()
+                self.player.take_damage()
                 
     def check_win_lose_conditions(self):
         if self.player.lives <= 0:
@@ -181,6 +181,15 @@ class Game:
             self.draw_tilemap()
             self.update_pickups()
             self.update_enemies()
+            
+            for a in list(self.arrows):
+                a.update(self.obstacles)
+                a.collide(self.player, scroll_offset=self.ground_scroll)
+                if not a.alive:
+                    self.arrows.remove(a)
+            for a in self.arrows:
+                a.draw(self.screen, scroll_offset=self.ground_scroll)
+            
             
             self.handle_pickup_collection()
             
@@ -242,9 +251,11 @@ class Level1(Game):
                             # Create appropriate enemy type
                             if ai_type == "archer":
                                 enemy = Archer(enemy_x, enemy_y)
+                                enemy.level = self
                                 self.enemies.append(enemy)
                             elif ai_type == "warrior":
                                 enemy = Warrior(enemy_x, enemy_y)
+                                enemy.level = self
                                 self.enemies.append(enemy)
 
                             

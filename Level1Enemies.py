@@ -92,7 +92,7 @@ class Level1Enemy:
         self.update_attack_detection(player)
         if self.player_in_attack:
             self.attack(player)
-  
+
     def update_timers(self, dt):
         self.ai_timer += dt
         self.jump_cooldown = max(0, self.jump_cooldown - dt)
@@ -167,14 +167,14 @@ class Level1Enemy:
             
     def check_ground_ahead(self, dx, obstacles):
 
-        if dx > 0: 
+        if dx > 0:
             check_x = self.rect.right + 5  # Look ahead a bit more
         else:  # Moving left
             check_x = self.rect.left - 5   # Look ahead a bit more
             
         # Create ground check rectangle below the projected position
-        ground_check = pygame.Rect(check_x - 5, self.rect.bottom, 32, 20)  
-        
+        ground_check = pygame.Rect(check_x - 5, self.rect.bottom, 32, 20)
+    
         self.debug_ground_check = ground_check
         
         ground_found = False
@@ -191,7 +191,7 @@ class Level1Enemy:
         return ground_found
         
     def should_ignore_edges(self):
-        return False  
+        return False
         
     def handle_edge_detection(self):
         if not hasattr(self, 'last_direction_change'):
@@ -296,22 +296,21 @@ class Level1Enemy:
             self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
         
-        # Draw purple square above head when player is spotted
-        if debug_mode and self.player_spotted:
+
+        if self.debug_mode and self.player_spotted:
             purple_rect = pygame.Rect(screen_x + self.rect.width//2 - 8, screen_y - 20, 16, 16)
             pygame.draw.rect(surface, (128, 0, 128), purple_rect)  # Purple square
         
-        # Draw ground detection box for debugging
-        if debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
+
+        if self.debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
 
             screen_ground_check = self.debug_ground_check.copy()
             screen_ground_check.x -= self.scroll_offset
             
-            # Draw the ground detection box in bright green
             pygame.draw.rect(surface, (0, 255, 0), screen_ground_check, 2)
         
-        # Draw attack range for debugging
-        if debug_mode:
+
+        if self.debug_mode:
             self.draw_debug_ranges(surface, self.scroll_offset)
         
         # Draw health bar
@@ -407,40 +406,57 @@ class Archer(Level1Enemy):
         self.patrol_center = x
         self.patrol_left_bound = x - self.patrol_range // 2
         self.patrol_right_bound = x + self.patrol_range // 2
+        self.name = "Archer"
+
+        # shooting setup
+        self.shoot_cooldown = 1000  # 1 second between shots
+        self.last_shot_time = 0
+        self.arrow_speed = 6
+        self.isIdle = False
         
+    def can_shoot(self):
+        return pygame.time.get_ticks() - self.last_shot_time >= self.shoot_cooldown
+
+    def on_attack(self, player):
+        spawn_x = self.rect.right if self.facing_right else self.rect.left - 16
+        spawn_y = self.rect.centery - 4
+
+        arrow = Arrow(spawn_x, spawn_y, dir_right=self.facing_right, speed=self.arrow_speed)
+
+        if hasattr(self, "level") and hasattr(self.level, "arrows"):
+            self.level.arrows.append(arrow)
+        elif hasattr(self, "arrows"):
+            self.arrows.append(arrow)
+
+        self.last_shot_time = pygame.time.get_ticks()  # cooldown start
+        print(f"{self.name} shoots an arrow!")
+
+
     def update_ai(self, player, obstacles, dt):
-        # If idle, stay at starting position and don't patrol
-        if self.isIdle:
+        if getattr(self, "isIdle", False):
             return
-        
-        # If player is spotted, stop moving and look at player
-        if self.player_spotted and player:
-            # Face the player
+
+        if player and self.is_player_in_sight(player):
+            if self.can_shoot():
+                self.on_attack(player)
             if player.rect.centerx + self.scroll_offset > self.rect.centerx:
                 self.facing_right = True
                 self.direction = 1
             else:
                 self.facing_right = False
                 self.direction = -1
-            return  # Don't move while player is in sight
-            
+            return
+
+        # normal patrol
         if self.on_ground:
             movement = self.direction * self.speed
-            
-            # Check if we've reached patrol boundaries using current rect position
             if self.direction > 0 and self.rect.x >= self.patrol_right_bound:
                 self.direction *= -1
                 self.facing_right = (self.direction > 0)
-                movement = self.direction * self.speed
             elif self.direction < 0 and self.rect.x <= self.patrol_left_bound:
                 self.direction *= -1
                 self.facing_right = (self.direction > 0)
-                movement = self.direction * self.speed
-                
             self.move_horizontal(movement, obstacles)
-        
-    def on_player_spotted(self, player):
-        print("Archer sees player!")
 
 
 class Warrior(Level1Enemy):
@@ -523,5 +539,61 @@ class Warrior(Level1Enemy):
         else:
             print("Warrior missed!")
 
-        
+
+
+class Arrow:
+    def __init__(self, x, y, dir_right: bool, speed=8, gravity=0.0, ttl_ms=4000, size=(18, 4)):
+        w, h = size
+        self.rect = pygame.Rect(int(x), int(y), w, h)  # world space
+        self.vx = speed if dir_right else -speed
+        self.vy = 0.0
+        self.gravity = gravity
+        self.alive = True
+        self.spawn_ms = pygame.time.get_ticks()
+        self.ttl_ms = ttl_ms
+        self.image = pygame.Surface((w, h))
+        self.image.fill((220, 200, 40))
+
+    def update(self, obstacles):
+        if not self.alive:
+            return
+        # ttl
+        if pygame.time.get_ticks() - self.spawn_ms > self.ttl_ms:
+            self.alive = False
+            return
+
+        # physics
+        self.vy += self.gravity
+        self.rect.x += int(self.vx)
+        self.rect.y += int(self.vy)
+
+        for o in obstacles:
+            r = o.get_rect().copy()
+            r.x = o.original_x
+            r.y = o.original_y
+            if self.rect.colliderect(r):
+                self.alive = False
+                return
+
+    def collide(self, player, scroll_offset=0):
+        if not self.alive:
+            return False
+        # convert player rect to world space
+        pw = player.rect.copy()
+        pw.x += scroll_offset
+        if self.rect.colliderect(pw):
+            if hasattr(player, "lives"):
+                player.take_damage(1)
+            self.alive = False
+            return True
+        return False
+
+    def draw(self, surface, scroll_offset=0):
+        if not self.alive:
+            return
+        surface.blit(self.image, (self.rect.x - scroll_offset, self.rect.y))
+
+    def get_rect(self):
+        return self.rect
+
     
