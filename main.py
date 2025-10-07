@@ -13,7 +13,6 @@ level1 = Level1(WIDTH, HEIGHT)
 
 def start_game_wrapper():
     global game_state
-    from menus import game_level
     
     print(f"Starting game with Level {game_level}")
     
