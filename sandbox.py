@@ -287,7 +287,7 @@ class SandboxMode:
         
         # Update player (with or without gravity)
         if self.gravity_enabled:
-            self.player.update(keys, self.obstacles)
+            self.player.update(keys, self.obstacles, self.enemies)
         else:
             # Manual movement without gravity
             if keys[pygame.K_LEFT]:
@@ -373,7 +373,7 @@ class SandboxMode:
             enemy.rect.x += shake_x
             enemy.rect.y += shake_y
             
-            enemy.draw(self.screen, self.debug_mode)
+            enemy.draw(self.screen)
             
             # Restore original position
             enemy.rect.x = original_x

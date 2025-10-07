@@ -422,7 +422,6 @@ class Warrior(Level1Enemy):
         if self.on_ground:
             movement = self.direction * self.speed
             
-            # Check if we've reached patrol boundaries using current rect position
             if self.direction > 0 and self.rect.x >= self.patrol_right_bound:
                 self.direction *= -1
                 self.facing_right = (self.direction > 0)
@@ -463,7 +462,7 @@ class Warrior(Level1Enemy):
 
         if player and hit_box.colliderect(self.player_world_rect):
             print("Warrior hit the player!")
-            player.lives -= 1
+            player.take_damage(1)
         else:
             print("Warrior missed!")
 
@@ -475,7 +474,6 @@ class Arrow:
         self.rect = pygame.Rect(int(x), int(y), w, h)  # world space
         self.vx = speed if dir_right else -speed
         self.vy = 0.0
-        self.gravity = gravity
         self.alive = True
         self.spawn_ms = pygame.time.get_ticks()
         self.ttl_ms = ttl_ms
@@ -491,7 +489,6 @@ class Arrow:
             return
 
         # physics
-        self.vy += self.gravity
         self.rect.x += int(self.vx)
         self.rect.y += int(self.vy)
 

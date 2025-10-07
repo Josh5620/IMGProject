@@ -1,6 +1,7 @@
 import pygame
 from game import Level1
 from menus import retry_menu, start_menu, game_level
+from sandbox import sandbox_mode
 
 
 pygame.init()
