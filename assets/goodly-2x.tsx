@@ -16,4 +16,34 @@
    <property name="type" value="tombstone"/>
   </properties>
  </tile>
+ <tile id="100">
+  <properties>
+   <property name="enemy" value="archer"/>
+  </properties>
+ </tile>
+ <tile id="101">
+  <properties>
+   <property name="enemy" value="warrior"/>
+  </properties>
+ </tile>
+ <tile id="102">
+  <properties>
+   <property name="enemy" value="chase"/>
+  </properties>
+ </tile>
+ <tile id="116">
+  <properties>
+   <property name="enemy" value="range"/>
+  </properties>
+ </tile>
+ <tile id="117">
+  <properties>
+   <property name="enemy" value="boss"/>
+  </properties>
+ </tile>
+ <tile id="118">
+  <properties>
+   <property name="enemy" value=""/>
+  </properties>
+ </tile>
 </tileset>

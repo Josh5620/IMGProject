@@ -1,7 +1,7 @@
 import pygame
 from game import Level1
 from menus import retry_menu, start_menu, game_level
-from sandbox import sandbox_mode
+
 
 pygame.init()
 WIDTH, HEIGHT = 960, 640
@@ -42,6 +42,11 @@ def quit_to_start():
 
 running = True
 while running:
+    # Check for sandbox mode trigger from menu
+    if hasattr(pygame, '_game_state') and pygame._game_state == 'sandbox':
+        game_state = 'sandbox'
+        delattr(pygame, '_game_state')
+    
     if game_state == "start":
         start_menu(WIDTH, HEIGHT, screen, start_game_wrapper)
     elif game_state == "retry":

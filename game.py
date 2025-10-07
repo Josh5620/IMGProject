@@ -1,8 +1,10 @@
 import pygame
 import pytmx
 from entities import mainCharacter
+from Level1Enemies import Level1Enemy, Archer, Warrior
 from blocks import block, Spikes, start, end
 from pickups import Coin, Meat
+
 
 class Game:
     def __init__(self, width=960, height=640):
@@ -28,6 +30,7 @@ class Game:
         
         self.player = None
         self.pickups = []
+        self.enemies = []
         
     def load_background(self, bg_folder, num_layers):
         self.bg_images = []
@@ -46,7 +49,7 @@ class Game:
         
     def reset_game(self):
         if self.player:
-            self.player.lives = 3
+            self.player.lives = 334
             self.player.x = self.start_position[0]
             self.player.y = self.start_position[1]
             self.player.rect.x = self.start_position[0]
@@ -139,6 +142,15 @@ class Game:
                 
             pickup.draw(self.screen)
             
+    def update_enemies(self):
+        for enemy in self.enemies:
+            if hasattr(enemy, '__class__') and hasattr(enemy.__class__, '__bases__') and Level1Enemy in enemy.__class__.__bases__:
+                enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+            else:
+                enemy.update(self.player)
+
+            enemy.draw(self.screen)
+            
     def handle_input(self, keys):
         if keys[pygame.K_w]:
             if self.player and not self.player.invulnerable:
@@ -168,6 +180,7 @@ class Game:
             self.update_obstacles()
             self.draw_tilemap()
             self.update_pickups()
+            self.update_enemies()
             
             self.handle_pickup_collection()
             
@@ -219,20 +232,43 @@ class Level1(Game):
                         found_gids.add(gid)
                         
                         props = self.tmx_data.get_tile_properties_by_gid(gid)
-                        if props and props.get("type") == "tombstone":
+                        
+                        # Handle enemy spawns - check if enemy property exists and get its AI type
+                        if props and "enemy" in props:
+                            ai_type = props.get("enemy")
+                            enemy_x = x * TILE_SIZE
+                            enemy_y = (y * TILE_SIZE) - 32
+                            
+                            # Create appropriate enemy type
+                            if ai_type == "archer":
+                                enemy = Archer(enemy_x, enemy_y)
+                                self.enemies.append(enemy)
+                            elif ai_type == "warrior":
+                                enemy = Warrior(enemy_x, enemy_y)
+                                self.enemies.append(enemy)
+
+                            
+                            print(f"Spawned {ai_type} enemy at ({enemy_x}, {enemy_y})")
+                        
+                        # Handle other tile types
+                        elif props and props.get("type") == "tombstone":
                             obstacle = Spikes(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
                         elif props and props.get("type") == "start":
                             obstacle = start(x * TILE_SIZE, y * TILE_SIZE)
                             self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
+                            self.obstacles.append(obstacle)
                         elif props and props.get("type") == "end":
                             obstacle = end(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
                         else:
+                            # Regular block
                             obstacle = block(x * TILE_SIZE, y * TILE_SIZE)
-                        
-                        self.obstacles.append(obstacle)
+                            self.obstacles.append(obstacle)
         
         print(f"Level 1 - All tile IDs found: {sorted(found_gids)}")
         print(f"Level 1 - Number of obstacles created: {len(self.obstacles)}")
+        print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
         
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
@@ -240,6 +276,10 @@ class Level1(Game):
         self.coin = Coin(400, 300)
         self.meat = Meat(200, 300)
         self.pickups = [self.coin, self.meat]
+        
+        # Enemies will be populated from tilemap in process_tilemap()
+        if not hasattr(self, 'enemies') or self.enemies is None:
+            self.enemies = []
         
     def handle_pickup_collection(self):
         if self.coin.update(self.player):
