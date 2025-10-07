@@ -110,10 +110,17 @@ class WeaponSystem:
         
         # Create attack hitbox based on facing direction
         attack_rect = self.get_melee_hitbox(MELEE_RANGE)
+        print(attack_rect)
+        for i in enemies:
+            print(i.rect)
         
+        attack_rect_world = attack_rect.copy()
+        if hasattr(self, "level"):
+            attack_rect_world.x += getattr(self.level, "ground_scroll", 0)
+            
         # Check collision with enemies using your collision system approach
         for enemy in enemies:
-            if hasattr(enemy, 'rect') and attack_rect.colliderect(enemy.rect):
+            if hasattr(enemy, 'rect') and attack_rect_world.colliderect(enemy.rect):
                 hit_enemies.append(enemy)
                 
                 # Create hit particles at impact point

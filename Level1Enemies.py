@@ -43,14 +43,18 @@ class Level1Enemy:
         self.player_spotted = False
 
         # Debug
-        self.debug_mode = True  # set True to show debug visuals
+        self.debug_mode = False  # set True to show debug visuals
+
+        # Health system
+        self.max_hp = 100
+        self.current_hp = self.max_hp
 
         # Attack setup in front of the enemy
         self.attack_range     = pygame.Vector2(40, 40)   # attack box size 
         self.player_in_attack = False
-        self.attack_cooldown = 1000  # milliseconds between attacks
+        self.attack_cooldown = 1000  
         self.last_attack_time = 0
-        self.attack_flash_time = 1500   # how long the filled box stays visible (ms)
+        self.attack_flash_time = 1500  
         self.attack_flash_until = 0
 
 
@@ -86,11 +90,10 @@ class Level1Enemy:
         self.ai_timer += dt
             
     def update_ai(self, player, obstacles, dt):
-        # If idle, stay at starting position and don't patrol
+
         if self.isIdle:
             return
         
-        # If player is spotted, stop moving and look at player
         if self.player_spotted and player:
             # Face the player
             if player.rect.centerx + self.scroll_offset > self.rect.centerx:
@@ -99,9 +102,8 @@ class Level1Enemy:
             else:
                 self.facing_right = False
                 self.direction = -1
-            return  # Don't move while player is in sight
+            return  
             
-        # Normal patrol behavior when player is not in sight
         if self.ai_timer > 120:
             self.direction *= -1
             self.facing_right = (self.direction > 0)
@@ -262,7 +264,6 @@ class Level1Enemy:
         
         self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
-        
 
         if self.debug_mode and self.player_spotted:
             purple_rect = pygame.Rect(screen_x + self.rect.width//2 - 8, screen_y - 20, 16, 16)
@@ -310,6 +311,14 @@ class Level1Enemy:
     def on_attack(self, player):
         print(f"{self.name} attacks player!")
         pass
+
+    def take_damage(self, damage):
+        self.current_hp -= damage
+        print(f"{self.name} took {damage} damage! HP: {self.current_hp}/{self.max_hp}")
+        
+        if self.current_hp <= 0:
+            self.alive = False
+            print(f"{self.name} has been defeated!")
 
 
 

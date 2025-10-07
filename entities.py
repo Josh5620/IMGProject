@@ -102,7 +102,7 @@ class mainCharacter(WeaponSystem):
         # Game variables
         self.visible = True
         self.invulnerable = False
-        self.lives = 10
+        self.lives = 5
         self.won = False
         
         # Ammo and shooting system
@@ -207,9 +207,10 @@ class mainCharacter(WeaponSystem):
             if self.anims:
                 self.image = self.anims["jump_start"][0]  
         
-    def update(self, keys, obstacles):
+    def update(self, keys, obstacles, enemies):
         # Update weapon system before movement
         self.update_weapon_system()
+        self.enemies = enemies  # Update current enemies
         
         # Apply speed boost to movement
         base_speed = 3.5 * self.speed_boost

@@ -50,7 +50,7 @@ class Game:
         
     def reset_game(self):
         if self.player:
-            self.player.lives = 5
+            self.player.lives = 500
             self.player.x = self.start_position[0]
             self.player.y = self.start_position[1]
             self.player.rect.x = self.start_position[0]
@@ -144,18 +144,27 @@ class Game:
             pickup.draw(self.screen)
             
     def update_enemies(self):
+        
+        alive_enemies = []
         for enemy in self.enemies:
             if hasattr(enemy, '__class__') and hasattr(enemy.__class__, '__bases__') and Level1Enemy in enemy.__class__.__bases__:
                 enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
             else:
                 enemy.update(self.player)
 
-            enemy.draw(self.screen)
+            
+            if enemy.alive:
+                alive_enemies.append(enemy)
+                enemy.draw(self.screen)
+        
+        # Update enemies list to only contain alive enemies
+        self.enemies = alive_enemies
             
     def handle_input(self, keys):
         if keys[pygame.K_w]:
             if self.player and not self.player.invulnerable:
                 self.player.take_damage()
+                
                 
     def check_win_lose_conditions(self):
         if self.player.lives <= 0:
@@ -197,7 +206,7 @@ class Game:
             self.handle_input(keys)
             
             if self.player:
-                self.player.update(keys, self.obstacles)
+                self.player.update(keys, self.obstacles,self.enemies)
                 self.player.draw(self.screen)
             
             self.handle_scrolling()
@@ -283,6 +292,8 @@ class Level1(Game):
         
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
+        self.player.level = self
+        self.player.enemies = self.enemies
         
         self.coin = Coin(400, 300)
         self.meat = Meat(200, 300)
