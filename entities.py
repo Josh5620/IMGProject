@@ -187,19 +187,17 @@ class mainCharacter(WeaponSystem):
 
     def check_horizontal_collision(self, obstacles):
         for obstacle in obstacles:
-            if isinstance(obstacle, (Spikes, end, Ice)):
-                obstacle.collideHurt(self)
             if self.rect.colliderect(obstacle.get_rect()):
-                
+                if isinstance(obstacle, (Spikes, end, Ice)):
+                    obstacle.collideHurt(self)
                 return True
         return False
-    
+
     def check_vertical_collision(self, obstacles):
         for obstacle in obstacles:
-            if isinstance(obstacle, (Spikes, end, Ice)):
-                obstacle.collideHurt(self)
             if self.rect.colliderect(obstacle.get_rect()):
-                
+                if isinstance(obstacle, (Spikes, end, Ice)):
+                    obstacle.collideHurt(self)
                 return True
         return False
 
@@ -465,45 +463,42 @@ class mainCharacter(WeaponSystem):
         surface.blit(self.image, self.rect)
 
     def check_collision(self, obstacles):
+        # Check for collisions while moving vertically
         for block in obstacles:
-            if isinstance(block, Spikes or Ice):
-                block.collideHurt(self)
             if self.rect.colliderect(block.get_rect()):
                 # Check if falling down and hitting top of block (landing)
                 if self.y_velocity > 0:
- 
                     self.rect.bottom = block.get_rect().top
                     self.jumping = False
                     self.on_ground = True
                     self.y_velocity = 0
                     
+                    # Check for special block effects right after landing
+                    if isinstance(block, (Spikes, Ice, end)):
+                        block.collideHurt(self)
+                    return True # A collision was handled
 
-                    
-                    if not self.anims:
-                        self.image = pygame.image.load("mc.png")
-                    return True
-                
                 # Check if moving up and hitting bottom of block (head bump)
                 elif self.y_velocity < 0:
-                    print("Hit ceiling")
                     self.rect.top = block.get_rect().bottom
                     self.y_velocity = 0
-                    return True
-        
-        # If no collision detected and player was on ground, they're now falling
+                    return True # A collision was handled
+
         if self.on_ground:
-            # Check if player is still touching ground
-            ground_check = pygame.Rect(self.rect.x, self.rect.y + 1, self.rect.width, self.rect.height)
+            ground_check_rect = pygame.Rect(self.rect.x, self.rect.y + 1, self.rect.width, 1)
             still_on_ground = False
-            for block in obstacles:
-                if ground_check.colliderect(block.get_rect()):
-                    still_on_ground = True
-                    break
             
+            for block in obstacles:
+                if ground_check_rect.colliderect(block.get_rect()):
+                    still_on_ground = True
+                    if isinstance(block, Ice):
+                        block.collideHurt(self)
+                    break 
+            
+
             if not still_on_ground:
-                print("Started falling")
                 self.on_ground = False
-        
+
         return False
 
     def applyGrav(self, obstacles):

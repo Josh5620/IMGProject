@@ -147,7 +147,7 @@ def level_select_menu(WIDTH, HEIGHT, screen):
         on_activate=lambda: select_level_and_exit(1)
     )
     
-    level2_button = Button(
+    level2_button = Button( 
         images=(pygame.image.load('assets/button.png').convert_alpha(),
                 pygame.image.load('assets/highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 50),
@@ -226,4 +226,111 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
                     retry_menu_obj.buttons[retry_menu_obj.selected_index].activate()
                     running = False  
 
+        pygame.display.flip()
+
+# In menus.py, replace the old DialogueScreen class with this one.
+
+class DialogueScreen:
+
+    def __init__(self, text, font_size, screen_rect, location="center", speed=3, text_color=(255, 255, 255)):
+
+        # --- Main Text Customization ---
+        self.text_to_display = text
+        self.font = pygame.font.Font(None, font_size)
+        self.text_color = text_color
+        
+
+        text_height = self.font.size(text)[1] 
+        if location == "top":
+            y_pos = screen_rect.top + 50
+        elif location == "bottom":
+            y_pos = screen_rect.bottom - text_height - 50
+        else: # Default to "center"
+            y_pos = screen_rect.centery - (text_height // 2)
+        self.position = (screen_rect.left + 50, y_pos) 
+
+        # --- Typing Logic ---
+        self.typing_delay = speed
+        self.typing_timer = 0
+        self.current_text = ""
+        self.text_index = 0
+        self.is_finished = False
+
+        # --- Continue Prompt Logic ---
+        self.prompt_text = "Press any key to continue..."
+        self.prompt_font = pygame.font.Font(None, 30)
+        self.prompt_alpha = 0  # Start fully transparent
+        self.prompt_fade_speed = 5 # How quickly the prompt fades in
+        prompt_pos_x = screen_rect.centerx
+        prompt_pos_y = screen_rect.bottom - 50
+
+        self.prompt_surf = self.prompt_font.render(self.prompt_text, True, self.text_color)
+        self.prompt_rect = self.prompt_surf.get_rect(center=(prompt_pos_x, prompt_pos_y))
+
+
+    def update(self):
+        if self.is_finished:
+            # If main text is done, fade in the continue prompt
+            if self.prompt_alpha < 255:
+                self.prompt_alpha = min(255, self.prompt_alpha + self.prompt_fade_speed)
+            return
+
+        self.typing_timer += 1
+        if self.typing_timer >= self.typing_delay:
+            self.typing_timer = 0
+            if self.text_index < len(self.text_to_display):
+                self.current_text += self.text_to_display[self.text_index]
+                self.text_index += 1
+            else:
+                self.is_finished = True
+
+    def draw(self, surface):
+        surface.fill((0, 0, 0))
+        
+        # Draw the main text
+        rendered_text = self.font.render(self.current_text, True, self.text_color)
+        surface.blit(rendered_text, self.position)
+        
+        # If finished, draw the continue prompt with its current alpha
+        if self.is_finished:
+            self.prompt_surf.set_alpha(self.prompt_alpha)
+            surface.blit(self.prompt_surf, self.prompt_rect)
+
+    def skip(self):
+        self.current_text = self.text_to_display
+        self.text_index = len(self.text_to_display)
+        self.is_finished = True
+
+
+
+def run_game_intro(WIDTH, HEIGHT, screen):
+
+    intro_dialogue = DialogueScreen(
+        text="In a world woven from forgotten code, a hero awakens...",
+        font_size=40,
+        screen_rect=screen.get_rect(),
+        location="center",
+        speed=3 
+    )
+
+    intro_running = True
+    while intro_running:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit() # Exit the program entirely if window is closed
+            
+            if event.type == pygame.KEYDOWN:
+                if not intro_dialogue.is_finished:
+                    # If typing, skip to the end
+                    intro_dialogue.skip()
+                else:
+                    # If finished, any key press will exit the intro
+                    intro_running = False
+
+        intro_dialogue.update()
+
+        intro_dialogue.draw(screen)
+        
         pygame.display.flip()

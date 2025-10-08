@@ -1,6 +1,6 @@
 import pygame
 from game import Level1
-from menus import retry_menu, start_menu, game_level
+from menus import retry_menu, start_menu, game_level, run_game_intro
 from sandbox import sandbox_mode
 
 
@@ -16,7 +16,9 @@ def start_game_wrapper():
     global game_state
     
     print(f"Starting game with Level {game_level}")
-    
+
+    run_game_intro(WIDTH, HEIGHT, screen)
+
     if game_level == 1:
         result = level1.run(screen)
     elif game_level == 2:

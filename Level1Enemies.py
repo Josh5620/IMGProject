@@ -43,7 +43,7 @@ class Level1Enemy:
         self.player_spotted = False
 
         # Debug
-        self.debug_mode = False  # set True to show debug visuals
+        self.debug_mode = True  # set True to show debug visuals
 
         # Health system
         self.max_hp = 100
