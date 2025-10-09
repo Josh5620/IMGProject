@@ -125,10 +125,7 @@ class mainCharacter(WeaponSystem):
         
         self.base_speed = 3.5 
         self.slow_until = 0
-        
-        
-
-
+      
     def _anim_index(self, state: str) -> int:
         if not self.anims or state not in self.anims:
             return 0
@@ -187,7 +184,12 @@ class mainCharacter(WeaponSystem):
 
     def check_horizontal_collision(self, obstacles):
         for obstacle in obstacles:
-            if self.rect.colliderect(obstacle.get_rect()):
+            if hasattr(obstacle, 'get_rect'): 
+                obstacle_rect = obstacle.get_rect()
+            else:  
+                obstacle_rect = obstacle
+
+            if self.rect.colliderect(obstacle_rect):
                 if isinstance(obstacle, (Spikes, end, Ice)):
                     obstacle.collideHurt(self)
                 return True
@@ -195,14 +197,19 @@ class mainCharacter(WeaponSystem):
 
     def check_vertical_collision(self, obstacles):
         for obstacle in obstacles:
-            if self.rect.colliderect(obstacle.get_rect()):
+            if hasattr(obstacle, 'get_rect'):
+                obstacle_rect = obstacle.get_rect()
+            else:
+                obstacle_rect = obstacle
+
+            if self.rect.colliderect(obstacle_rect):
                 if isinstance(obstacle, (Spikes, end, Ice)):
                     obstacle.collideHurt(self)
                 return True
         return False
 
     def jump(self):
-        if self.on_ground:  # Only jump from ground
+        if self.on_ground:  
             self.on_ground = False
             self.jumping = True
             self.y_velocity = -self.jump_height
@@ -221,11 +228,19 @@ class mainCharacter(WeaponSystem):
                 self.image = self.anims["jump"][0]  
         
     def update(self, keys, obstacles, enemies):
-        #THIS ENEMISE DOESNT WORK IT ONLY CHECKS THE FIRST POSITION OF THE ENEMIES @!@!QEWWEQ
         self.update_weapon_system()
         self.enemies = enemies  
         
-        all_collidables = obstacles + enemies
+        player_world_rect = self.rect.copy()
+        player_world_rect.x += self.level.ground_scroll
+        
+        enemy_screen_rects = []
+        for enemy in enemies:
+            screen_rect = enemy.rect.copy()
+            screen_rect.x -= self.level.ground_scroll 
+            enemy_screen_rects.append(screen_rect)
+        
+        all_collidables = obstacles + enemy_screen_rects
         if pygame.time.get_ticks() > self.slow_until:
             self.speed_boost = 1.0
 
@@ -244,14 +259,11 @@ class mainCharacter(WeaponSystem):
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, all_collidables)  # Fast fall
 
-        # Update shooting cooldown and powerup timers
         if self.shooting_cooldown > 0:
             self.shooting_cooldown -= 1
         
-        # Update powerup effects
         self.update_powerup_effects()
         
-        # Weapon controls (updated bindings: A-melee, W-straight, C-aimed)
         if keys[pygame.K_a]:  # Melee attack
             hit_enemies = self.melee_attack(self.enemies, obstacles)
             if hit_enemies:

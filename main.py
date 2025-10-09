@@ -22,7 +22,7 @@ def start_game_wrapper():
     if game_level == 1:
         result = level1.run(screen)
     elif game_level == 2:
-        # For now, run Level1 since Level2 isn't implemented yet
+        
         print("Level 2 not implemented yet, running Level 1")
         result = level1.run(screen)
     else:
@@ -31,7 +31,7 @@ def start_game_wrapper():
     
     if result == "quit":
         game_state = "quit"
-    elif result == "game_over":
+    elif result == "game_over": 
         game_state = "retry"
     elif result == "game_won":
         game_state = "start"

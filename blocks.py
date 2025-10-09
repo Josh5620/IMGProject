@@ -49,7 +49,6 @@ class Spikes(block):
         if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
             surface.blit(self.image, self.rect.topleft)
 
-
 class start(block):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -61,7 +60,6 @@ class start(block):
     
     def collideHurt(self, player):
         return 0
-
 
 class end(block):
     def __init__(self, x, y):
@@ -86,7 +84,6 @@ class Ice(block):
         self.rect.topleft = (x, y)
 
     def collideHurt(self, player):
-        # Only apply slow effect if not already slowed
         current_time = pygame.time.get_ticks()
         if not hasattr(player, 'slow_until') or current_time > player.slow_until:
             print("Slowed down by Ice!")

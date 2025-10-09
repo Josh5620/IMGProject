@@ -157,8 +157,8 @@ class Game:
                 alive_enemies.append(enemy)
                 enemy.draw(self.screen)
         
-        # Update enemies list to only contain alive enemies
         self.enemies = alive_enemies
+        return alive_enemies
             
     def handle_input(self, keys):
         if keys[pygame.K_w]:
@@ -189,7 +189,7 @@ class Game:
             self.update_obstacles()
             self.draw_tilemap()
             self.update_pickups()
-            self.update_enemies()
+            alive_enemies = self.update_enemies()
             
             for a in list(self.arrows):
                 a.update(self.obstacles)
@@ -206,7 +206,7 @@ class Game:
             self.handle_input(keys)
             
             if self.player:
-                self.player.update(keys, self.obstacles,self.enemies)
+                self.player.update(keys, self.obstacles,alive_enemies)
                 self.player.draw(self.screen)
             
             self.handle_scrolling()
@@ -302,7 +302,6 @@ class Level1(Game):
         self.meat = Meat(200, 300)
         self.pickups = [self.coin, self.meat]
         
-        # Enemies will be populated from tilemap in process_tilemap()
         if not hasattr(self, 'enemies') or self.enemies is None:
             self.enemies = []
         

@@ -62,7 +62,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     running = True
     start_button = Button(
         images=(pygame.image.load('assets/start_button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2),
         text="Start Game",
         font=pygame.font.Font(None, 50),
@@ -89,8 +89,8 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         exit()
     
     quit_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
+                pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 200),
         text="Quit",
         font=pygame.font.Font(None, 50),
@@ -140,7 +140,7 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     
     level1_button = Button(
         images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 - 50),
         text="Level 1",
         font=pygame.font.Font(None, 50),
@@ -157,8 +157,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     )
     
     back_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
+                pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 150),
         text="Back",
         font=pygame.font.Font(None, 50),
@@ -199,8 +199,8 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
     )
     
     quit_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
+                pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Quit",
         font=pygame.font.Font(None, 50),
@@ -228,7 +228,6 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
 
         pygame.display.flip()
 
-# In menus.py, replace the old DialogueScreen class with this one.
 
 class DialogueScreen:
 
