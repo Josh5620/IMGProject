@@ -32,6 +32,7 @@ class Game:
         self.pickups = []
         self.enemies = []
         self.arrows = []
+        self.doScroll = True
         
     def load_background(self, bg_folder, num_layers):
         self.bg_images = []
@@ -65,13 +66,14 @@ class Game:
         start_bg_x = int(self.scroll // self.bg_width) - 1
         end_bg_x = int((self.scroll + self.WIDTH) // self.bg_width) + 2
         
-        for x in range(start_bg_x, end_bg_x):
-            speed = 1
-            for i in self.bg_images:
-                bg_pos_x = (x * self.bg_width) - self.scroll * speed
-                if bg_pos_x > -self.bg_width and bg_pos_x < self.WIDTH:
-                    self.screen.blit(i, (bg_pos_x, 0))
-                speed += 0.1
+        if self.doScroll:
+            for x in range(start_bg_x, end_bg_x):
+                speed = 1
+                for i in self.bg_images:
+                    bg_pos_x = (x * self.bg_width) - self.scroll * speed
+                    if bg_pos_x > -self.bg_width and bg_pos_x < self.WIDTH:
+                        self.screen.blit(i, (bg_pos_x, 0))
+                    speed += 0.1
                 
     def update_lives(self):
         if self.player and self.heart:
@@ -79,7 +81,7 @@ class Game:
                 self.screen.blit(self.heart, (10 + i * 30, 10))
                 
     def handle_scrolling(self):
-        if not self.player:
+        if not self.player or not self.doScroll:
             return
             
         current_player_x = self.player.rect.x
@@ -170,7 +172,7 @@ class Game:
         if self.player.lives <= 0:
             return "game_over"
         if self.player.won:
-            return "game_won"
+            return "boss_level1"
         return "playing"
         
     def run(self, screen):
@@ -314,3 +316,80 @@ class Level1(Game):
         if self.meat.update(self.player):
             self.player.lives += 1
             self.meat.respawn(self.obstacles, self.ground_scroll)
+    
+    
+class BossLevel1(Game):
+    def __init__(self, width=960, height=640):
+        self.doScroll = False
+        super().__init__(width, height)
+        
+        self.load_background('assets/BGL', 11)
+        self.load_tilemap("forestBossMap.tmx")
+        self.load_ui_assets()
+        
+        self.process_tilemap()
+        self.initialize_game_objects()
+        
+        
+    def process_tilemap(self):
+        TILE_SIZE = 32
+        self.obstacles = []
+        found_gids = set()
+        self.start_position = (0, 100)
+        
+        for layer in self.tmx_data.visible_layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    if gid != 0:
+                        found_gids.add(gid)
+                        
+                        props = self.tmx_data.get_tile_properties_by_gid(gid)
+                        
+                        # Handle enemy spawns - check if enemy property exists and get its AI type
+                        if props and "enemy" in props:
+                            ai_type = props.get("enemy")
+                            enemy_x = x * TILE_SIZE
+                            enemy_y = (y * TILE_SIZE) - 32
+                            
+                            # Create appropriate enemy type
+                            if ai_type == "archer":
+                                enemy = Archer(enemy_x, enemy_y)
+                                enemy.level = self
+                                self.enemies.append(enemy)
+                            elif ai_type == "warrior":
+                                enemy = Warrior(enemy_x, enemy_y)
+                                enemy.level = self
+                                self.enemies.append(enemy)
+
+                            
+                            print(f"Spawned {ai_type} enemy at ({enemy_x}, {enemy_y})")
+                        
+                        # Handle other tile types
+                        elif props and props.get("type") == "tombstone":
+                            obstacle = Spikes(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
+                        elif props and props.get("type") == "ice":
+                            obstacle = Ice(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
+                        elif props and props.get("type") == "start":
+                            obstacle = start(x * TILE_SIZE, y * TILE_SIZE)
+                            self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
+                            self.obstacles.append(obstacle)
+                        elif props and props.get("type") == "end":
+                            obstacle = end(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
+                        else:
+                            # Regular block
+                            obstacle = block(x * TILE_SIZE, y * TILE_SIZE)
+                            self.obstacles.append(obstacle)
+    def initialize_game_objects(self):
+        self.player = mainCharacter(self.start_position[0], self.start_position[1])
+        self.player.level = self
+        self.player.enemies = self.enemies
+        
+        self.coin = Coin(400, 300)
+        self.meat = Meat(200, 300)
+        self.pickups = [self.coin, self.meat]
+        
+        if not hasattr(self, 'enemies') or self.enemies is None:
+            self.enemies = []

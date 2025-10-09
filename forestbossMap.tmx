@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< Updated upstream
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="9">
+=======
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="13">
+>>>>>>> Stashed changes
  <tileset firstgid="1" source="assets/Tileset.tsx"/>
  <tileset firstgid="61" source="assets/forestobjects.tsx"/>
+ <tileset firstgid="120" source="assets/goodly-2x.tsx"/>
  <layer id="1" name="Tile Layer 1" width="30" height="20">
   <data encoding="csv">
 42,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,42,
@@ -9,8 +14,13 @@
 55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
 55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
 55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
+<<<<<<< Updated upstream
 36,48,0,0,0,0,0,0,0,0,0,7,8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
 11,58,2,10,2,2,25,48,0,0,0,0,0,0,0,0,31,0,0,0,0,0,0,0,0,0,0,0,0,55,
+=======
+36,48,124,0,0,0,0,0,0,0,0,7,8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
+11,58,2,10,2,2,25,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
+>>>>>>> Stashed changes
 38,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
 55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,32,34,0,0,0,0,0,0,0,0,0,55,
 55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,
