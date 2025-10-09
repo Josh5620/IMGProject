@@ -64,7 +64,7 @@ class start(block):
 class end(block):
     def __init__(self, x, y):
         super().__init__(x, y)
-        # Use a different color or image for end block (red tinted block for example)
+ 
         self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
         
         self.rect = self.image.get_rect()
