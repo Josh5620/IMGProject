@@ -61,7 +61,7 @@ class Button():
 def start_menu(WIDTH, HEIGHT, screen, start_game):
     running = True
     start_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
+        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
                 pygame.image.load('assets/highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2),
         text="Start Game",
@@ -74,8 +74,8 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         level_select_menu(WIDTH, HEIGHT, screen)
     
     level_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/level_button.png').convert_alpha(),
+                pygame.image.load('assets/level_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Select Level",
         font=pygame.font.Font(None, 50),
@@ -96,7 +96,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         font=pygame.font.Font(None, 50),
         on_activate=quit_game
     )
-    main_menu = baseMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow.png').convert_alpha())  # Load an actual arrow image
+    main_menu = baseMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow_pointer.png').convert_alpha()) 
     while running:
         
         
@@ -232,11 +232,11 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
 
 class DialogueScreen:
 
-    def __init__(self, text, font_size, screen_rect, location="center", speed=3, text_color=(255, 255, 255)):
+    def __init__(self, text, font_size, screen_rect, speed, location, text_color=(255, 255, 255)):
 
         # --- Main Text Customization ---
         self.text_to_display = text
-        self.font = pygame.font.Font(None, font_size)
+        self.font = pygame.font.Font("assets/yoster.ttf", font_size)
         self.text_color = text_color
         
 
@@ -258,7 +258,7 @@ class DialogueScreen:
 
         # --- Continue Prompt Logic ---
         self.prompt_text = "Press any key to continue..."
-        self.prompt_font = pygame.font.Font(None, 30)
+        self.prompt_font = self.font
         self.prompt_alpha = 0  # Start fully transparent
         self.prompt_fade_speed = 5 # How quickly the prompt fades in
         prompt_pos_x = screen_rect.centerx
@@ -306,11 +306,11 @@ class DialogueScreen:
 def run_game_intro(WIDTH, HEIGHT, screen):
 
     intro_dialogue = DialogueScreen(
-        text="In a world woven from forgotten code, a hero awakens...",
-        font_size=40,
+        text="TEST TEST CAT GO FIND MUSHROOMS FOR GRANDMA!",
+        font_size=20,
         screen_rect=screen.get_rect(),
-        location="center",
-        speed=3 
+        speed=200, 
+        location="center"
     )
 
     intro_running = True

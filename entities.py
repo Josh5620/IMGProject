@@ -221,28 +221,28 @@ class mainCharacter(WeaponSystem):
                 self.image = self.anims["jump"][0]  
         
     def update(self, keys, obstacles, enemies):
-        # Update weapon system before movement
+        #THIS ENEMISE DOESNT WORK IT ONLY CHECKS THE FIRST POSITION OF THE ENEMIES @!@!QEWWEQ
         self.update_weapon_system()
-        self.enemies = enemies  # Update current enemies
+        self.enemies = enemies  
         
-        # Apply speed boost to movement
+        all_collidables = obstacles + enemies
         if pygame.time.get_ticks() > self.slow_until:
             self.speed_boost = 1.0
 
         actual_speed = self.base_speed * self.speed_boost
 
         if keys[pygame.K_LEFT]:
-            self.move(-actual_speed, 0, obstacles)
+            self.move(-actual_speed, 0, all_collidables)
             self.scroll_speed = -0.5
         if keys[pygame.K_RIGHT]:
-            self.move(actual_speed, 0, obstacles)
+            self.move(actual_speed, 0, all_collidables)
             self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
         if keys[pygame.K_SPACE]:  # Double jump with spacebar
             self.double_jump()
         if keys[pygame.K_DOWN]:
-            self.move(0, 3.5, obstacles)
+            self.move(0, 3.5, all_collidables)  # Fast fall
 
         # Update shooting cooldown and powerup timers
         if self.shooting_cooldown > 0:

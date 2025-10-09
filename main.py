@@ -54,7 +54,7 @@ while running:
     elif game_state == "retry":
         retry_menu(WIDTH, HEIGHT, screen, start_game_wrapper, quit_to_start)
     elif game_state == "sandbox":
-        result = sandbox_mode()
+        result = sandbox_mode(screen)
         if result == "menu":
             game_state = "start"
         elif result == "quit":

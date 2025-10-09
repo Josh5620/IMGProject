@@ -334,6 +334,7 @@ class Archer(Level1Enemy):
         self.patrol_center = x
         self.patrol_left_bound = x - self.patrol_range // 2
         self.patrol_right_bound = x + self.patrol_range // 2
+        self.speed = 1.2
         self.name = "Archer"
 
         # shooting setup
@@ -352,7 +353,6 @@ class Archer(Level1Enemy):
         # Check if enough time has passed since last shot
         if current_time - self.last_shot_time < self.shoot_cooldown:
             return False
-        # Check if delay after first spotting player has elapsed
         if self.player_spotted_recently and current_time - self.first_spotted_time < self.shoot_delay:
             return False
         return True
@@ -417,45 +417,51 @@ class Warrior(Level1Enemy):
         self.sight_range = 150
         self.sight_width = 100
         self.patrol_range = 100
-        self.speed = 1.5
+        self.speed = 1
         self.patrol_center = x
         self.patrol_left_bound = x - self.patrol_range // 2
         self.patrol_right_bound = x + self.patrol_range // 2
-        self.isIdle = True
+        self.isIdle = False
         self.name = "Warrior"
+        self.chase_speed = 1.5
+        self.chase_range = 300
+        self.start_x = x
         
-    def update_ai(self, player, obstacles, dt):
-        # If idle, stay at starting position and don't patrol
+    def update_ai(self, player, obstacles, dt): 
         if self.isIdle:
             return
         
-        # If player is spotted, stop moving and look at player
         if self.player_spotted and player:
-            # Face the player
-            if player.rect.centerx + self.scroll_offset > self.rect.centerx:
-                self.facing_right = True
-                self.direction = 1
+            distance_from_start = abs(self.rect.x - self.start_x)
+            
+            if distance_from_start < self.chase_range:
+                if player.rect.centerx + self.scroll_offset > self.rect.centerx:
+                    self.facing_right = True
+                    self.direction = 1
+                    movement = self.chase_speed
+                else:
+                    self.facing_right = False
+                    self.direction = -1
+                    movement = -self.chase_speed
+                
+                self.move_horizontal(movement, obstacles)
             else:
-                self.facing_right = False
-                self.direction = -1
-            return  # Don't move while player is in sight
-        
+                pass
+            return
         if self.on_ground:
             movement = self.direction * self.speed
             
             if self.direction > 0 and self.rect.x >= self.patrol_right_bound:
                 self.direction *= -1
                 self.facing_right = (self.direction > 0)
-                movement = self.direction * self.speed
             elif self.direction < 0 and self.rect.x <= self.patrol_left_bound:
                 self.direction *= -1
                 self.facing_right = (self.direction > 0)
-                movement = self.direction * self.speed
             
             self.move_horizontal(movement, obstacles)
         
     def on_player_spotted(self, player):
-        print("Warrior sees player!")
+        print("Warrior sees player! Starting the chase!")
     
     def on_attack(self, player):
 
@@ -498,8 +504,10 @@ class Arrow:
         self.alive = True
         self.spawn_ms = pygame.time.get_ticks()
         self.ttl_ms = ttl_ms
-        self.image = pygame.Surface((w, h))
-        self.image.fill((220, 200, 40))
+        self.image = pygame.image.load("assets/arrow.png").convert_alpha()
+        
+        if not dir_right:
+            self.image = pygame.transform.flip(self.image, True,False)
 
     def update(self, obstacles):
         if not self.alive:
