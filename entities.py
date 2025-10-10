@@ -296,7 +296,7 @@ class mainCharacter(WeaponSystem):
         self.update_animation(keys)
         
         # Apply physics (gravity and movement)
-        self.applyGrav(obstacles)
+        self.applyGrav(all_collidables)
         
         # Update weapon system
         self.projectile_manager.update()
@@ -474,27 +474,28 @@ class mainCharacter(WeaponSystem):
         # Draw the player sprite
         surface.blit(self.image, self.rect)
 
-    def check_collision(self, obstacles):
-        # Check for collisions while moving vertically
-        for block in obstacles:
-            if self.rect.colliderect(block.get_rect()):
-                # Check if falling down and hitting top of block (landing)
+    def check_collision(self, all_collidables):
+        for entity in all_collidables:
+
+            if hasattr(entity, 'get_rect'):  # It's a block-like object
+                entity_rect = entity.get_rect()
+            else:  
+                entity_rect = entity
+            if self.rect.colliderect(entity_rect):
                 if self.y_velocity > 0:
-                    self.rect.bottom = block.get_rect().top
+                    self.rect.bottom = entity_rect.top
                     self.jumping = False
                     self.on_ground = True
                     self.y_velocity = 0
                     
-                    # Check for special block effects right after landing
-                    if isinstance(block, (Spikes, Ice, end)):
-                        block.collideHurt(self)
+                    if isinstance(entity, (Spikes, Ice, end)):
+                        entity.collideHurt(self)
                     return True # A collision was handled
 
-                # Check if moving up and hitting bottom of block (head bump)
                 elif self.y_velocity < 0:
-                    self.rect.top = block.get_rect().bottom
+                    self.rect.top = entity_rect.bottom
                     self.y_velocity = 0
-                    return True # A collision was handled
+                    return True 
 
         if self.on_ground:
             ground_check_rect = pygame.Rect(self.rect.x, self.rect.y + 1, self.rect.width, 1)

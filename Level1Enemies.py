@@ -377,7 +377,10 @@ class Archer(Level1Enemy):
             return
 
         if player and self.is_player_in_sight(player):
-            # Track when player is first spotted
+            distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
+
+            if distance_to_player < 60: 
+                return 
             if not self.player_spotted_recently:
                 self.player_spotted_recently = True
                 self.first_spotted_time = pygame.time.get_ticks()
@@ -433,6 +436,11 @@ class Warrior(Level1Enemy):
         
         if self.player_spotted and player:
             distance_from_start = abs(self.rect.x - self.start_x)
+            distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
+
+
+            if distance_to_player < 60: 
+                return 
             
             if distance_from_start < self.chase_range:
                 if player.rect.centerx + self.scroll_offset > self.rect.centerx:
