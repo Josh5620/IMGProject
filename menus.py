@@ -333,3 +333,36 @@ def run_game_intro(WIDTH, HEIGHT, screen):
         intro_dialogue.draw(screen)
         
         pygame.display.flip()
+
+
+def run_BossIntro(WIDTH, HEIGHT, screen):
+
+    intro_dialogue = DialogueScreen(
+        text="BOSS BATTLE! GET READY TO FIGHT THE BIG BAD SMTH SMTH!",
+        font_size=20,
+        screen_rect=screen.get_rect(),
+        speed=200, 
+        location="center"
+    )
+
+    intro_running = True
+    while intro_running:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit() # Exit the program entirely if window is closed
+            
+            if event.type == pygame.KEYDOWN:
+                if not intro_dialogue.is_finished:
+                    # If typing, skip to the end
+                    intro_dialogue.skip()
+                else:
+                    # If finished, any key press will exit the intro
+                    intro_running = False
+
+        intro_dialogue.update()
+
+        intro_dialogue.draw(screen)
+        
+        pygame.display.flip()

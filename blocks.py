@@ -10,7 +10,7 @@ class block:
         self.original_y = y
         self.x = x
         self.y = y
-        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        self.image = pygame.Surface((16,16), pygame.SRCALPHA)  
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
     

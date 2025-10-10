@@ -323,7 +323,7 @@ class BossLevel1(Game):
         self.doScroll = False
         super().__init__(width, height)
         
-        self.load_background('assets/BGL', 11)
+        self.load_background('assets/BossBGL', 5)
         self.load_tilemap("forestBossMap.tmx")
         self.load_ui_assets()
         
@@ -393,3 +393,5 @@ class BossLevel1(Game):
         
         if not hasattr(self, 'enemies') or self.enemies is None:
             self.enemies = []
+    
+        
