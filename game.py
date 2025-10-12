@@ -1,7 +1,7 @@
 import pygame
 import pytmx
 from entities import mainCharacter
-from Level1Enemies import Level1Enemy, Archer, Warrior
+from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior
 from blocks import block, Spikes, start, end, Ice
 from pickups import Coin, Meat
 
@@ -130,6 +130,17 @@ class Game:
                         tile_x = (x * TILE_SIZE) - self.ground_scroll
                         if tile_x > -TILE_SIZE and tile_x < self.WIDTH:
                             self.screen.blit(tile, (tile_x, y * TILE_SIZE))
+            if isinstance(layer, pytmx.TiledObjectGroup):
+                for obj in layer:
+                    image = self.tmx_data.get_tile_image_by_gid(obj.gid)
+                    obj_type = getattr(obj, "type", None) or (obj.properties or {}).get("type")
+
+                    if obj_type == "breakable":
+                        continue
+                    if image:
+                        obj_x = obj.x - self.ground_scroll
+                        if obj_x > -obj.width and obj_x < self.WIDTH:
+                            self.screen.blit(image, (obj_x, obj.y))
                             
     def update_obstacles(self):
         for obstacle in self.obstacles:
@@ -242,56 +253,47 @@ class Level1(Game):
     def process_tilemap(self):
         TILE_SIZE = 32
         self.obstacles = []
-        found_gids = set()
         self.start_position = (0, 100)
         
-        for layer in self.tmx_data.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid in layer:
-                    if gid != 0:
-                        found_gids.add(gid)
-                        
-                        props = self.tmx_data.get_tile_properties_by_gid(gid)
-                        
-                        # Handle enemy spawns - check if enemy property exists and get its AI type
-                        if props and "enemy" in props:
-                            ai_type = props.get("enemy")
-                            enemy_x = x * TILE_SIZE
-                            enemy_y = (y * TILE_SIZE) - 32
-                            
-                            # Create appropriate enemy type
-                            if ai_type == "archer":
-                                enemy = Archer(enemy_x, enemy_y)
-                                enemy.level = self
-                                self.enemies.append(enemy)
-                            elif ai_type == "warrior":
-                                enemy = Warrior(enemy_x, enemy_y)
-                                enemy.level = self
-                                self.enemies.append(enemy)
+        objectLayer = self.tmx_data.get_layer_by_name("Object Layer 1")
+        tile_layer = self.tmx_data.get_layer_by_name("Tile Layer 1")
+        if isinstance(tile_layer, pytmx.TiledTileLayer):
+            for x, y, gid in tile_layer.iter_data():
+                if not gid:
+                    continue
 
-                            
-                            print(f"Spawned {ai_type} enemy at ({enemy_x}, {enemy_y})")
-                        
-                        # Handle other tile types
-                        elif props and props.get("type") == "tombstone":
-                            obstacle = Spikes(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "ice":
-                            obstacle = Ice(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "start":
-                            obstacle = start(x * TILE_SIZE, y * TILE_SIZE)
-                            self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
-                            self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "end":
-                            obstacle = end(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
-                        else:
-                            # Regular block
-                            obstacle = block(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
+                props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
+                typ = props.get("type")
+                if typ == "tombstone":
+                    self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
+                elif typ == "ice":
+                    self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
+                else:
+                    self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
         
-        print(f"Level 1 - All tile IDs found: {sorted(found_gids)}")
+        
+        if isinstance(objectLayer, pytmx.TiledObjectGroup):
+            self.enemies = []
+            
+            for obj in objectLayer:
+                typ = getattr(obj, "type", None) or (obj.properties or {}).get("type")
+                if typ == "end":
+                    self.obstacles.append(end(obj.x, obj.y))
+                if typ == "breakable":
+                    block_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
+                    new_block = BreakableBlock(obj.x, obj.y, block_image)
+                    self.enemies.append(new_block)
+                elif typ == "start":
+                    self.obstacles.append(start(obj.x, obj.y))
+                    self.start_position = (obj.x + 30, obj.y - 70)
+                elif typ == "archer":
+                    enemy = Archer(obj.x, obj.y - 32)
+                    enemy.level = self
+                    self.enemies.append(enemy)
+                elif typ == "warrior":
+                    enemy = Warrior(obj.x, obj.y - 32)
+                    enemy.level = self
+                    self.enemies.append(enemy)
         print(f"Level 1 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
         

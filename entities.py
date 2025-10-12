@@ -172,17 +172,17 @@ class mainCharacter(WeaponSystem):
         # Handle horizontal movement
         if dx != 0:
             self.rect.x += dx
-            if obstacles and self.check_horizontal_collision(obstacles):
+            if obstacles and self.check_collision_with_obstacles(obstacles):
                 self.rect.x = old_x
                 
-        # Handle vertical movement
+
         if dy != 0:
             self.rect.y += dy
-            if obstacles and self.check_vertical_collision(obstacles):
+            if obstacles and self.check_collision_with_obstacles(obstacles):
                 self.rect.y = old_y
                 
 
-    def check_horizontal_collision(self, obstacles):
+    def check_collision_with_obstacles(self, obstacles):
         for obstacle in obstacles:
             if hasattr(obstacle, 'get_rect'): 
                 obstacle_rect = obstacle.get_rect()
@@ -192,20 +192,10 @@ class mainCharacter(WeaponSystem):
             if self.rect.colliderect(obstacle_rect):
                 if isinstance(obstacle, (Spikes, end, Ice)):
                     obstacle.collideHurt(self)
-                return True
-        return False
+                
+                if getattr(obstacle, 'solid', True):
+                    return True
 
-    def check_vertical_collision(self, obstacles):
-        for obstacle in obstacles:
-            if hasattr(obstacle, 'get_rect'):
-                obstacle_rect = obstacle.get_rect()
-            else:
-                obstacle_rect = obstacle
-
-            if self.rect.colliderect(obstacle_rect):
-                if isinstance(obstacle, (Spikes, end, Ice)):
-                    obstacle.collideHurt(self)
-                return True
         return False
 
     def jump(self):
@@ -476,47 +466,53 @@ class mainCharacter(WeaponSystem):
 
     def check_collision(self, all_collidables):
         for entity in all_collidables:
-
             if hasattr(entity, 'get_rect'):  # It's a block-like object
                 entity_rect = entity.get_rect()
             else:  
                 entity_rect = entity
-            if self.rect.colliderect(entity_rect):
-                if self.y_velocity > 0:
-                    self.rect.bottom = entity_rect.top
-                    self.jumping = False
-                    self.on_ground = True
-                    self.y_velocity = 0
-                    
-                    if isinstance(entity, (Spikes, Ice, end)):
-                        entity.collideHurt(self)
-                    return True # A collision was handled
 
-                elif self.y_velocity < 0:
-                    self.rect.top = entity_rect.bottom
-                    self.y_velocity = 0
-                    return True 
+            if self.rect.colliderect(entity_rect):
+
+                
+                if isinstance(entity, (Spikes, Ice, end)):
+                    entity.collideHurt(self)
+
+                
+                if getattr(entity, 'solid', True): 
+                    if self.y_velocity > 0:
+                        self.rect.bottom = entity_rect.top
+                        self.jumping = False
+                        self.on_ground = True
+                        self.y_velocity = 0
+                        return True 
+
+                    elif self.y_velocity < 0:
+                        self.rect.top = entity_rect.bottom
+                        self.y_velocity = 0
+                        return True 
 
         if self.on_ground:
             ground_check_rect = pygame.Rect(self.rect.x, self.rect.y + 1, self.rect.width, 1)
             still_on_ground = False
             
-            for block in obstacles:
-                if ground_check_rect.colliderect(block.get_rect()):
+            for block in all_collidables:
+                if hasattr(block, 'get_rect'):
+                    block_rect = block.get_rect()
+                else:
+                    block_rect = block
+                    
+                if getattr(block, 'solid', True) and ground_check_rect.colliderect(block_rect):
                     still_on_ground = True
                     if isinstance(block, Ice):
                         block.collideHurt(self)
                     break 
             
-
             if not still_on_ground:
                 self.on_ground = False
 
-        return False
-
     def applyGrav(self, obstacles):
         # Apply gravity to velocity
-        if not self.check_vertical_collision(obstacles):
+        if not self.check_collision_with_obstacles(obstacles):
             self.on_ground = False
         if not self.on_ground:
             self.y_velocity += self.y_gravity
@@ -986,3 +982,5 @@ class Powerup:
             sparkle_size = 2 + int(math.sin(self.pulse_timer * 3 + i))
             pygame.draw.circle(surface, (*self.color_set["bright"], sparkle_alpha), 
                              (sparkle_x, sparkle_y), sparkle_size)
+
+

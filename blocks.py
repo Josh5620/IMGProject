@@ -13,6 +13,7 @@ class block:
         self.image = pygame.Surface((16,16), pygame.SRCALPHA)  
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
+        self.solid = True
     
     def update_position(self, scroll):
         self.rect.x = self.original_x - scroll
@@ -64,16 +65,19 @@ class start(block):
 class end(block):
     def __init__(self, x, y):
         super().__init__(x, y)
+        self.solid = False
  
         self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
         
+        self.image = pygame.Surface((32, 32), pygame.SRCALPHA) 
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
+
     
     def collideHurt(self, player):
         if self.rect.colliderect(player.rect):
             print("You Win!")
-            player.won = True
+            player.won = False
             return 0
 
 class Ice(block):

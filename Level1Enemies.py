@@ -56,9 +56,6 @@ class Level1Enemy:
         self.last_attack_time = 0
         self.attack_flash_time = 1500  
         self.attack_flash_until = 0
-
-
-
         
     def update(self, player, dt=1.0, obstacles=None, scroll_offset=0):
         if not self.alive:
@@ -410,7 +407,6 @@ class Archer(Level1Enemy):
                 self.facing_right = (self.direction > 0)
             self.move_horizontal(movement, obstacles)
 
-
 class Warrior(Level1Enemy):
     
     
@@ -501,8 +497,6 @@ class Warrior(Level1Enemy):
         else:
             print("Warrior missed!")
 
-
-
 class Arrow:
     def __init__(self, x, y, dir_right: bool, speed=8, gravity=0.0, ttl_ms=4000, size=(18, 4)):
         w, h = size
@@ -558,5 +552,37 @@ class Arrow:
 
     def get_rect(self):
         return self.rect
-
     
+class BreakableBlock(Level1Enemy): # <-- Inherit from Enemy
+    def __init__(self, x, y, image):
+        
+        super().__init__(x, y) 
+        self.debug_mode = False
+        self.isIdle = True 
+        self.max_hp = 40
+        self.current_hp = self.max_hp
+        self.image = image
+        # Disable physics
+        self.gravity = 0
+        self.y_velocity = 0
+        
+    def should_ignore_edges(self):
+        return True  
+        
+    def apply_physics(self, obstacles):
+        pass
+        
+    def move_horizontal(self, dx, obstacles):
+        pass
+        
+    def check_horizontal_collision(self, obstacles):
+        return False
+        
+    def check_vertical_collision(self, obstacles):
+        return False
+        
+    def on_attack(self, player):
+        pass
+
+    def on_player_spotted(self, player):
+        pass
