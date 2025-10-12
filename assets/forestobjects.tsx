@@ -28,7 +28,11 @@
  <tile id="8">
   <image source="3 Objects/Bushes/9.png" width="61" height="25"/>
  </tile>
- <tile id="9">
+ <tile id="9" type="crate">
+  <properties>
+   <property name="break_from" value="below"/>
+   <property name="hp" type="int" value="1"/>
+  </properties>
   <image source="3 Objects/Boxes/1.png" width="34" height="28"/>
  </tile>
  <tile id="10">
