@@ -30,6 +30,8 @@ class SandboxMode:
         self.gravity_enabled = True
         self.mouse_mode = False
         self.debug_mode = True
+        self.unlimited_ammo = False
+        self.ground_scroll = 0
         
         # AI cycling - Level 1 and Level 2 enemies
         self.level1_ai_types = ["idle", "patrol", "chase", "ranged"]
@@ -62,6 +64,7 @@ class SandboxMode:
         
         # Create player
         self.player = mainCharacter(100, 500)
+        self.player.level = self
         
         # Create simple floor obstacle
         class SimpleBlock:
@@ -154,14 +157,21 @@ class SandboxMode:
                     print(f"Mouse spawn mode: {'ON' if self.mouse_mode else 'OFF'}")
                 
                 # State management
-                elif event.key == pygame.K_s:  # Save state
+                elif event.key == pygame.K_l:  # Save state
                     filename = f"sandbox_save_{len(os.listdir('.'))}.json"
                     self.save_state(filename)
                     print(f"Saved to {filename}")
                 
-                elif event.key == pygame.K_l:  # Load state
+                elif event.key == pygame.K_k:  # Load state
                     self.load_state("autosave.json")
                     print("Loaded autosave.json")
+                
+                elif event.key == pygame.K_u:  # Toggle unlimited ammo
+                    self.unlimited_ammo = not self.unlimited_ammo
+                    print(f"Unlimited ammo: {'ON' if self.unlimited_ammo else 'OFF'}")
+                    if self.unlimited_ammo:
+                        # Set ammo to max when enabling unlimited ammo
+                        self.player.current_ammo = self.player.max_ammo
                 
                 # Debug toggle
                 elif event.key == pygame.K_b:  # Toggle debug mode
@@ -298,6 +308,10 @@ class SandboxMode:
                 self.player.rect.y -= 5 * effective_dt
             if keys[pygame.K_DOWN]:
                 self.player.rect.y += 5 * effective_dt
+        
+        # Handle unlimited ammo
+        if self.unlimited_ammo:
+            self.player.current_ammo = self.player.max_ammo
         
         # Update enemies
         for enemy in self.enemies[:]:
@@ -450,17 +464,17 @@ class SandboxMode:
             f"Enemies: {len(self.enemies)} | Powerups: {len(self.powerups)}",
             f"Gravity: {'ON' if self.gravity_enabled else 'OFF'} | Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
             f"Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | Debug: {'ON' if self.debug_mode else 'OFF'}",
-            f"Player Lives: {self.player.lives} | Ammo: {self.player.current_ammo}/{self.player.max_ammo}",
+            f"Player Lives: {self.player.lives} | Ammo: {'∞' if self.unlimited_ammo else f'{self.player.current_ammo}/{self.player.max_ammo}'}",
             self.get_powerup_status_text(),
             "",
             "SANDBOX CONTROLS:",
             "E - Spawn Enemy | P - Spawn Powerup | D - Delete Nearest",
             "1/2 - Switch Level | TAB - Cycle AI | F - Slow Motion",
             "G - Toggle Gravity | M - Mouse Mode | B - Debug Mode",
-            "S - Save State | L - Load State | ESC - Exit",
+            "U - Unlimited Ammo | L - Save State | K - Load State | ESC - Exit",
             "",
             "COMBAT CONTROLS:",
-            "A - Melee Attack | W - Straight Projectile | C - Aimed Projectile",
+            "A - Melee Attack | S - Straight Projectile | C - Aimed Projectile",
             "UP - Jump | SPACE - Double Jump"
         ]
         
@@ -624,11 +638,12 @@ class SandboxMode:
         return "quit"
 
 
-def sandbox_mode():
+def sandbox_mode(screen=None):
     """Entry point for sandbox mode"""
-    screen = pygame.display.get_surface()
     if not screen:
-        screen = pygame.display.set_mode((960, 640))
+        screen = pygame.display.get_surface()
+        if not screen:
+            screen = pygame.display.set_mode((960, 640))
     
     sandbox = SandboxMode(screen)
     return sandbox.run()

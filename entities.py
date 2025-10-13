@@ -393,7 +393,7 @@ class mainCharacter(WeaponSystem):
         # Shield effect - pulsing blue protective aura
         if hasattr(self, 'shield_active') and self.shield_active:
             shield_pulse = math.sin(current_time * 0.01) * 0.3 + 0.7
-            shield_radius = int(40 * shield_pulse)
+            shield_radius = int(60 * shield_pulse)
             
             # Outer shield glow
             for i in range(3):
@@ -412,7 +412,7 @@ class mainCharacter(WeaponSystem):
             # Energy trails behind player
             for i in range(4):
                 trail_x = player_center[0] - (i + 1) * 10 * speed_intensity
-                trail_alpha = int(150 * speed_intensity) - i * 30
+                trail_alpha = int(200 * speed_intensity) - i * 30
                 if trail_alpha > 0:
                     trail_size = 8 - i * 2
                     pygame.draw.circle(surface, (0, 255, 100), 
@@ -429,10 +429,10 @@ class mainCharacter(WeaponSystem):
         # Damage effect - fiery aura and sparks
         if hasattr(self, 'damage_boost') and self.damage_boost > 1.0:
             damage_intensity = min((self.damage_boost - 1.0), 1.0)
-            damage_pulse = math.sin(current_time * 0.015) * 0.3 + 0.7
+            damage_pulse = math.sin(current_time * 0.008) * 0.3 + 0.7
             
             # Fiery aura
-            aura_radius = int(35 * damage_pulse * damage_intensity)
+            aura_radius = int(55 * damage_pulse * damage_intensity)
             for i in range(3):
                 alpha = int(80 * damage_intensity) - i * 20
                 if alpha > 0:
@@ -443,7 +443,7 @@ class mainCharacter(WeaponSystem):
             
             # Floating spark particles
             for i in range(8):
-                angle = (current_time * 0.02 + i * 45) % 360
+                angle = (current_time * 0.008 + i * 45) % 360
                 spark_distance = 25 + math.sin(current_time * 0.03 + i) * 8
                 spark_x = player_center[0] + int(spark_distance * math.cos(math.radians(angle)))
                 spark_y = player_center[1] + int(spark_distance * math.sin(math.radians(angle))) - 5
