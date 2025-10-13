@@ -4,7 +4,8 @@ from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior
 from blocks import block, Spikes, start, end, Ice
 from pickups import Coin, Meat
-
+from particles import LeafParticle
+import random
 
 class Game:
     def __init__(self, width=960, height=640):
@@ -33,6 +34,8 @@ class Game:
         self.enemies = []
         self.arrows = []
         self.doScroll = True
+        
+        self.leaf_particles = [LeafParticle(random.randint(0, 960), random.randint(-200, 0)) for _ in range(50)]
         
     def load_background(self, bg_folder, num_layers):
         self.bg_images = []
@@ -74,12 +77,20 @@ class Game:
                     if bg_pos_x > -self.bg_width and bg_pos_x < self.WIDTH:
                         self.screen.blit(i, (bg_pos_x, 0))
                     speed += 0.1
+            
+        for particle in self.leaf_particles:
+            particle.draw(self.screen, self.scroll)
                 
     def update_lives(self):
         if self.player and self.heart:
             for i in range(self.player.lives):
                 self.screen.blit(self.heart, (10 + i * 30, 10))
-                
+
+    def update_particles(self):
+            
+        for particle in self.leaf_particles:
+            particle.update(self.obstacles, self.scroll)
+        
     def handle_scrolling(self):
         if not self.player or not self.doScroll:
             return
@@ -202,6 +213,7 @@ class Game:
             self.update_obstacles()
             self.draw_tilemap()
             self.update_pickups()
+            self.update_particles()
             alive_enemies = self.update_enemies()
             
             for a in list(self.arrows):
@@ -322,8 +334,8 @@ class Level1(Game):
     
 class BossLevel1(Game):
     def __init__(self, width=960, height=640):
-        self.doScroll = False
         super().__init__(width, height)
+        self.doScroll = False
         
         self.load_background('assets/BossBGL', 5)
         self.load_tilemap("forestBossMap.tmx")
@@ -384,6 +396,7 @@ class BossLevel1(Game):
                             # Regular block
                             obstacle = block(x * TILE_SIZE, y * TILE_SIZE)
                             self.obstacles.append(obstacle)
+                            
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self

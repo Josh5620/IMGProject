@@ -53,8 +53,9 @@ class Spikes(block):
 class start(block):
     def __init__(self, x, y):
         super().__init__(x, y)
+        self.solid = False
         
-        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
         
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
@@ -67,7 +68,7 @@ class end(block):
         super().__init__(x, y)
         self.solid = False
  
-        self.image = rescaleObject(pygame.image.load("assets/block.png"), 0.1)
+        
         
         self.image = pygame.Surface((32, 32), pygame.SRCALPHA) 
         self.rect = self.image.get_rect()
