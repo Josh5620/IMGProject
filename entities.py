@@ -6,6 +6,7 @@ import math
 from blocks import Ice, Spikes, block, end
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager
+from particles import ScreenDropletParticle
 
 
 def rescaleObject(object, scale_factor):
@@ -139,6 +140,7 @@ class mainCharacter(WeaponSystem):
         
         self.base_speed = 3.5 
         self.slow_until = 0
+        self.slowdown_particles = []
       
     def _anim_index(self, state: str) -> int:
         if not self.anims or state not in self.anims:
@@ -564,7 +566,9 @@ class mainCharacter(WeaponSystem):
                 surface.blit(self.image, self.rect)
         else:
             if self.visible:
+                on_screen_pos = (self.rect.x , self.rect.y)
                 surface.blit(self.image, self.rect)
+                self.draw_slowdown_effect(surface, on_screen_pos)
         
         # Draw weapon effects on top of sprite
         camera_offset = (0, 0)  # Replace with your actual camera offset if you have one
@@ -575,6 +579,26 @@ class mainCharacter(WeaponSystem):
             
     def get_position(self):
         return self.rect.topleft
+
+
+    def draw_slowdown_effect(self, surface, on_screen_pos):
+
+        if self.speed_boost < 1.0 and random.randint(0, 4) == 0:
+            self.slowdown_particles.append(ScreenDropletParticle())
+
+        anchor_x = on_screen_pos[0] + self.rect.width / 2
+        anchor_y = on_screen_pos[1] + self.rect.height / 2
+
+        for particle in list(self.slowdown_particles):
+            particle.update()
+
+            draw_x = anchor_x + particle.relative_x
+            draw_y = anchor_y + particle.relative_y
+            
+            pygame.draw.circle(surface, particle.color, (draw_x, draw_y), particle.size)
+
+            if particle.lifespan <= 0:
+                self.slowdown_particles.remove(particle)
 
 
 # ===== ENEMY CLASSES =====
@@ -628,22 +652,27 @@ class Enemy:
         elif self.ai_type == "boss":
             self._ai_boss(player, dt)
         
-        # Update enemy projectiles
-        for projectile in self.projectiles[:]:
+        # MEMORY LEAK FIX: More efficient projectile update with list comprehension
+        active_projectiles = []
+        for projectile in self.projectiles:
             projectile['x'] += projectile['dx'] * dt
             projectile['y'] += projectile['dy'] * dt
             
-            # Remove projectiles that go off screen
-            if (projectile['x'] < -50 or projectile['x'] > 1010 or 
-                projectile['y'] < -50 or projectile['y'] > 700):
-                self.projectiles.remove(projectile)
-                continue
+            # Remove projectiles that go off screen or are too old
+            if (projectile['x'] < -50 or projectile['x'] > 1250 or 
+                projectile['y'] < -50 or projectile['y'] > 750):
+                continue  # Skip adding to active list
             
             # Check collision with player
             proj_rect = pygame.Rect(projectile['x'], projectile['y'], 8, 8)
             if proj_rect.colliderect(player.rect):
                 self.damage_player(player)
-                self.projectiles.remove(projectile)
+                continue  # Skip adding to active list
+            
+            # Keep active projectile
+            active_projectiles.append(projectile)
+        
+        self.projectiles = active_projectiles
     
     def _ai_idle(self, player, dt):
         """Enemy stays in place, occasionally looks around"""

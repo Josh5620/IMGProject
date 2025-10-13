@@ -46,3 +46,21 @@ class LeafParticle(Particle):
     def draw(self, surface, scroll):
         rotated_image = pygame.transform.rotate(self.image, self.angle)
         surface.blit(rotated_image, (self.x - scroll, self.y))
+
+
+class ScreenDropletParticle:
+    def __init__(self):
+
+        self.relative_x = random.uniform(-10, 10)
+        self.relative_y = 20  # Start below the center point
+
+        # Simple physics for the visual effect
+        self.speed_y = random.uniform(1, 2.5)
+        self.lifespan = random.randint(20, 40)
+        self.color = (100, 150, 255)
+        self.size = random.randint(3, 5)
+
+    def update(self):
+
+        self.relative_y += self.speed_y  # Just falls straight down
+        self.lifespan -= 1

@@ -168,19 +168,18 @@ class Game:
             pickup.draw(self.screen)
             
     def update_enemies(self):
-        
-        alive_enemies = []
+        # MEMORY LEAK FIX: More efficient enemy list management
         for enemy in self.enemies:
-            if hasattr(enemy, '__class__') and hasattr(enemy.__class__, '__bases__') and Level1Enemy in enemy.__class__.__bases__:
-                enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
-            else:
-                enemy.update(self.player)
-
-            
-            if enemy.alive:
-                alive_enemies.append(enemy)
+            if enemy.alive:  # Only update alive enemies
+                if hasattr(enemy, '__class__') and hasattr(enemy.__class__, '__bases__') and Level1Enemy in enemy.__class__.__bases__:
+                    enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+                else:
+                    enemy.update(self.player)
+                
                 enemy.draw(self.screen)
         
+        # Remove dead enemies after all updates
+        alive_enemies = [e for e in self.enemies if e.alive]
         self.enemies = alive_enemies
         return alive_enemies
             
@@ -216,11 +215,15 @@ class Game:
             self.update_particles()
             alive_enemies = self.update_enemies()
             
-            for a in list(self.arrows):
+            # MEMORY LEAK FIX: More efficient arrow cleanup
+            self.arrows = [a for a in self.arrows if a.alive]
+            for a in self.arrows:
                 a.update(self.obstacles)
                 a.collide(self.player, scroll_offset=self.ground_scroll)
-                if not a.alive:
-                    self.arrows.remove(a)
+            
+            # Remove dead arrows after collision check
+            self.arrows = [a for a in self.arrows if a.alive]
+            
             for a in self.arrows:
                 a.draw(self.screen, scroll_offset=self.ground_scroll)
             
