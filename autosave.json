@@ -1,8 +1,8 @@
 {
   "player": {
-    "x": 379,
+    "x": 255,
     "y": 508,
-    "lives": 3
+    "lives": -7
   },
   "enemies": [],
   "powerups": [],

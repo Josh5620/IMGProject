@@ -26,6 +26,20 @@ CELL_MAP = {
     "charge": [(0,0), (1,0), (2,0), (3,0), (0,1), (1,1), (2,1), (3,1)]
 }
 
+# ===== SFX =====
+pygame.mixer.init()
+
+# ===== Load global sounds =====
+# ==== Attack Sounds ====
+FISH_THROW_SOUND = pygame.mixer.Sound("assets/SFX/FishThrow.mp3")
+FISH_THROW_SOUND.set_volume(0.3)
+SCRATCH_SOUND = pygame.mixer.Sound("assets/SFX/ScratchAttack.mp3")
+SCRATCH_SOUND.set_volume(0.3)
+
+#==== Hurt Sounds ====
+CAT_HURT_SOUND = pygame.mixer.Sound("assets/SFX/CatDamaged.mp3")
+CAT_HURT_SOUND.set_volume(0.3)
+
 def load_surface(path: str) -> pygame.Surface:
     return pygame.image.load(path).convert_alpha()
 
@@ -256,6 +270,7 @@ class mainCharacter(WeaponSystem):
         
         if keys[pygame.K_a]:  # Melee attack
             hit_enemies = self.melee_attack(self.enemies, obstacles)
+            SCRATCH_SOUND.play()
             if hit_enemies:
                 print(f"Hit {len(hit_enemies)} enemies!")
         
@@ -265,6 +280,7 @@ class mainCharacter(WeaponSystem):
                 if projectile:
                     self.projectile_manager.add_projectile(projectile)
                     self.consume_ammo()
+                    FISH_THROW_SOUND.play()
         
         if keys[pygame.K_c]:  # Aimed projectile
             if not self.is_charging and self.can_shoot():
@@ -278,6 +294,7 @@ class mainCharacter(WeaponSystem):
                     if projectile:
                         self.projectile_manager.add_projectile(projectile)
                         self.consume_ammo()
+                    FISH_THROW_SOUND.play()
                 except:
                     # Fallback if mouse position unavailable
                     self.stop_charging()
@@ -380,6 +397,7 @@ class mainCharacter(WeaponSystem):
             print("Player defeated!")
         else:
             # Brief invulnerability after taking damage
+            CAT_HURT_SOUND.play()
             self.iFrame()
             # You might want to add a timer to reset invulnerability
         
