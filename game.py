@@ -330,7 +330,12 @@ class Level1(Game):
         if self.meat.update(self.player):
             self.player.lives += 1
             self.meat.respawn(self.obstacles, self.ground_scroll)
-    
+
+#class Level2(Game):
+#    def __init__(self, width=960, height=640):
+#       super().__init__(width, height)
+
+
     
 class BossLevel1(Game):
     def __init__(self, width=960, height=640):

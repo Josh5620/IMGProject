@@ -33,7 +33,7 @@ class WeaponSystem:
         self.charge_time = 0
         self.max_charge_time = 120  # 2 seconds at 60 FPS
         
-        # Weapon animation states (integrate with your CELL_MAP)
+        # Weapon animation states 
         self.weapon_state = None  # None, "attacking", "charging"
         
         # Track if we need to override normal animation
@@ -72,11 +72,12 @@ class WeaponSystem:
         
         Returns: animation_state string or None if no override needed
         """
-        if self.weapon_animation_override:
+        # Only override animation for a very short time to prevent facing direction lock
+        if self.weapon_animation_override and self.attack_animation_timer > 10:
             if self.weapon_state == "attacking":
-                return "attack"  # You'll need to add this to CELL_MAP
+                return "attack"  
             elif self.weapon_state == "charging":
-                return "charge"  # You'll need to add this to CELL_MAP
+                return "charge"  
         
         return None  # Use normal movement-based animation
     
@@ -165,6 +166,11 @@ class WeaponSystem:
         # Update attack timer
         if self.attack_animation_timer > 0:
             self.attack_animation_timer -= 1
+            # Reset weapon animation override earlier to allow facing direction changes
+            # Keep visual effects but allow movement animation updates
+            if self.attack_animation_timer <= 10:  # Reset override earlier
+                self.weapon_animation_override = False
+            
             if self.attack_animation_timer <= 0:
                 self.is_attacking = False
                 self.weapon_animation_override = False

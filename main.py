@@ -12,7 +12,7 @@ pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
  
 game_state = "start"
 
-
+level1 = Level1(WIDTH, HEIGHT)
 
 def start_game_wrapper():
     global game_state
@@ -23,10 +23,9 @@ def start_game_wrapper():
     run_game_intro(WIDTH, HEIGHT, screen)
 
     if game_level == 1:
-        level1 = Level1(WIDTH, HEIGHT)
         result = level1.run(screen)
     elif game_level == 2:
-        
+        # For now, run Level1 since Level2 isn't implemented yet
         print("Level 2 not implemented yet, running Level 1")
         result = level1.run(screen)
     else:
@@ -69,7 +68,6 @@ while running:
         run_BossIntro(WIDTH, HEIGHT, screen) 
         boss_level1 = BossLevel1(WIDTH, HEIGHT)  
         boss_level1.run(screen)
-        
     else:
         running = False
 
