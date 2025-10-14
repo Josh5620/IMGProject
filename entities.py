@@ -583,7 +583,7 @@ class mainCharacter(WeaponSystem):
 
     def draw_slowdown_effect(self, surface, on_screen_pos):
 
-        if self.speed_boost < 1.0 and random.randint(0, 4) == 0:
+        if self.speed_boost < 1.0 and random.randint(0, 10) == 0:
             self.slowdown_particles.append(ScreenDropletParticle())
 
         anchor_x = on_screen_pos[0] + self.rect.width / 2
