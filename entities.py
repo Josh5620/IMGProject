@@ -96,8 +96,9 @@ class mainCharacter(WeaponSystem):
         self.enemies = []  # Can be populated later
         
         # Load sprite animations
-        self.anims = build_state_animations("assets/catspritesheet/*.png")
-        self.image = self._get_initial_image()
+        self.anims = build_state_animations("assets/redhood/*.png")
+        if self.anims:
+            self.image = self.anims["idle"][0]
 
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
