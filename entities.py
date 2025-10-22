@@ -1,7 +1,5 @@
 import pygame
 import random
-import glob
-import os
 import math
 from blocks import Ice, Spikes, block, end
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
@@ -9,23 +7,75 @@ from weapons.projectiles import ProjectileManager
 from particles import ScreenDropletParticle
 
 
-def rescaleObject(object, scale_factor):
-    scaledObject = pygame.transform.scale_by(object, scale_factor)
-    return scaledObject
+# ===== Sprite Animation System (one-row spritesheets) =====
+FRAME_TARGET_SIZE = (72, 72)  # final draw size for consistency
 
-# ===== Sprite Animation System =====
-COLS, ROWS = 4, 2
-CELL_MAP = {
-    "idle": (0, 0),
-    "run": (1, 0),
-    "jump_start": (2, 0),
-    "jump": (3, 0),
-    "jump_to_fall": (0, 1),
-    "fall": (1, 1),
-    "wall_jump": (2, 1),
-    "attack": [(0,0), (1,0), (2,0), (3,0), (0,1), (1,1), (2,1), (3,1)],
-    "charge": [(0,0), (1,0), (2,0), (3,0), (0,1), (1,1), (2,1), (3,1)]
+ANIM_MANIFEST = {
+    "idle":      {"file": "assets/redhood/idle.png",      "frame_count": 18},
+    "run":       {"file": "assets/redhood/run.png",       "frame_width": 32},
+    "jump":      {"file": "assets/redhood/jump.png",      "frame_width": 32},
+    "fall":      {"alias": "jump"},            # reuse jump frames while falling
+    "light_atk": {"file": "assets/redhood/light_atk.png", "frame_width": 40},
+    "hurt":      {"file": "assets/redhood/hurt.png",      "frame_count": 6},
+    # compatibility aliases (so older state names keep working)
+    "attack":        {"alias": "light_atk"},
+    "charge":        {"alias": "light_atk"},
+    "jump_start":    {"alias": "jump"},
+    "jump_to_fall":  {"alias": "jump"},
+    "wall_jump":     {"alias": "jump"},
 }
+
+def _slice_one_row(sheet: pygame.Surface, *, frame_width=None, frame_count=None,
+                   scale_to: tuple[int, int] | None = FRAME_TARGET_SIZE) -> list[pygame.Surface]:
+    h = sheet.get_height()
+    w = sheet.get_width()
+    if frame_width is None and frame_count is None:
+        frame_width = h  # fallback to square frames
+    if frame_width is not None:
+        n = max(1, w // frame_width)
+    else:
+        n = max(1, frame_count)
+        frame_width = w // n
+    frames = []
+    for i in range(n):
+        rect = pygame.Rect(i * frame_width, 0, frame_width, h)
+        frame = sheet.subsurface(rect).copy()
+        if scale_to:
+            frame = pygame.transform.scale(frame, scale_to)
+        frames.append(frame)
+    return frames
+
+def build_state_animations_from_manifest(manifest: dict[str, dict]) -> dict[str, list[pygame.Surface]]:
+    cache: dict[str, list[pygame.Surface]] = {}
+    anims: dict[str, list[pygame.Surface]] = {}
+
+    def resolve(state: str) -> list[pygame.Surface]:
+        if state in anims:
+            return anims[state]
+        spec = manifest.get(state)
+        if not spec:
+            anims[state] = []
+            return anims[state]
+        if "alias" in spec:
+            anims[state] = resolve(spec["alias"])
+            return anims[state]
+        file = spec["file"]
+        frame_width = spec.get("frame_width")
+        frame_count = spec.get("frame_count")
+        if file not in cache:
+            try:
+                sheet = pygame.image.load(file).convert_alpha()
+            except FileNotFoundError as exc:
+                raise FileNotFoundError(f"Sprite sheet not found: {file}") from exc
+            except pygame.error as exc:
+                raise RuntimeError(f"Failed to load sprite sheet '{file}': {exc}") from exc
+            cache[file] = _slice_one_row(sheet, frame_width=frame_width, frame_count=frame_count)
+        anims[state] = cache[file]
+        return anims[state]
+
+    for key in manifest.keys():
+        resolve(key)
+    return anims
 
 # ===== SFX =====
 pygame.mixer.init()
@@ -40,45 +90,6 @@ SCRATCH_SOUND.set_volume(0.3)
 #==== Hurt Sounds ====
 CAT_HURT_SOUND = pygame.mixer.Sound("assets/SFX/CatDamaged.mp3")
 CAT_HURT_SOUND.set_volume(0.3)
-
-def load_surface(path: str) -> pygame.Surface:
-    return pygame.image.load(path).convert_alpha()
-
-def slice_cell(sheet: pygame.Surface, col: int, row: int) -> pygame.Surface:
-    w = sheet.get_width() // COLS
-    h = sheet.get_height() // ROWS
-    rect = pygame.Rect(col * w, row * h, w, h)
-    cell = sheet.subsurface(rect).copy()
-    return pygame.transform.scale(cell, (72, 72 ))
-
-def build_state_animations(pattern: str):
-    paths = glob.glob(pattern)
-    if not paths:
-        print(f"No sprite sheets found for: {pattern}")
-        return None
-    
-    def num_key(p):
-        name = os.path.splitext(os.path.basename(p))[0]
-        try:
-            return int(name)
-        except ValueError:
-            return name
-    
-    paths = sorted(paths, key=num_key)
-    sheets = [load_surface(p) for p in paths]
-    
-    anims = {state: [] for state in CELL_MAP.keys()}
-    for sh in sheets:
-        for state, coords in CELL_MAP.items():
-            if isinstance(coords, list):
-                # Handle multi-frame animations like attack/charge
-                for (c, r) in coords:
-                    anims[state].append(slice_cell(sh, c, r))
-            else:
-                # Handle single frame animations like idle/run
-                c, r = coords
-                anims[state].append(slice_cell(sh, c, r))
-    return anims
 
 class mainCharacter(WeaponSystem):
 
@@ -96,7 +107,7 @@ class mainCharacter(WeaponSystem):
         self.enemies = []  # Can be populated later
         
         # Load sprite animations
-        self.anims = build_state_animations("assets/catspritesheet/*.png")
+        self.anims = build_state_animations_from_manifest(ANIM_MANIFEST)
         self.image = self._get_initial_image()
 
         self.rect = self.image.get_rect()
@@ -147,7 +158,7 @@ class mainCharacter(WeaponSystem):
         """Return the first available animation frame for the player sprite."""
         if not self.anims:
             raise RuntimeError(
-                "Failed to load mainCharacter animations; ensure assets/catspritesheet contains sprite sheets."
+                "Failed to load mainCharacter animations; ensure assets/redhood spritesheets are available."
             )
 
         idle_frames = self.anims.get("idle", [])
@@ -181,18 +192,14 @@ class mainCharacter(WeaponSystem):
     def update_animation(self, keys):
         self.anim_tick = (self.anim_tick + 1) % 10_000_000
     
-        # Check if weapon should override animation
         weapon_anim = self.get_current_weapon_animation_state()
         if weapon_anim:
-            # Use weapon animation instead of movement animation
-            state = weapon_anim
+            state = "light_atk" if weapon_anim in ("attack", "charge", "light_atk") else (
+                weapon_anim if weapon_anim in self.anims else "idle"
+            )
         else:
-            # Default movement-based animation logic
             if not self.on_ground:
-                if self.y_velocity < 0:
-                    state = "jump"
-                else:
-                    state = "fall"
+                state = "jump" if self.y_velocity < 0 else "fall"
             else:
                 if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
                     state = "run"
@@ -203,12 +210,11 @@ class mainCharacter(WeaponSystem):
                 else:
                     state = "idle"
                     self.scroll_speed = 0
-        
 
         idx = self._anim_index(state)
-        img = self.anims[state][idx]
-        
-        self.image = img if self.facing_right else pygame.transform.flip(img, True, False) 
+        if self.anims.get(state):
+            img = self.anims[state][idx]
+            self.image = img if self.facing_right else pygame.transform.flip(img, True, False)
     
     def move(self, dx, dy, obstacles=None):
         old_x, old_y = self.rect.x, self.rect.y
@@ -240,12 +246,12 @@ class mainCharacter(WeaponSystem):
         return False
 
     def jump(self):
-        if self.on_ground:  
+        if self.on_ground:
             self.on_ground = False
             self.jumping = True
             self.y_velocity = -self.jump_height
             self.double_jump_used = False  # Reset double jump when landing
-            if self.anims:
+            if self.anims and self.anims.get("jump_start"):
                 self.image = self.anims["jump_start"][0]
     
     def double_jump(self):
@@ -254,9 +260,9 @@ class mainCharacter(WeaponSystem):
             self.y_velocity = -self.jump_height * 0.8  # Slightly weaker than first jump
             self.double_jump_used = True
             print("Double jump!")
-            
-            if self.anims:
-                self.image = self.anims["jump"][0]  
+
+            if self.anims and self.anims.get("jump"):
+                self.image = self.anims["jump"][0]
         
     def update(self, keys, obstacles, enemies):
         self.update_weapon_system()
