@@ -8,7 +8,7 @@ from particles import ScreenDropletParticle
 
 
 # ===== Sprite Animation System (one-row spritesheets) =====
-FRAME_TARGET_SIZE = (72, 72)  # final draw size for consistency
+FRAME_TARGET_SIZE = (64, 64)  # final draw size for consistency
 
 ANIM_MANIFEST = {
     "idle":      {"file": "assets/redhood/idle.png",      "frame_count": 18},
@@ -118,6 +118,12 @@ class mainCharacter(WeaponSystem):
         self.anim_speed = 10
         self.facing_right = True
         self.scroll_speed = 0
+
+        # Timed animation gates
+        self.attack_timer = 0
+        self.attack_cooldown_frames = 18   # length of the light_atk animation in frames (tune)
+        self.hurt_timer = 0
+        self.hurt_frames = 12              # length of the hurt animation in frames (tune)
         
         # Physics variables
         self.y_gravity = 0.7
@@ -191,25 +197,35 @@ class mainCharacter(WeaponSystem):
 
     def update_animation(self, keys):
         self.anim_tick = (self.anim_tick + 1) % 10_000_000
-    
-        weapon_anim = self.get_current_weapon_animation_state()
-        if weapon_anim:
-            state = "light_atk" if weapon_anim in ("attack", "charge", "light_atk") else (
-                weapon_anim if weapon_anim in self.anims else "idle"
-            )
+
+        # 1) Timed non-looping states override everything
+        if self.hurt_timer > 0 and "hurt" in self.anims and self.anims["hurt"]:
+            state = "hurt"
+        elif self.attack_timer > 0 and "light_atk" in self.anims and self.anims["light_atk"]:
+            state = "light_atk"
         else:
-            if not self.on_ground:
-                state = "jump" if self.y_velocity < 0 else "fall"
-            else:
-                if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
-                    state = "run"
-                    if keys[pygame.K_LEFT]:
-                        self.facing_right = False
-                    elif keys[pygame.K_RIGHT]:
-                        self.facing_right = True
+            # 2) Weapon system override (if present)
+            weapon_anim = self.get_current_weapon_animation_state()
+            if weapon_anim:
+                # normalize weapon names to our sheet keys
+                if weapon_anim in ("attack", "charge", "light_atk"):
+                    state = "light_atk"
                 else:
-                    state = "idle"
-                    self.scroll_speed = 0
+                    state = weapon_anim if weapon_anim in self.anims else "idle"
+            else:
+                # 3) Movement fallback
+                if not self.on_ground:
+                    state = "jump" if self.y_velocity < 0 else "fall"
+                else:
+                    if keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
+                        state = "run"
+                        if keys[pygame.K_LEFT]:
+                            self.facing_right = False
+                        elif keys[pygame.K_RIGHT]:
+                            self.facing_right = True
+                    else:
+                        state = "idle"
+                        self.scroll_speed = 0
 
         idx = self._anim_index(state)
         if self.anims.get(state):
@@ -295,15 +311,23 @@ class mainCharacter(WeaponSystem):
 
         if self.shooting_cooldown > 0:
             self.shooting_cooldown -= 1
-        
+
         self.update_powerup_effects()
-        
-        if keys[pygame.K_a]:  # Melee attack
-            hit_enemies = self.melee_attack(self.enemies, obstacles)
-            SCRATCH_SOUND.play()
-            if hit_enemies:
-                print(f"Hit {len(hit_enemies)} enemies!")
-        
+
+        # Melee attack (press A)
+        if keys[pygame.K_a]:
+            if self.attack_timer <= 0:  # start new attack only if not already attacking
+                hit_enemies = self.melee_attack(self.enemies, obstacles)
+                SCRATCH_SOUND.play()
+                self.attack_timer = self.attack_cooldown_frames
+                if hit_enemies:
+                    print(f"Hit {len(hit_enemies)} enemies!")
+        # decrement timers
+        if self.attack_timer > 0:
+            self.attack_timer -= 1
+        if self.hurt_timer > 0:
+            self.hurt_timer -= 1
+
         if keys[pygame.K_s]:  # Straight projectile
             if self.can_shoot():
                 projectile = self.shoot_projectile()
@@ -429,8 +453,9 @@ class mainCharacter(WeaponSystem):
             # Brief invulnerability after taking damage
             CAT_HURT_SOUND.play()
             self.iFrame()
+            self.hurt_timer = self.hurt_frames
             # You might want to add a timer to reset invulnerability
-        
+
         return True
     
     def draw_powerup_effects(self, surface):
