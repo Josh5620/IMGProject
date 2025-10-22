@@ -216,16 +216,21 @@ class Game:
             alive_enemies = self.update_enemies()
             
             # MEMORY LEAK FIX: More efficient arrow cleanup
-            self.arrows = [a for a in self.arrows if a.alive]
-            for a in self.arrows:
-                a.update(self.obstacles)
-                a.collide(self.player, scroll_offset=self.ground_scroll)
-            
-            # Remove dead arrows after collision check
-            self.arrows = [a for a in self.arrows if a.alive]
-            
-            for a in self.arrows:
-                a.draw(self.screen, scroll_offset=self.ground_scroll)
+            active_arrows = []
+            for arrow in self.arrows:
+                if not arrow.alive:
+                    continue
+
+                arrow.update(self.obstacles)
+                arrow.collide(self.player, scroll_offset=self.ground_scroll)
+
+                if arrow.alive:
+                    active_arrows.append(arrow)
+
+            self.arrows = active_arrows
+
+            for arrow in self.arrows:
+                arrow.draw(self.screen, scroll_offset=self.ground_scroll)
             
             
             self.handle_pickup_collection()

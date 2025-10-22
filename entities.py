@@ -81,7 +81,9 @@ def build_state_animations(pattern: str):
     return anims
 
 class mainCharacter(WeaponSystem):
-    
+
+    MAX_SLOWDOWN_PARTICLES = 40
+
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -95,8 +97,7 @@ class mainCharacter(WeaponSystem):
         
         # Load sprite animations
         self.anims = build_state_animations("assets/catspritesheet/*.png")
-        if self.anims:
-            self.image = self.anims["idle"][0]
+        self.image = self._get_initial_image()
 
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
@@ -138,9 +139,36 @@ class mainCharacter(WeaponSystem):
             "shield": 0
         }
         
-        self.base_speed = 3.5 
+        self.base_speed = 3.5
         self.slow_until = 0
         self.slowdown_particles = []
+
+    def _get_initial_image(self) -> pygame.Surface:
+        """Return the first available animation frame for the player sprite."""
+        if not self.anims:
+            raise RuntimeError(
+                "Failed to load mainCharacter animations; ensure assets/catspritesheet contains sprite sheets."
+            )
+
+        idle_frames = self.anims.get("idle", [])
+        if idle_frames:
+            return idle_frames[0]
+
+        for frames in self.anims.values():
+            if frames:
+                return frames[0]
+
+        raise RuntimeError("No animation frames available for mainCharacter.")
+
+    @staticmethod
+    def _resolve_rect(obj):
+        """Return a pygame.Rect derived from the provided object or rect-like tuple."""
+        if hasattr(obj, "get_rect"):
+            rect = obj.get_rect()
+        else:
+            rect = obj
+
+        return rect if isinstance(rect, pygame.Rect) else pygame.Rect(rect)
       
     def _anim_index(self, state: str) -> int:
         if not self.anims or state not in self.anims:
@@ -200,15 +228,12 @@ class mainCharacter(WeaponSystem):
 
     def check_collision_with_obstacles(self, obstacles):
         for obstacle in obstacles:
-            if hasattr(obstacle, 'get_rect'): 
-                obstacle_rect = obstacle.get_rect()
-            else:  
-                obstacle_rect = obstacle
+            obstacle_rect = self._resolve_rect(obstacle)
 
             if self.rect.colliderect(obstacle_rect):
                 if isinstance(obstacle, (Spikes, end, Ice)):
                     obstacle.collideHurt(self)
-                
+
                 if getattr(obstacle, 'solid', True):
                     return True
 
@@ -236,9 +261,6 @@ class mainCharacter(WeaponSystem):
     def update(self, keys, obstacles, enemies):
         self.update_weapon_system()
         self.enemies = enemies  
-        
-        player_world_rect = self.rect.copy()
-        player_world_rect.x += self.level.ground_scroll
         
         enemy_screen_rects = []
         for enemy in enemies:
@@ -486,19 +508,12 @@ class mainCharacter(WeaponSystem):
 
     def check_collision(self, all_collidables):
         for entity in all_collidables:
-            if hasattr(entity, 'get_rect'):  # It's a block-like object
-                entity_rect = entity.get_rect()
-            else:  
-                entity_rect = entity
+            entity_rect = self._resolve_rect(entity)
 
             if self.rect.colliderect(entity_rect):
-
-                
                 if isinstance(entity, (Spikes, Ice, end)):
                     entity.collideHurt(self)
-
-                
-                if getattr(entity, 'solid', True): 
+                if getattr(entity, 'solid', True):
                     if self.y_velocity > 0:
                         self.rect.bottom = entity_rect.top
                         self.jumping = False
@@ -516,11 +531,8 @@ class mainCharacter(WeaponSystem):
             still_on_ground = False
             
             for block in all_collidables:
-                if hasattr(block, 'get_rect'):
-                    block_rect = block.get_rect()
-                else:
-                    block_rect = block
-                    
+                block_rect = self._resolve_rect(block)
+
                 if getattr(block, 'solid', True) and ground_check_rect.colliderect(block_rect):
                     still_on_ground = True
                     if isinstance(block, Ice):
@@ -584,21 +596,26 @@ class mainCharacter(WeaponSystem):
     def draw_slowdown_effect(self, surface, on_screen_pos):
 
         if self.speed_boost < 1.0 and random.randint(0, 10) == 0:
+            if len(self.slowdown_particles) >= self.MAX_SLOWDOWN_PARTICLES:
+                self.slowdown_particles.pop(0)
             self.slowdown_particles.append(ScreenDropletParticle())
 
         anchor_x = on_screen_pos[0] + self.rect.width / 2
         anchor_y = on_screen_pos[1] + self.rect.height / 2
 
-        for particle in list(self.slowdown_particles):
+        active_particles = []
+        for particle in self.slowdown_particles:
             particle.update()
 
             draw_x = anchor_x + particle.relative_x
             draw_y = anchor_y + particle.relative_y
-            
+
             pygame.draw.circle(surface, particle.color, (draw_x, draw_y), particle.size)
 
-            if particle.lifespan <= 0:
-                self.slowdown_particles.remove(particle)
+            if particle.lifespan > 0:
+                active_particles.append(particle)
+
+        self.slowdown_particles = active_particles
 
 
 # ===== ENEMY CLASSES =====
