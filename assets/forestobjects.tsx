@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="forestobjects" tilewidth="199" tileheight="183" tilecount="59" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="forestobjects" tilewidth="199" tileheight="183" tilecount="60" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="3 Objects/Bushes/1.png" width="31" height="15"/>
@@ -248,5 +248,11 @@
  </tile>
  <tile id="58">
   <image source="3 Objects/Willows/3.png" width="199" height="183"/>
+ </tile>
+ <tile id="60">
+  <properties>
+   <property name="type" value="mushroom"/>
+  </properties>
+  <image source="3 Objects/mushroom.png" width="28" height="25"/>
  </tile>
 </tileset>

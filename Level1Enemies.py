@@ -6,19 +6,16 @@ from weapons.projectiles import ProjectileManager, EnemyProjectile, ChargedProje
 class Level1Enemy:
     
     def __init__(self, x, y, width=48, height=48):
-        # Main
         self.rect        = pygame.Rect(x, y, width, height)
         self.original_x  = x
         self.original_y  = y
         self.name        = "Enemy"
 
-        # Lifecycle and visibility
         self.alive       = True
         self.visible     = True
         self.image       = pygame.Surface((width, height))
         self.image.fill((255, 100, 100))
 
-        # Movement and physics
         self.speed       = 2.0
         self.direction   = 1
         self.facing_right = (self.direction > 0)
@@ -28,34 +25,32 @@ class Level1Enemy:
         self.isIdle = False
         self.player_world_rect = None
 
-        # Simple AI state
         self.ai_state    = "idle"
         self.ai_timer    = 0
 
-        # Patrol configuration
         self.patrol_start = x
         self.patrol_range = 150
 
-        # Legacy sight cone settings
         self.sight_range  = 200
         self.sight_width  = 80
         self.sight_color = (255, 0, 0, 100)
         self.player_spotted = False
 
-        # Debug
-        self.debug_mode = True  # set True to show debug visuals
+        self.debug_mode = True
 
-        # Health system
         self.max_hp = 100
         self.current_hp = self.max_hp
 
-        # Attack setup in front of the enemy
-        self.attack_range     = pygame.Vector2(40, 40)   # attack box size 
+        self.attack_range     = pygame.Vector2(40, 40)
         self.player_in_attack = False
         self.attack_cooldown = 1000  
         self.last_attack_time = 0
         self.attack_flash_time = 1500  
         self.attack_flash_until = 0
+        
+        self.exclamation_img = pygame.image.load("assets/exclamation.png").convert_alpha()
+        self.exclamation_img = pygame.transform.scale(self.exclamation_img, (16, 24))
+
         
     def update(self, player, dt=1.0, obstacles=None, scroll_offset=0):
         if not self.alive:
@@ -264,14 +259,11 @@ class Level1Enemy:
         self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
 
-        # Draw exclamation indicator when player is spotted (replaces purple box)
-        if hasattr(self, 'detection_timer') and hasattr(self, 'exclamation_img'):
-            if self.detection_timer > 0 and self.exclamation_img:
-                # Position above enemy's head with a bounce effect
-                bounce = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 3
-                exclamation_x = screen_x + self.rect.width // 2 - self.exclamation_img.get_width() // 2
-                exclamation_y = screen_y - self.exclamation_img.get_height() - 5 - bounce
-                surface.blit(self.exclamation_img, (exclamation_x, exclamation_y))
+        if self.player_spotted and self.exclamation_img:
+            bounce = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 3
+            exclamation_x = screen_x + self.rect.width // 2 - self.exclamation_img.get_width() // 2
+            exclamation_y = screen_y - self.exclamation_img.get_height() - 5 - bounce
+            surface.blit(self.exclamation_img, (exclamation_x, exclamation_y))
         
 
         if self.debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
