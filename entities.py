@@ -286,6 +286,9 @@ class mainCharacter(WeaponSystem):
         
         enemy_screen_rects = []
         for enemy in enemies:
+            # Skip collectibles (like mushrooms) - they don't block movement
+            if hasattr(enemy, 'is_collectible') and enemy.is_collectible:
+                continue
             screen_rect = enemy.rect.copy()
             screen_rect.x -= self.level.ground_scroll 
             enemy_screen_rects.append(screen_rect)

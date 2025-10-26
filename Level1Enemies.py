@@ -586,3 +586,40 @@ class BreakableBlock(Level1Enemy): # <-- Inherit from Enemy
 
     def on_player_spotted(self, player):
         pass
+
+class Mushroom(BreakableBlock):
+    def __init__(self, x, y, image):
+        super().__init__(x, y, image)
+        self.name = "Mushroom"
+        self.debug_mode = False
+        self.isIdle = True 
+        self.max_hp = 1
+        self.current_hp = self.max_hp
+        self.image = image
+        
+        self.gravity = 0
+        self.y_velocity = 0
+        self.on_ground = True
+        
+        self.is_collectible = True
+        self.solid = False
+        
+    def get_rect(self):
+        return pygame.Rect(self.rect.x, self.rect.y, 0, 0)
+        
+    def check_player_collision(self, player, scroll_offset):
+        if not self.alive:
+            return False
+            
+        player_world_rect = player.rect.copy()
+        player_world_rect.x += scroll_offset
+        
+        if self.rect.colliderect(player_world_rect):
+            return True
+        return False
+        
+    def collect(self):
+        self.alive = False
+        
+    def on_attack(self, player):
+        pass

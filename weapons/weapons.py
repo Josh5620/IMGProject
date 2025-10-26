@@ -111,9 +111,6 @@ class WeaponSystem:
         
         # Create attack hitbox based on facing direction
         attack_rect = self.get_melee_hitbox(MELEE_RANGE)
-        print(attack_rect)
-        for i in enemies:
-            print(i.rect)
         
         attack_rect_world = attack_rect.copy()
         if hasattr(self, "level"):

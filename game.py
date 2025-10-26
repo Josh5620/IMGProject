@@ -1,9 +1,8 @@
 import pygame
 import pytmx
 from entities import mainCharacter
-from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior
+from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from blocks import block, Spikes, start, end, Ice
-from pickups import Coin, Meat
 from particles import LeafParticle
 import random
 
@@ -18,7 +17,6 @@ class Game:
         self.scroll = 0
         self.ground_scroll = 0
         self.player_prev_x = 0
-        self.coin_count = 0
         
         self.bg_images = []
         self.bg_width = 0
@@ -28,9 +26,9 @@ class Game:
         
         self.font = pygame.font.Font(None, 36)
         self.heart = None
+        self.mushroomCount = 0
         
         self.player = None
-        self.pickups = []
         self.enemies = []
         self.arrows = []
         self.doScroll = True
@@ -63,23 +61,24 @@ class Game:
         self.scroll = 0
         self.ground_scroll = 0
         self.player_prev_x = self.start_position[0]
-        self.coin_count = 0
         
     def draw_bg(self):
         start_bg_x = int(self.scroll // self.bg_width) - 1
         end_bg_x = int((self.scroll + self.WIDTH) // self.bg_width) + 2
         
-        if self.doScroll:
-            for x in range(start_bg_x, end_bg_x):
-                speed = 1
-                for i in self.bg_images:
+        for x in range(start_bg_x, end_bg_x):
+            speed = 1
+            for i in self.bg_images:
+                if self.doScroll:
                     bg_pos_x = (x * self.bg_width) - self.scroll * speed
-                    if bg_pos_x > -self.bg_width and bg_pos_x < self.WIDTH:
-                        self.screen.blit(i, (bg_pos_x, 0))
-                    speed += 0.1
+                else:
+                    bg_pos_x = x * self.bg_width
+                if bg_pos_x > -self.bg_width and bg_pos_x < self.WIDTH:
+                    self.screen.blit(i, (bg_pos_x, 0))
+                speed += 0.1
             
         for particle in self.leaf_particles:
-            particle.draw(self.screen, self.scroll)
+            particle.draw(self.screen, self.scroll if self.doScroll else 0)
                 
     def update_lives(self):
         if self.player and self.heart:
@@ -146,7 +145,7 @@ class Game:
                     image = self.tmx_data.get_tile_image_by_gid(obj.gid)
                     obj_type = getattr(obj, "type", None) or (obj.properties or {}).get("type")
 
-                    if obj_type == "breakable":
+                    if obj_type == "breakable" or obj_type == "mushroom":
                         continue
                     if image:
                         obj_x = obj.x - self.ground_scroll
@@ -157,15 +156,6 @@ class Game:
         for obstacle in self.obstacles:
             obstacle.update_position(self.ground_scroll)
             obstacle.draw(self.screen)
-            
-    def update_pickups(self):
-        for pickup in self.pickups:
-            pickup.update_position(self.ground_scroll)
-            
-            if pickup.is_offscreen(self.screen):
-                pickup.respawn(self.obstacles, self.ground_scroll)
-                
-            pickup.draw(self.screen)
             
     def update_enemies(self):
         # MEMORY LEAK FIX: More efficient enemy list management
@@ -182,6 +172,16 @@ class Game:
         alive_enemies = [e for e in self.enemies if e.alive]
         self.enemies = alive_enemies
         return alive_enemies
+    
+    def check_mushroom_collection(self):
+        if not self.player:
+            return
+        
+        for enemy in self.enemies[:]:
+            if hasattr(enemy, 'is_collectible') and enemy.is_collectible:
+                if enemy.check_player_collision(self.player, self.ground_scroll):
+                    enemy.collect()
+                    self.mushroomCount += 1
             
     def handle_input(self, keys):
         if keys[pygame.K_w]:
@@ -211,7 +211,6 @@ class Game:
             
             self.update_obstacles()
             self.draw_tilemap()
-            self.update_pickups()
             self.update_particles()
             alive_enemies = self.update_enemies()
             
@@ -232,8 +231,8 @@ class Game:
             for arrow in self.arrows:
                 arrow.draw(self.screen, scroll_offset=self.ground_scroll)
             
-            
-            self.handle_pickup_collection()
+            # Check for mushroom collection
+            self.check_mushroom_collection()
             
             keys = pygame.key.get_pressed()
             self.handle_input(keys)
@@ -255,9 +254,6 @@ class Game:
             self.clock.tick(60)
             
         return "menu"
-        
-    def handle_pickup_collection(self):
-        pass
 
 class Level1(Game):
     def __init__(self, width=960, height=640):
@@ -314,6 +310,11 @@ class Level1(Game):
                     enemy = Warrior(obj.x, obj.y - 32)
                     enemy.level = self
                     self.enemies.append(enemy)
+                elif typ == "mushroom":
+                    block_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
+                    new_block = Mushroom(obj.x, obj.y, block_image)
+                    self.enemies.append(new_block)
+                    
         print(f"Level 1 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
         
@@ -322,22 +323,8 @@ class Level1(Game):
         self.player.level = self
         self.player.enemies = self.enemies
         
-        self.coin = Coin(400, 300)
-        self.meat = Meat(200, 300)
-        self.pickups = [self.coin, self.meat]
-        
         if not hasattr(self, 'enemies') or self.enemies is None:
             self.enemies = []
-        
-    def handle_pickup_collection(self):
-        if self.coin.update(self.player):
-            self.coin_count += 1
-            self.coin.respawn(self.obstacles, self.ground_scroll)
-            print("Coin count: ", self.coin_count)
-        
-        if self.meat.update(self.player):
-            self.player.lives += 1
-            self.meat.respawn(self.obstacles, self.ground_scroll)
 
 #class Level2(Game):
 #    def __init__(self, width=960, height=640):
@@ -348,7 +335,7 @@ class Level1(Game):
 class BossLevel1(Game):
     def __init__(self, width=960, height=640):
         super().__init__(width, height)
-        self.doScroll = False
+        
         
         self.load_background('assets/BossBGL', 5)
         self.load_tilemap("forestBossMap.tmx")
@@ -415,11 +402,10 @@ class BossLevel1(Game):
         self.player.level = self
         self.player.enemies = self.enemies
         
-        self.coin = Coin(400, 300)
-        self.meat = Meat(200, 300)
-        self.pickups = [self.coin, self.meat]
-        
         if not hasattr(self, 'enemies') or self.enemies is None:
             self.enemies = []
     
+    def run(self, screen):
+        self.doScroll = False
+        return super().run(screen)
         

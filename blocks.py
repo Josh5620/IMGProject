@@ -78,7 +78,7 @@ class end(block):
     def collideHurt(self, player):
         if self.rect.colliderect(player.rect):
             print("You Win!")
-            player.won = False
+            player.won = True
             return 0
 
 class Ice(block):
