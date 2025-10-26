@@ -11,7 +11,7 @@ import pygame
 import json
 import os
 import math
-from entities import mainCharacter, Powerup
+from entities import MainCharacter, Powerup, Enemy
 from Level1Enemies import Level1Enemy
 from Level2Enemies import Level2Enemy, Level2HunterEnemy, Level2StealthEnemy, Level2BossEnemy
 
@@ -63,7 +63,7 @@ class SandboxMode:
         print("Initializing Sandbox Mode...")
         
         # Create player
-        self.player = mainCharacter(100, 500)
+        self.player = MainCharacter(100, 500)
         self.player.level = self
         
         # Create simple floor obstacle
@@ -297,7 +297,7 @@ class SandboxMode:
         
         # Update player (with or without gravity)
         if self.gravity_enabled:
-            self.player.update(keys, self.obstacles, self.enemies)
+            self.player.update(keys, self.obstacles, self.enemies, effective_dt)
         else:
             # Manual movement without gravity
             if keys[pygame.K_LEFT]:

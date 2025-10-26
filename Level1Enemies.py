@@ -71,12 +71,14 @@ class Level1Enemy:
         self.update_timers(dt)
         if obstacles is None:
             obstacles = []
+        
         if self.is_player_in_sight(player):
             if not self.player_spotted:
                 self.on_player_spotted(player)
                 self.player_spotted = True
         else:
             self.player_spotted = False
+        
         self.update_ai(player, obstacles, dt)
         self.apply_physics(obstacles)
         self.update_attack_detection(player)
@@ -262,9 +264,14 @@ class Level1Enemy:
         self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
 
-        if self.debug_mode and self.player_spotted:
-            purple_rect = pygame.Rect(screen_x + self.rect.width//2 - 8, screen_y - 20, 16, 16)
-            pygame.draw.rect(surface, (128, 0, 128), purple_rect)  # Purple square
+        # Draw exclamation indicator when player is spotted (replaces purple box)
+        if hasattr(self, 'detection_timer') and hasattr(self, 'exclamation_img'):
+            if self.detection_timer > 0 and self.exclamation_img:
+                # Position above enemy's head with a bounce effect
+                bounce = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 3
+                exclamation_x = screen_x + self.rect.width // 2 - self.exclamation_img.get_width() // 2
+                exclamation_y = screen_y - self.exclamation_img.get_height() - 5 - bounce
+                surface.blit(self.exclamation_img, (exclamation_x, exclamation_y))
         
 
         if self.debug_mode and hasattr(self, 'debug_ground_check') and hasattr(self, 'scroll_offset'):
@@ -345,6 +352,16 @@ class Archer(Level1Enemy):
         self.first_spotted_time = 0
         self.player_spotted_recently = False
         
+        # Exclamation indicator for player detection
+        self.player_detected = False
+        self.detection_timer = 0.0
+        self.detection_duration = 60  # Frames to show exclamation
+        try:
+            self.exclamation_img = pygame.image.load("assets/exclamation.png").convert_alpha()
+            self.exclamation_img = pygame.transform.scale(self.exclamation_img, (24, 24))
+        except:
+            self.exclamation_img = None
+        
     def can_shoot(self):
         current_time = pygame.time.get_ticks()
         # Check if enough time has passed since last shot
@@ -370,6 +387,10 @@ class Archer(Level1Enemy):
 
 
     def update_ai(self, player, obstacles, dt):
+        # Update detection timer
+        if self.detection_timer > 0:
+            self.detection_timer -= dt
+        
         if getattr(self, "isIdle", False):
             return
 
@@ -381,6 +402,9 @@ class Archer(Level1Enemy):
             if not self.player_spotted_recently:
                 self.player_spotted_recently = True
                 self.first_spotted_time = pygame.time.get_ticks()
+                # Trigger exclamation when first spotting player
+                self.player_detected = True
+                self.detection_timer = self.detection_duration
                 print(f"{self.name} spotted player! Preparing to shoot...")
             
             if self.can_shoot():
@@ -395,6 +419,7 @@ class Archer(Level1Enemy):
         else:
             # Reset spotted flag when player is no longer in sight
             self.player_spotted_recently = False
+            self.player_detected = False
 
         # normal patrol
         if self.on_ground:
@@ -426,11 +451,30 @@ class Warrior(Level1Enemy):
         self.chase_range = 300
         self.start_x = x
         
+        # Exclamation indicator for player detection
+        self.player_detected = False
+        self.detection_timer = 0.0
+        self.detection_duration = 60  # Frames to show exclamation
+        try:
+            self.exclamation_img = pygame.image.load("assets/exclamation.png").convert_alpha()
+            self.exclamation_img = pygame.transform.scale(self.exclamation_img, (24, 24))
+        except:
+            self.exclamation_img = None
+        
     def update_ai(self, player, obstacles, dt): 
+        # Update detection timer
+        if self.detection_timer > 0:
+            self.detection_timer -= dt
+        
         if self.isIdle:
             return
         
         if self.player_spotted and player:
+            # Trigger exclamation when first spotting player
+            if not self.player_detected:
+                self.player_detected = True
+                self.detection_timer = self.detection_duration
+                
             distance_from_start = abs(self.rect.x - self.start_x)
             distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
 
@@ -452,6 +496,10 @@ class Warrior(Level1Enemy):
             else:
                 pass
             return
+        else:
+            # Reset exclamation when player is no longer spotted
+            self.player_detected = False
+            
         if self.on_ground:
             movement = self.direction * self.speed
             
