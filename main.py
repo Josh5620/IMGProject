@@ -67,7 +67,7 @@ while running:
     elif game_state == "boss_level1":
         run_BossIntro(WIDTH, HEIGHT, screen) 
         boss_level1 = BossLevel1(WIDTH, HEIGHT)  
-        boss_level1.run(screen)
+        boss_level1.run(screen) 
     else:
         running = False
 

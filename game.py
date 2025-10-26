@@ -1,6 +1,6 @@
 import pygame
 import pytmx
-from entities import mainCharacter
+from entities import MainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior
 from blocks import block, Spikes, start, end, Ice
 from pickups import Coin, Meat
@@ -200,6 +200,9 @@ class Game:
         self.screen = screen
         self.reset_game()
         
+        # Initialize delta time properly
+        self.clock.tick()  # Prime the clock
+        
         running = True
         while running:
             for event in pygame.event.get():
@@ -239,7 +242,11 @@ class Game:
             self.handle_input(keys)
             
             if self.player:
-                self.player.update(keys, self.obstacles,alive_enemies)
+                # Calculate delta time AFTER the previous tick
+                # Get milliseconds since last frame and normalize to 60 FPS baseline
+                dt = min(self.clock.get_time() / (1000.0 / 60.0), 3.0)  # Cap at 3x to prevent huge jumps
+                
+                self.player.update(keys, self.obstacles, alive_enemies, dt)
                 self.player.draw(self.screen)
             
             self.handle_scrolling()
@@ -318,7 +325,7 @@ class Level1(Game):
         print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
         
     def initialize_game_objects(self):
-        self.player = mainCharacter(self.start_position[0], self.start_position[1])
+        self.player = MainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
         self.player.enemies = self.enemies
         
@@ -411,7 +418,7 @@ class BossLevel1(Game):
                             self.obstacles.append(obstacle)
                             
     def initialize_game_objects(self):
-        self.player = mainCharacter(self.start_position[0], self.start_position[1])
+        self.player = MainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
         self.player.enemies = self.enemies
         
