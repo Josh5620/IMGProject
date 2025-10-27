@@ -11,7 +11,7 @@ import pygame
 import json
 import os
 import math
-from entities import MainCharacter, Powerup, Enemy
+from entities import mainCharacter, Powerup, Enemy
 from Level1Enemies import Level1Enemy
 from Level2Enemies import Level2Enemy, Level2HunterEnemy, Level2StealthEnemy, Level2BossEnemy
 
@@ -63,7 +63,7 @@ class SandboxMode:
         print("Initializing Sandbox Mode...")
         
         # Create player
-        self.player = MainCharacter(100, 500)
+        self.player = mainCharacter(100, 500)
         self.player.level = self
         
         # Create simple floor obstacle
