@@ -16,7 +16,6 @@ class Game:
         
         self.scroll = 0
         self.ground_scroll = 0
-        self.player_prev_x = 0
         
         self.bg_images = []
         self.bg_width = 0
@@ -26,6 +25,7 @@ class Game:
         
         self.font = pygame.font.Font(None, 36)
         self.heart = None
+        self.mushroom_icon = None
         self.mushroomCount = 0
         
         self.player = None
@@ -50,6 +50,9 @@ class Game:
         heart = pygame.image.load('assets/heart.png').convert_alpha()
         self.heart = pygame.transform.scale_by(heart, 0.05)
         
+        mushroom_icon = pygame.image.load('assets/mushroom.png').convert_alpha()
+        self.mushroom_icon = pygame.transform.scale(mushroom_icon, (30, 30))
+        
     def reset_game(self):
         if self.player:
             self.player.lives = 500
@@ -60,7 +63,6 @@ class Game:
             self.player.won = False
         self.scroll = 0
         self.ground_scroll = 0
-        self.player_prev_x = self.start_position[0]
         
     def draw_bg(self):
         start_bg_x = int(self.scroll // self.bg_width) - 1
@@ -118,14 +120,11 @@ class Game:
         fps = self.clock.get_fps()
         fps_text = self.font.render(f"FPS: {fps:.1f}", True, (255, 255, 255))
         self.screen.blit(fps_text, (self.WIDTH - 150, 10))
-        
-        bg_scroll_text = self.font.render(f"BG Scroll: {self.scroll:.1f}", True, (255, 255, 255))
-        ground_scroll_text = self.font.render(f"Ground Scroll: {self.ground_scroll:.1f}", True, (255, 255, 255))
-        self.screen.blit(bg_scroll_text, (self.WIDTH - 250, 50))
-        self.screen.blit(ground_scroll_text, (self.WIDTH - 250, 90))
-        
-        pygame.draw.line(self.screen, (255, 0, 0), (self.scroll_threshold, 0), (self.scroll_threshold, self.HEIGHT))
-        pygame.draw.line(self.screen, (255, 0, 0), (self.WIDTH - self.scroll_threshold, 0), (self.WIDTH - self.scroll_threshold, self.HEIGHT))
+    
+    def draw_mushroom_count(self):
+        self.screen.blit(self.mushroom_icon, (self.WIDTH - 150, 50))
+        mushroom_text = self.font.render(f"x {self.mushroomCount}", True, (255, 255, 255))
+        self.screen.blit(mushroom_text, (self.WIDTH - 110, 55))
         
     def draw_tilemap(self):
         if not self.tmx_data:
@@ -158,20 +157,16 @@ class Game:
             obstacle.draw(self.screen)
             
     def update_enemies(self):
-        # MEMORY LEAK FIX: More efficient enemy list management
         for enemy in self.enemies:
-            if enemy.alive:  # Only update alive enemies
-                if hasattr(enemy, '__class__') and hasattr(enemy.__class__, '__bases__') and Level1Enemy in enemy.__class__.__bases__:
+            if enemy.alive:
+                if isinstance(enemy, Level1Enemy):
                     enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
                 else:
                     enemy.update(self.player)
                 
                 enemy.draw(self.screen)
         
-        # Remove dead enemies after all updates
-        alive_enemies = [e for e in self.enemies if e.alive]
-        self.enemies = alive_enemies
-        return alive_enemies
+        self.enemies = [e for e in self.enemies if e.alive]
     
     def check_mushroom_collection(self):
         if not self.player:
@@ -212,7 +207,7 @@ class Game:
             self.update_obstacles()
             self.draw_tilemap()
             self.update_particles()
-            alive_enemies = self.update_enemies()
+            self.update_enemies()
             
             # MEMORY LEAK FIX: More efficient arrow cleanup
             active_arrows = []
@@ -238,12 +233,13 @@ class Game:
             self.handle_input(keys)
             
             if self.player:
-                self.player.update(keys, self.obstacles,alive_enemies)
+                self.player.update(keys, self.obstacles, self.enemies)
                 self.player.draw(self.screen)
             
             self.handle_scrolling()
             
             self.update_lives()
+            self.draw_mushroom_count()
             self.draw_debug_info()
             
             game_state = self.check_win_lose_conditions()
@@ -269,6 +265,7 @@ class Level1(Game):
     def process_tilemap(self):
         TILE_SIZE = 32
         self.obstacles = []
+        self.enemies = []
         self.start_position = (0, 100)
         
         objectLayer = self.tmx_data.get_layer_by_name("Object Layer 1")
@@ -280,28 +277,30 @@ class Level1(Game):
 
                 props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
                 typ = props.get("type")
-                if typ == "tombstone":
-                    self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
-                elif typ == "ice":
-                    self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
-                else:
-                    self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
+                
+                # Use dictionary mapping for obstacle types
+                obstacle_map = {
+                    "tombstone": Spikes,
+                    "ice": Ice
+                }
+                obstacle_class = obstacle_map.get(typ, block)
+                self.obstacles.append(obstacle_class(x * TILE_SIZE, y * TILE_SIZE))
         
         
         if isinstance(objectLayer, pytmx.TiledObjectGroup):
-            self.enemies = []
-            
             for obj in objectLayer:
                 typ = getattr(obj, "type", None) or (obj.properties or {}).get("type")
+                block_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
+                
                 if typ == "end":
                     self.obstacles.append(end(obj.x, obj.y))
-                if typ == "breakable":
-                    block_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
-                    new_block = BreakableBlock(obj.x, obj.y, block_image)
-                    self.enemies.append(new_block)
                 elif typ == "start":
                     self.obstacles.append(start(obj.x, obj.y))
                     self.start_position = (obj.x + 30, obj.y - 70)
+                elif typ == "breakable":
+                    self.enemies.append(BreakableBlock(obj.x, obj.y, block_image))
+                elif typ == "mushroom":
+                    self.enemies.append(Mushroom(obj.x, obj.y, block_image))
                 elif typ == "archer":
                     enemy = Archer(obj.x, obj.y - 32)
                     enemy.level = self
@@ -310,10 +309,6 @@ class Level1(Game):
                     enemy = Warrior(obj.x, obj.y - 32)
                     enemy.level = self
                     self.enemies.append(enemy)
-                elif typ == "mushroom":
-                    block_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
-                    new_block = Mushroom(obj.x, obj.y, block_image)
-                    self.enemies.append(new_block)
                     
         print(f"Level 1 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
@@ -322,9 +317,6 @@ class Level1(Game):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
         self.player.enemies = self.enemies
-        
-        if not hasattr(self, 'enemies') or self.enemies is None:
-            self.enemies = []
 
 #class Level2(Game):
 #    def __init__(self, width=960, height=640):
@@ -348,62 +340,58 @@ class BossLevel1(Game):
     def process_tilemap(self):
         TILE_SIZE = 32
         self.obstacles = []
-        found_gids = set()
+        self.enemies = []
         self.start_position = (0, 100)
         
         for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):
                 for x, y, gid in layer:
-                    if gid != 0:
-                        found_gids.add(gid)
+                    if gid == 0:
+                        continue
                         
-                        props = self.tmx_data.get_tile_properties_by_gid(gid)
+                    props = self.tmx_data.get_tile_properties_by_gid(gid)
+                    
+                    # Handle enemy spawns - check if enemy property exists and get its AI type
+                    if props and "enemy" in props:
+                        ai_type = props.get("enemy")
+                        enemy_x = x * TILE_SIZE
+                        enemy_y = (y * TILE_SIZE) - 32
                         
-                        # Handle enemy spawns - check if enemy property exists and get its AI type
-                        if props and "enemy" in props:
-                            ai_type = props.get("enemy")
-                            enemy_x = x * TILE_SIZE
-                            enemy_y = (y * TILE_SIZE) - 32
-                            
-                            # Create appropriate enemy type
-                            if ai_type == "archer":
-                                enemy = Archer(enemy_x, enemy_y)
-                                enemy.level = self
-                                self.enemies.append(enemy)
-                            elif ai_type == "warrior":
-                                enemy = Warrior(enemy_x, enemy_y)
-                                enemy.level = self
-                                self.enemies.append(enemy)
-
-                            
+                        # Use dictionary mapping for enemy types
+                        enemy_map = {
+                            "archer": Archer,
+                            "warrior": Warrior
+                        }
+                        if ai_type in enemy_map:
+                            enemy = enemy_map[ai_type](enemy_x, enemy_y)
+                            enemy.level = self
+                            self.enemies.append(enemy)
                             print(f"Spawned {ai_type} enemy at ({enemy_x}, {enemy_y})")
+                    
+                    # Handle obstacle types
+                    elif props:
+                        typ = props.get("type")
+                        obstacle_map = {
+                            "tombstone": Spikes,
+                            "ice": Ice,
+                            "start": start,
+                            "end": end
+                        }
                         
-                        # Handle other tile types
-                        elif props and props.get("type") == "tombstone":
-                            obstacle = Spikes(x * TILE_SIZE, y * TILE_SIZE)
+                        if typ in obstacle_map:
+                            obstacle = obstacle_map[typ](x * TILE_SIZE, y * TILE_SIZE)
                             self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "ice":
-                            obstacle = Ice(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "start":
-                            obstacle = start(x * TILE_SIZE, y * TILE_SIZE)
-                            self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
-                            self.obstacles.append(obstacle)
-                        elif props and props.get("type") == "end":
-                            obstacle = end(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
+                            
+                            if typ == "start":
+                                self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
                         else:
                             # Regular block
-                            obstacle = block(x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
+                            self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
                             
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
         self.player.enemies = self.enemies
-        
-        if not hasattr(self, 'enemies') or self.enemies is None:
-            self.enemies = []
     
     def run(self, screen):
         self.doScroll = False

@@ -259,7 +259,7 @@ class Level1Enemy:
         self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
 
-        if self.player_spotted and self.exclamation_img:
+        if self.player_spotted:
             bounce = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 3
             exclamation_x = screen_x + self.rect.width // 2 - self.exclamation_img.get_width() // 2
             exclamation_y = screen_y - self.exclamation_img.get_height() - 5 - bounce
@@ -627,6 +627,9 @@ class BreakableBlock(Level1Enemy): # <-- Inherit from Enemy
     def on_player_spotted(self, player):
         pass
 
+    def is_player_in_sight(self, player):
+        return False
+
 class Mushroom(BreakableBlock):
     def __init__(self, x, y, image):
         super().__init__(x, y, image)
@@ -663,3 +666,4 @@ class Mushroom(BreakableBlock):
         
     def on_attack(self, player):
         pass
+    
