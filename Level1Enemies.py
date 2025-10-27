@@ -1,11 +1,24 @@
 import pygame
 import math
-from weapons.projectiles import ProjectileManager, EnemyProjectile, ChargedProjectile
+from entities import build_state_animations_from_manifest
+import time
+
+WARRIOR_ANIM = {
+    "run":       {"file": "assets/Level1/Warrior/Run.png",       "frame_width": 40},
+    "attack": {"file": "assets/Level1/Warrior/Attack.png", "frame_width": 40}
+}
+
+ARCHER_ANIM = {
+    "run":       {"file": "assets/Level1/Archer/Run.png",       "frame_width": 64},
+    "attack": {"file": "assets/Level1/Archer/Attack.png", "frame_width": 64}
+}
 
 
 class Level1Enemy:
     
-    def __init__(self, x, y, width=48, height=48):
+    def __init__(self, x, y, width=48, height=48, anim_manifest : dict = None):
+        
+        
         self.rect        = pygame.Rect(x, y, width, height)
         self.original_x  = x
         self.original_y  = y
@@ -43,13 +56,74 @@ class Level1Enemy:
 
         self.attack_range     = pygame.Vector2(40, 40)
         self.player_in_attack = False
-        self.attack_cooldown = 1000  
+        self.attack_cooldown = 3000  
         self.last_attack_time = 0
         self.attack_flash_time = 1500  
         self.attack_flash_until = 0
         
         self.exclamation_img = pygame.image.load("assets/exclamation.png").convert_alpha()
         self.exclamation_img = pygame.transform.scale(self.exclamation_img, (16, 24))
+        self.anims = build_state_animations_from_manifest(anim_manifest or {})
+        self.anim_tick = 0
+        self.anim_speed = 10
+        self.attack_anim_timer = 0
+        self.attack_anim_elapsed = 0
+        self.attack_anim_duration = 0
+        self.current_state = "run" if "run" in self.anims else None
+        if "run" in self.anims and self.anims["run"]:
+            self.image = self.anims["run"][0]
+        self._last_x = self.rect.x
+        if not hasattr(self, "facing_right"):
+            self.facing_right = True
+            
+            
+    def _anim_index(self, frames):
+        if not frames:
+            return 0
+        return (self.anim_tick // self.anim_speed) % len(frames)
+
+    def update_anim_timers(self, dt):
+        if self.attack_anim_timer > 0:
+            self.attack_anim_timer = max(0, self.attack_anim_timer - dt)
+            self.attack_anim_elapsed = min(self.attack_anim_duration, self.attack_anim_elapsed + dt)
+
+
+    def start_attack_anim(self, duration_ms=400):
+        self.attack_anim_duration = max(1, duration_ms)
+        self.attack_anim_timer = duration_ms
+        self.attack_anim_elapsed = 0
+
+    def update_animation(self):
+        self.anim_tick = (self.anim_tick + 1) % 10000000
+
+        # Attack animation (non-looping)
+        if self.attack_anim_timer > 0 and "attack" in self.anims and self.anims["attack"]:
+            state = "attack"
+            frames = self.anims["attack"]
+            if frames:
+                progress = self.attack_anim_elapsed / self.attack_anim_duration
+                idx = min(int(progress * len(frames)), len(frames) - 1)
+            else:
+                idx = 0
+
+        else:
+            state = "run" if "run" in self.anims else None
+            frames = self.anims.get("run", [])
+            if state and frames:
+                if self.rect.x == self._last_x:
+                    idx = 0  
+                else:
+                    idx = (self.anim_tick // self.anim_speed) % len(frames)
+            else:
+                idx = 0
+
+        if state and frames:
+            img = frames[idx]
+            self.image = img if self.facing_right else pygame.transform.flip(img, True, False)
+            self.current_state = state
+
+        self._last_x = self.rect.x
+
 
         
     def update(self, player, dt=1.0, obstacles=None, scroll_offset=0):
@@ -59,7 +133,6 @@ class Level1Enemy:
         # Set scroll offset first
         self.scroll_offset = scroll_offset
         
-        # Convert player from screen coordinates to world coordinates
         self.player_world_rect = player.rect.copy()
         self.player_world_rect.x += self.scroll_offset
 
@@ -79,6 +152,8 @@ class Level1Enemy:
         self.update_attack_detection(player)
         if self.player_in_attack:
             self.attack(player)
+        self.update_anim_timers(dt)
+        self.update_animation()
   
     def update_timers(self, dt):
         self.ai_timer += dt
@@ -302,6 +377,7 @@ class Level1Enemy:
         if now - self.last_attack_time >= self.attack_cooldown:
             if self.player_in_attack:
                 self.last_attack_time = now
+                
                 self.on_attack(player)  # call simple attack event
 
     def on_attack(self, player):
@@ -322,8 +398,8 @@ class Level1Enemy:
 class Archer(Level1Enemy):
     
     def __init__(self, x, y, width=48, height=48):
-        super().__init__(x, y, width, height)
-        self.image.fill((0, 0, 255))
+        super().__init__(x, y, width, height, anim_manifest=ARCHER_ANIM)
+
         self.sight_range = 250
         self.sight_width = 60
         self.patrol_range = 400
@@ -332,15 +408,18 @@ class Archer(Level1Enemy):
         self.patrol_right_bound = x + self.patrol_range // 2
         self.speed = 1.2
         self.name = "Archer"
+        self.pending_arrow = False
+        self.arrow_spawn_time = 0
+        self.debug_mode = False
 
-        # shooting setup
-        self.shoot_cooldown = 1000  # 1 second between shots
+
+        self.shoot_cooldown = 2000  
         self.last_shot_time = 0
         self.arrow_speed = 6
         self.isIdle = False
         
         # Shooting delay after spotting player
-        self.shoot_delay = 1000  # 1 second delay after first spotting player
+        self.shoot_delay = 2000  
         self.first_spotted_time = 0
         self.player_spotted_recently = False
         
@@ -366,7 +445,8 @@ class Archer(Level1Enemy):
     def on_attack(self, player):
         spawn_x = self.rect.right if self.facing_right else self.rect.left - 16
         spawn_y = self.rect.centery - 4
-
+        
+        self.start_attack_anim(200)
         arrow = Arrow(spawn_x, spawn_y, dir_right=self.facing_right, speed=self.arrow_speed)
 
         if hasattr(self, "level") and hasattr(self.level, "arrows"):
@@ -388,18 +468,21 @@ class Archer(Level1Enemy):
 
         if player and self.is_player_in_sight(player):
             distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
+            
 
             if distance_to_player < 60: 
                 return 
             if not self.player_spotted_recently:
                 self.player_spotted_recently = True
                 self.first_spotted_time = pygame.time.get_ticks()
-                # Trigger exclamation when first spotting player
+                
                 self.player_detected = True
                 self.detection_timer = self.detection_duration
                 print(f"{self.name} spotted player! Preparing to shoot...")
+                self.start_attack_anim(200)
             
             if self.can_shoot():
+                
                 self.on_attack(player)
             if player.rect.centerx + self.scroll_offset > self.rect.centerx:
                 self.facing_right = True
@@ -428,8 +511,8 @@ class Warrior(Level1Enemy):
     
     
     def __init__(self, x, y, width=48, height=48):
-        super().__init__(x, y, width, height)
-        self.image.fill((255, 0, 0))
+        super().__init__(x, y, width, height, anim_manifest=WARRIOR_ANIM)
+        
         self.sight_range = 150
         self.sight_width = 100
         self.patrol_range = 100
@@ -442,6 +525,7 @@ class Warrior(Level1Enemy):
         self.chase_speed = 1.5
         self.chase_range = 300
         self.start_x = x
+        self.debug_mode = False
         
         # Exclamation indicator for player detection
         self.player_detected = False
@@ -508,7 +592,7 @@ class Warrior(Level1Enemy):
         print("Warrior sees player! Starting the chase!")
     
     def on_attack(self, player):
-
+        self.start_attack_anim(30)
         hit_width, hit_height = 60, 40  # adjust to taste
         if self.facing_right:
             x = self.rect.right
@@ -518,7 +602,7 @@ class Warrior(Level1Enemy):
 
         hit_box = pygame.Rect(x, y, hit_width, hit_height)
 
-
+        
         surface = pygame.display.get_surface()
         if surface:
 

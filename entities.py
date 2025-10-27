@@ -8,7 +8,7 @@ from particles import ScreenDropletParticle
 
 
 # ===== Sprite Animation System (one-row spritesheets) =====
-FRAME_TARGET_SIZE = (64, 64)  # final draw size for consistency
+FRAME_TARGET_SIZE = (48, 48)  # final draw size for consistency
 
 ANIM_MANIFEST = {
     "idle":      {"file": "assets/redhood/idle.png",      "frame_count": 18},
@@ -17,12 +17,6 @@ ANIM_MANIFEST = {
     "fall":      {"alias": "jump"},            # reuse jump frames while falling
     "light_atk": {"file": "assets/redhood/light_atk.png", "frame_width": 40},
     "hurt":      {"file": "assets/redhood/hurt.png",      "frame_count": 6},
-    # compatibility aliases (so older state names keep working)
-    "attack":        {"alias": "light_atk"},
-    "charge":        {"alias": "light_atk"},
-    "jump_start":    {"alias": "jump"},
-    "jump_to_fall":  {"alias": "jump"},
-    "wall_jump":     {"alias": "jump"},
 }
 
 def _slice_one_row(sheet: pygame.Surface, *, frame_width=None, frame_count=None,
