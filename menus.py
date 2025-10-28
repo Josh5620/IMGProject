@@ -308,7 +308,7 @@ class DialogueScreen:
 def run_game_intro(WIDTH, HEIGHT, screen):
 
     intro_dialogue = DialogueScreen(
-        text="TEST TEST CAT GO FIND MUSHROOMS FOR GRANDMA!",
+        text="Red Hood! Search for the Shroomlight!",
         font_size=20,
         screen_rect=screen.get_rect(),
         speed=200, 

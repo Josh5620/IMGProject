@@ -18,6 +18,9 @@ class block:
     def update_position(self, scroll):
         self.rect.x = self.original_x - scroll
         self.rect.y = self.original_y
+
+    def update(self):
+        pass
     
     def draw(self, surface):
         if self.rect.x > -self.rect.width and self.rect.x < surface.get_width():
@@ -29,7 +32,51 @@ class block:
     def get_rect(self):
         return self.rect
     
+class AnimatedTrap(block):
+    def __init__(self, x, y, spritesheet_path, frame_width, frame_height, damage=1, cooldown=1000):
+
+        super().__init__(x, y)
+        spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+        self.frames = []
+        for i in range(spritesheet.get_width() // frame_width):
+            frame = spritesheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height))
+            self.frames.append(frame)
+
+        self.current_frame = 0
+        self.image = self.frames[self.current_frame]
+        self.rect = self.image.get_rect(midtop=(x, y))
+
+        hitbox_width = self.rect.width * 0.5
+        hitbox_height = self.rect.height * 0.5
+        self.hitbox = pygame.Rect(0, 0, hitbox_width, hitbox_height)
+        self.hitbox.center = self.rect.center
+
+        self.animation_speed = 50 # milliseconds per frame
+        self.last_update = pygame.time.get_ticks()
+
+        self.damage = damage
+        self.cooldown_duration = cooldown
+        self.last_hit_time = 0
+
+    def update_animation(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.animation_speed:
+            self.last_update = now
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.image = self.frames[self.current_frame]
     
+    def check_collision(self, player):
+        now = pygame.time.get_ticks()
+        if self.rect.colliderect(player.rect):
+            if now - self.last_hit_time > self.cooldown_duration:
+                self.last_hit_time = now
+                player.lives -= self.damage
+                player.iFrame()
+
+    def update(self, player):
+        self.update_animation()
+        self.check_collision(player)
+
 class Spikes(block):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -96,3 +143,4 @@ class Ice(block):
             player.slow_until = current_time + 2000  # 2 seconds
 
         return 0
+    

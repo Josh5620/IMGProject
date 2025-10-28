@@ -2,7 +2,7 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
-from blocks import block, Spikes, start, end, Ice
+from blocks import block, Spikes, start, end, Ice, AnimatedTrap
 from particles import LeafParticle
 import random
 
@@ -21,6 +21,8 @@ class Game:
         self.bg_width = 0
         self.tmx_data = None
         self.obstacles = []
+        self.animated_traps = []
+        self.spatial_hash = {}
         self.start_position = (300, 300)
 
         self.debug_mode = False # Start with debug mode off
@@ -152,10 +154,24 @@ class Game:
                         obj_x = obj.x - self.ground_scroll
                         if obj_x > -obj.width and obj_x < self.WIDTH:
                             self.screen.blit(image, (obj_x, obj.y))
+
+    def build_spatial_hash(self):
+        """Organizes all static obstacles into a spatial hash for efficient collision detection."""
+        print("Building spatial hash...")
+        TILE_SIZE = 32
+        self.spatial_hash.clear()
+        for obstacle in self.obstacles:
+            # Determine which grid cell(s) the obstacle overlaps with.
+            # For simplicity, we'll use its top-left corner.
+            key = (int(obstacle.rect.x // TILE_SIZE), int(obstacle.rect.y // TILE_SIZE))
+            if key not in self.spatial_hash:
+                self.spatial_hash[key] = []
+            self.spatial_hash[key].append(obstacle)
                             
     def update_obstacles(self):
         for obstacle in self.obstacles:
             obstacle.update_position(self.ground_scroll)
+            obstacle.update()
             obstacle.draw(self.screen)
             
     def update_enemies(self):
@@ -259,6 +275,12 @@ class Game:
             keys = pygame.key.get_pressed()
             self.handle_input(keys)
             
+            # For damage with animated traps
+            if self.player:
+                for trap in self.animated_traps:
+                    trap.update(self.player)
+                    self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+
             if self.player:
                 self.player.update(keys, self.obstacles, self.enemies)
                 self.player.draw(self.screen)
@@ -353,6 +375,7 @@ class Level2(Game):
        self.load_background('assets/BGL2', 5)
        self.load_tilemap("DungeonMap.tmx")
        self.load_ui_assets()
+       self.animated_traps = []
 
        self.process_tilemap()
        self.initialize_game_objects()
@@ -392,7 +415,19 @@ class Level2(Game):
                 elif typ == "start":
                     self.obstacles.append(start(obj.x, obj.y))
                     self.start_position = (obj.x , obj.y - 70)
+                    continue
+                elif typ == "sawtrap":
+                    
+
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y 
+                    trap = AnimatedTrap(anchor_x, anchor_y, 'assets/Level2/Traps/SawTrap.png', 64, 32)
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    continue
         
+        self.build_spatial_hash() # Build spatial hash after obstacles are created
+
     def initialize_game_objects(self):
         if self.start_position:
             self.player = mainCharacter(self.start_position[0], self.start_position[1])
