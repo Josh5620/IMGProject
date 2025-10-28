@@ -11,9 +11,10 @@ import pygame
 import json
 import os
 import math
-from entities import mainCharacter, Powerup, Enemy
+import random
+import inspect
+from entities import mainCharacter, Powerup, Enemy, MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
 from Level1Enemies import Level1Enemy
-from Level2Enemies import Level2Enemy, Level2HunterEnemy, Level2StealthEnemy, Level2BossEnemy
 
 
 class SandboxMode:
@@ -191,17 +192,29 @@ class SandboxMode:
             enemy.level = 1  # Add level attribute
             print(f"Spawned Level 1 {current_ai} enemy at ({x}, {y})")
         else:
-            # Level 2 enemies (BOSS level)
+            # Level 2 - NEW ENEMIES from entities.py
             if current_ai == "basic":
-                enemy = Level2Enemy(x, y)
+                # Spawn one of the 3 new enemies randomly
+                enemy_type = random.choice(["mushroom", "skeleton", "flying"])
+                if enemy_type == "mushroom":
+                    enemy = MutatedMushroom(x, y)
+                elif enemy_type == "skeleton":
+                    enemy = Skeleton(x, y)
+                elif enemy_type == "flying":
+                    enemy = FlyingMonster(x, y)
+                else:
+                    enemy = MutatedMushroom(x, y)  # Default
             elif current_ai == "hunter":
-                enemy = Level2HunterEnemy(x, y)
+                # Hunter is also one of the 3 new enemies
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
             elif current_ai == "stealth":
-                enemy = Level2StealthEnemy(x, y)
+                # Stealth is also one of the 3 new enemies
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
             elif current_ai == "boss":
-                enemy = Level2BossEnemy(x, y)
+                enemy = Level2Boss(x, y)  # Use new Level2Boss from entities.py
             else:
-                enemy = Level2Enemy(x, y)  # Default to basic
+                # Default to one of the 3 new enemies
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
             
             enemy.level = 2  # Add level attribute
             print(f"Spawned Level 2 {current_ai} enemy at ({x}, {y})")
@@ -297,7 +310,7 @@ class SandboxMode:
         
         # Update player (with or without gravity)
         if self.gravity_enabled:
-            self.player.update(keys, self.obstacles, self.enemies, effective_dt)
+            self.player.update(keys, self.obstacles, self.enemies)
         else:
             # Manual movement without gravity
             if keys[pygame.K_LEFT]:
@@ -316,7 +329,12 @@ class SandboxMode:
         # Update enemies
         for enemy in self.enemies[:]:
             if hasattr(enemy, 'level') and enemy.level == 2:  # Level 2 enemies
-                enemy.update(self.player, self.obstacles, effective_dt)
+                # Check if enemy is from entities.py (has obstacles parameter in update)
+                sig = inspect.signature(enemy.update)
+                if len(sig.parameters) >= 4:  # Has obstacles parameter
+                    enemy.update(self.player, effective_dt, self.obstacles)
+                else:
+                    enemy.update(self.player, effective_dt)
             else:  # Level 1 enemies
                 enemy.update(self.player, effective_dt)
             

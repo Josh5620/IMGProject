@@ -1,10 +1,18 @@
 {
   "player": {
-    "x": 255,
-    "y": 508,
-    "lives": -7
+    "x": 354,
+    "y": 532,
+    "lives": -8
   },
-  "enemies": [],
+  "enemies": [
+    {
+      "x": 346,
+      "y": 482,
+      "ai_type": "chase",
+      "health": 100,
+      "projectiles": 0
+    }
+  ],
   "powerups": [],
   "settings": {
     "current_ai_index": 0,
