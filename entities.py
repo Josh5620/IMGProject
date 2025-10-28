@@ -943,6 +943,10 @@ class Enemy:
         """Advanced boss AI with multiple phases"""
         distance = abs(player.rect.centerx - self.rect.centerx)
         
+        # BOUNDARY CHECK - Keep boss on screen (0 to 960 width)
+        # Clamp boss position to screen bounds
+        self.rect.x = max(50, min(self.rect.x, 910))  # 50 to 910 to keep boss visible (960 - 64 + some buffer)
+        
         # Back away if too close - gives player chance to escape
         if distance < 60:  # Increased from 40 to 60
             if player.rect.centerx < self.rect.centerx:
@@ -953,22 +957,53 @@ class Enemy:
                 self.rect.x -= self.speed * dt * 1.5  # Increased from 0.5 to 1.5
             return
         
+        # Boss actively chases the player based on health phase
         # Phase based on health
         if self.health > self.max_health * 0.7:
-            # Phase 1: Slow chase
-            self._ai_chase(player, dt * 0.5)
+            # Phase 1: Slow chase - ALWAYS chase
+            if distance < 500:  # Chase range
+                if player.rect.centerx < self.rect.centerx:
+                    self.direction = -1
+                    self.rect.x -= self.speed * dt
+                else:
+                    self.direction = 1
+                    self.rect.x += self.speed * dt
+                
+                # Melee attack if close enough
+                if distance < self.melee_range and self.attack_cooldown <= 0:
+                    self._attack_melee(player)
+                    self.attack_cooldown = 120
         elif self.health > self.max_health * 0.3:
-            # Phase 2: Fast ranged attacks + combos
-            self._ai_ranged(player, dt * 1.5)
-            if self.attack_cooldown <= 0:
-                self._combo_attack_phase2(player)
-                self.attack_cooldown = 60
+            # Phase 2: Moderate chase with ranged attacks
+            if distance < 600:  # Larger chase range
+                if player.rect.centerx < self.rect.centerx:
+                    self.direction = -1
+                    self.rect.x -= self.speed * dt * 1.2
+                else:
+                    self.direction = 1
+                    self.rect.x += self.speed * dt * 1.2
+                
+                # Ranged attack
+                if self.attack_cooldown <= 0 and distance > self.melee_range:
+                    self._attack_ranged(player)
+                    self.attack_cooldown = 90
         else:
-            # Phase 3: Desperate rush + ultimate combos
-            self._ai_chase(player, dt * 2.0)
-            if self.attack_cooldown <= 0:
-                self._desperate_combo_attack(player)
-                self.attack_cooldown = 45  # Even faster
+            # Phase 3: Aggressive chase - ALWAYS pursue
+            if distance < 700:  # Even larger chase range
+                if player.rect.centerx < self.rect.centerx:
+                    self.direction = -1
+                    self.rect.x -= self.speed * dt * 1.5
+                else:
+                    self.direction = 1
+                    self.rect.x += self.speed * dt * 1.5
+                
+                # Aggressive attacks
+                if self.attack_cooldown <= 0:
+                    if distance < self.melee_range:
+                        self._attack_melee(player)
+                    else:
+                        self._attack_ranged(player)
+                    self.attack_cooldown = 60
     
     def _combo_attack_phase2(self, player):
         """Phase 2 combo attack - rapid fire projectiles"""
