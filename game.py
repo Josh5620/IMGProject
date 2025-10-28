@@ -55,7 +55,7 @@ class Game:
         
     def reset_game(self):
         if self.player:
-            self.player.lives = 500
+            self.player.lives = 3
             self.player.x = self.start_position[0]
             self.player.y = self.start_position[1]
             self.player.rect.x = self.start_position[0]

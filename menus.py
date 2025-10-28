@@ -8,6 +8,8 @@ class baseMenu():
         self.buttons = buttons
         self.selected_index = 0
         self.font = pygame.font.Font(None, 50)
+        self.background = pygame.image.load('assets/menuBack.jpeg').convert()
+        self.background = pygame.transform.scale(self.background, (960, 640))
     
     def move_selection(self, direction):
         self.selected_index = (self.selected_index + direction) % len(self.buttons)
@@ -15,6 +17,7 @@ class baseMenu():
 
     def draw(self, screen):
         screen.fill((0, 0, 0))  # Clear screen with black
+        screen.blit(self.background, (0, 0))
         if self.title_image:
             title_rect = self.title_image.get_rect(center=(screen.get_width() // 2, 150))
             screen.blit(self.title_image, title_rect)

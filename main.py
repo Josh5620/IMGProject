@@ -1,10 +1,10 @@
 import pygame
 from game import Level1, BossLevel1
 from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro
-from sandbox import sandbox_mode
 
 
 
+ 
 pygame.init()
 WIDTH, HEIGHT = 960, 640
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -12,7 +12,7 @@ pygame.display.set_caption("CAT-ching Mushrooms QUEST FOR GRANDMA")
  
 game_state = "start"
 
-level1 = Level1(WIDTH, HEIGHT)
+level1 = Level1(WIDTH, HEIGHT)  
 
 def start_game_wrapper():
     global game_state
@@ -32,13 +32,13 @@ def start_game_wrapper():
         # Default to Level 1
         result = level1.run(screen)
     
-    if result == "quit":
+    if result == "quit": 
         game_state = "quit"
     elif result == "game_over": 
         game_state = "retry"
     elif result == "boss_level1":
         game_state = "boss_level1"
-    else:
+    else:  
         game_state = "start"
 
 def quit_to_start():
