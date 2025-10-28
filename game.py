@@ -22,6 +22,8 @@ class Game:
         self.tmx_data = None
         self.obstacles = []
         self.start_position = (300, 300)
+
+        self.debug_mode = False # Start with debug mode off
         
         self.font = pygame.font.Font(None, 36)
         self.heart = None
@@ -182,8 +184,32 @@ class Game:
         if keys[pygame.K_w]:
             if self.player and not self.player.invulnerable:
                 self.player.take_damage()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_b: # 'B' for Boxes
+                    self.debug_mode = not self.debug_mode
+                    print(f"Debug Mode: {'ON' if self.debug_mode else 'OFF'}")
                 
+
+    def draw_debug_info(self):
+        """Draws collision boxes if debug mode is active."""
+        if not self.debug_mode:
+            return
+
+        # Draw player's collision box in blue
+        if self.player:
+            player_screen_rect = self.player.rect.copy()
+            player_screen_rect.x -= self.ground_scroll
+            pygame.draw.rect(self.screen, (0, 0, 255), player_screen_rect, 2)
+
+        # Draw all obstacle collision boxes in red
+        for obstacle in self.obstacles:
+            obstacle_screen_rect = obstacle.rect.copy()
+            obstacle_screen_rect.x -= self.ground_scroll
+            pygame.draw.rect(self.screen, (255, 0, 0), obstacle_screen_rect, 1)
                 
+
     def check_win_lose_conditions(self):
         if self.player.lives <= 0:
             return "game_over"
@@ -228,7 +254,8 @@ class Game:
             
             # Check for mushroom collection
             self.check_mushroom_collection()
-            
+            self.draw_debug_info()
+
             keys = pygame.key.get_pressed()
             self.handle_input(keys)
             
@@ -318,9 +345,63 @@ class Level1(Game):
         self.player.level = self
         self.player.enemies = self.enemies
 
-#class Level2(Game):
-#    def __init__(self, width=960, height=640):
-#       super().__init__(width, height)
+class Level2(Game):
+    def __init__(self, width=960, height=640):
+       super().__init__(width, height)
+
+       #--- Assets loading ---
+       self.load_background('assets/BGL2', 5)
+       self.load_tilemap("DungeonMap.tmx")
+       self.load_ui_assets()
+
+       self.process_tilemap()
+       self.initialize_game_objects()
+
+    def process_tilemap(self):
+        TILE_SIZE = 32
+        self.obstacles = []
+        self.enemies = []
+        self.start_position = (0, 100)
+        
+        objectLayer = self.tmx_data.get_layer_by_name("Object Layer 1")
+        tile_layer = self.tmx_data.get_layer_by_name("Tile Layer 1")
+        if isinstance(tile_layer, pytmx.TiledTileLayer):
+            for x, y, gid in tile_layer.iter_data():
+
+                if not gid:
+                    continue
+
+                props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
+                typ = props.get("type")
+                
+                # Use dictionary mapping for obstacle types
+                obstacle_map = {
+                    "tombstone": Spikes,
+                    "ice": Ice
+                }
+                obstacle_class = obstacle_map.get(typ, block)
+                self.obstacles.append(obstacle_class(x * TILE_SIZE, y * TILE_SIZE))
+        
+        
+        if isinstance(objectLayer, pytmx.TiledObjectGroup):
+            for obj in objectLayer:
+                typ = getattr(obj, "type", None) or (obj.properties or {}).get("type")
+                
+                if typ == "end":
+                    self.obstacles.append(end(obj.x, obj.y))
+                elif typ == "start":
+                    self.obstacles.append(start(obj.x, obj.y))
+                    self.start_position = (obj.x , obj.y - 70)
+        
+    def initialize_game_objects(self):
+        if self.start_position:
+            self.player = mainCharacter(self.start_position[0], self.start_position[1])
+            self.player.level = self
+        else:
+            # Fallback if no start position is found
+            self.player = mainCharacter(100, 100)
+            self.player.level = self
+            print("Warning: No start position found in tilemap. Defaulting to (100, 100).")
 
 
     
