@@ -131,6 +131,10 @@ class WeaponSystem:
                 elif hasattr(enemy, 'collideHurt'):
                     # If enemy uses same pattern as Spikes class
                     enemy.collideHurt(self, MELEE_DAMAGE)
+                
+                # Level 2 - Add to combo when hitting enemies
+                if hasattr(self, 'add_to_combo'):
+                    self.add_to_combo(1)
         
         # Optional: Break blocks with melee attacks
         if blocks:

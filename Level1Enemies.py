@@ -647,7 +647,6 @@ class Arrow:
         self.rect.x += int(self.vx)
         self.rect.y += int(self.vy)
 
-       
         for o in obstacles:
             r = o.get_rect().copy()
             r.x = o.original_x

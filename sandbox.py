@@ -15,6 +15,7 @@ import random
 import inspect
 from entities import mainCharacter, Powerup, Enemy, MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
 from Level1Enemies import Level1Enemy
+from level2_powerups import Level2Powerup, LEVEL2_POWERUP_TYPES
 
 
 class SandboxMode:
@@ -240,12 +241,21 @@ class SandboxMode:
     
     def spawn_powerup(self, x, y):
         """Spawn powerup at specified position"""
-        powerup_types = ["health", "speed", "damage", "shield", "ammo"]
         import random
-        powerup_type = random.choice(powerup_types)
-        powerup = Powerup(x, y, powerup_type)
+        
+        if self.current_level == 2:
+            # Level 2 powerups - enhanced red riding hood themed
+            powerup_type = random.choice(LEVEL2_POWERUP_TYPES)
+            powerup = Level2Powerup(x, y, powerup_type)
+            print(f"Spawned Level 2 {powerup_type} powerup at ({x}, {y})")
+        else:
+            # Level 1 powerups - standard
+            powerup_types = ["health", "speed", "damage", "shield", "ammo"]
+            powerup_type = random.choice(powerup_types)
+            powerup = Powerup(x, y, powerup_type)
+            print(f"Spawned {powerup_type} powerup at ({x}, {y})")
+        
         self.powerups.append(powerup)
-        print(f"Spawned {powerup_type} powerup at ({x}, {y})")
     
     def delete_nearest_entity(self, pos):
         """Delete nearest entity to specified position"""
@@ -309,6 +319,8 @@ class SandboxMode:
         keys = pygame.key.get_pressed()
         
         # Update player (with or without gravity)
+        # Pass current level for Level 2 features
+        self.player.current_level = self.current_level
         if self.gravity_enabled:
             self.player.update(keys, self.obstacles, self.enemies)
         else:
@@ -350,6 +362,32 @@ class SandboxMode:
                         enemy.take_damage(damage)
                         self.player.projectile_manager.projectiles.remove(projectile)
                         print(f"Player projectile hit Level {getattr(enemy, 'level', 1)} enemy for {damage} damage!")
+            
+            # Check enemy projectiles hitting player (Level 2 special attacks)
+            if hasattr(enemy, 'bone_projectiles'):  # Skeleton bones
+                for bone in enemy.bone_projectiles[:]:
+                    bone_rect = pygame.Rect(bone['x'] - 5, bone['y'] - 5, 10, 10)
+                    if bone_rect.colliderect(self.player.rect):
+                        self.player.take_damage(2)
+                        enemy.bone_projectiles.remove(bone)
+                        print("Hit by bone!")
+                        break
+            
+            if hasattr(enemy, 'poison_clouds'):  # Mutated Mushroom poison
+                # Only check if player hasn't been damaged recently by this cloud
+                if not hasattr(self.player, 'last_poison_damage_time'):
+                    self.player.last_poison_damage_time = 0
+                
+                current_time = pygame.time.get_ticks()
+                for cloud in enemy.poison_clouds:
+                    cloud_rect = pygame.Rect(cloud['x'] - cloud['radius'], cloud['y'] - cloud['radius'], 
+                                            cloud['radius'] * 2, cloud['radius'] * 2)
+                    # Only damage every 500ms (50 frames) to avoid massive damage
+                    if cloud_rect.colliderect(self.player.rect) and current_time - self.player.last_poison_damage_time > 500:
+                        self.player.take_damage(1)
+                        self.player.last_poison_damage_time = current_time
+                        print("Poisoned by cloud!")
+                        break
             
             if not enemy.alive:
                 self.enemies.remove(enemy)
@@ -477,12 +515,21 @@ class SandboxMode:
         self.screen.blit(ui_bg, (10, 10))
         
         # Current status
+        combo_text = ""
+        dash_text = ""
+        if self.current_level == 2:
+            # Level 2 features
+            combo_text = f" | Combo: {self.player.combo_count}x ({self.player.combo_timer//60}s left)"
+            dash_status = "READY" if self.player.dash_cooldown <= 0 else f"{self.player.dash_cooldown//60}s"
+            dash_text = f" | Dash: {dash_status}"
+        
         status_lines = [
-            f"Level: {self.current_level} | AI: {self.ai_types[self.current_ai_index]}",
-            f"Enemies: {len(self.enemies)} | Powerups: {len(self.powerups)}",
-            f"Gravity: {'ON' if self.gravity_enabled else 'OFF'} | Slow-Mo: {'ON' if self.slow_motion else 'OFF'}",
+            f"Level: {self.current_level} | AI: {self.ai_types[self.current_ai_index]} {'[L2 POWERUPS]' if self.current_level == 2 else ''}",
+            f"Enemies: {len(self.enemies)} | Powerups: {len(self.powerups)}{combo_text}",
+            f"Gravity: {'ON' if self.gravity_enabled else 'OFF'} | Slow-Mo: {'ON' if self.slow_motion else 'OFF'}{dash_text}",
             f"Mouse Mode: {'ON' if self.mouse_mode else 'OFF'} | Debug: {'ON' if self.debug_mode else 'OFF'}",
             f"Player Lives: {self.player.lives} | Ammo: {'∞' if self.unlimited_ammo else f'{self.player.current_ammo}/{self.player.max_ammo}'}",
+            f"Score: {self.player.total_score} | Multiplier: {self.player.score_multiplier:.1f}x",
             self.get_powerup_status_text(),
             "",
             "SANDBOX CONTROLS:",
@@ -493,7 +540,8 @@ class SandboxMode:
             "",
             "COMBAT CONTROLS:",
             "A - Melee Attack | S - Straight Projectile | C - Aimed Projectile",
-            "UP - Jump | SPACE - Double Jump"
+            "UP - Jump | SPACE - Double Jump",
+            "SHIFT - Dash (Level 2 only)" if self.current_level == 2 else ""
         ]
         
         for i, line in enumerate(status_lines):
@@ -521,16 +569,18 @@ class SandboxMode:
                 if timer > 0:
                     seconds_left = timer // 60  # Assuming 60 FPS
                     if effect == "speed" and getattr(self.player, 'speed_boost', 1.0) > 1.0:
-                        status_parts.append(f"⚡Speed({seconds_left}s)")
+                        status_parts.append(f"Speed({seconds_left}s)")
                     elif effect == "damage" and getattr(self.player, 'damage_boost', 1.0) > 1.0:
-                        status_parts.append(f"🔥Damage({seconds_left}s)")
+                        status_parts.append(f"Damage({seconds_left}s)")
                     elif effect == "shield" and getattr(self.player, 'shield_active', False):
-                        status_parts.append(f"🛡️Shield({seconds_left}s)")
+                        status_parts.append(f"Shield({seconds_left}s)")
+                    elif effect == "invincibility" and getattr(self.player, 'invulnerable', False):
+                        status_parts.append(f"Invincible({seconds_left}s)")
         
         if status_parts:
-            return "🌟 Active: " + " | ".join(status_parts)
+            return "Active Powerups: " + " | ".join(status_parts)
         else:
-            return "🌟 No active powerups"
+            return "No active powerups"
         
         # Active powerup effects display
         powerup_y = 60
@@ -613,7 +663,12 @@ class SandboxMode:
             
             # Load powerups
             for powerup_data in state.get("powerups", []):
-                powerup = Powerup(powerup_data["x"], powerup_data["y"], powerup_data["type"])
+                powerup_type = powerup_data["type"]
+                # Check if it's a Level 2 powerup type
+                if powerup_type in LEVEL2_POWERUP_TYPES:
+                    powerup = Level2Powerup(powerup_data["x"], powerup_data["y"], powerup_type)
+                else:
+                    powerup = Powerup(powerup_data["x"], powerup_data["y"], powerup_type)
                 self.powerups.append(powerup)
             
             # Load settings

@@ -153,6 +153,19 @@ class mainCharacter(WeaponSystem):
         self.base_speed = 3.5
         self.slow_until = 0
         self.slowdown_particles = []
+        
+        # Level 2 - Dash Ability
+        self.dash_cooldown = 0
+        self.dash_duration = 10  # Frames of dash
+        self.dashing = False
+        self.dash_direction = 0
+        
+        # Level 2 - Combo System
+        self.combo_count = 0
+        self.combo_timer = 0
+        self.combo_duration = 180  # 3 seconds at 60 FPS
+        self.score_multiplier = 1.0
+        self.total_score = 0
 
     def _get_initial_image(self) -> pygame.Surface:
         """Return the first available animation frame for the player sprite."""
@@ -270,10 +283,44 @@ class mainCharacter(WeaponSystem):
             self.y_velocity = -self.jump_height * 0.8  # Slightly weaker than first jump
             self.double_jump_used = True
             print("Double jump!")
-
-            if self.anims and self.anims.get("jump"):
-                self.image = self.anims["jump"][0]
-        
+    
+    def trigger_dash(self):
+        """Trigger dash ability"""
+        self.dashing = True
+        self.dash_cooldown = 120  # 2 seconds cooldown
+        # Determine dash direction based on input
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            self.dash_direction = -1
+        elif keys[pygame.K_RIGHT]:
+            self.dash_direction = 1
+        else:
+            self.dash_direction = 1 if self.facing_right else -1
+        print("DASH!")
+    
+    def update_dash(self, all_collidables):
+        """Update dash movement"""
+        if self.dash_duration > 0:
+            # Dash with invincibility
+            dash_distance = 15  # Fast dash
+            self.move(self.dash_direction * dash_distance, 0, all_collidables)
+            self.invulnerable = True  # During dash
+            self.dash_duration -= 1
+        else:
+            # End dash
+            self.dashing = False
+            self.dash_duration = 10  # Reset duration
+            self.invulnerable = False
+            print("Dash ended")
+    
+    def add_to_combo(self, amount=1):
+        """Add to combo counter"""
+        self.combo_count += amount
+        self.combo_timer = self.combo_duration  # Reset timer
+        self.score_multiplier = 1.0 + (self.combo_count * 0.1)  # 10% bonus per combo
+        if self.combo_count > 0 and self.combo_count % 5 == 0:
+            print(f"AMAZING! {self.combo_count}x COMBO!")
+    
     def update(self, keys, obstacles, enemies):
         self.update_weapon_system()
         self.enemies = enemies  
@@ -301,10 +348,32 @@ class mainCharacter(WeaponSystem):
             self.scroll_speed = 0.5
         if keys[pygame.K_UP]:
             self.jump()
-        if keys[pygame.K_SPACE]:  # Double jump with spacebar
-            self.double_jump()
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, all_collidables)  # Fast fall
+        
+        # Level 2 - Special Abilities (ONLY in Level 2)
+        if hasattr(self, 'current_level') and self.current_level == 2:
+            # Dash Ability (Shift key)
+            if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+                if self.dash_cooldown <= 0 and not self.dashing:
+                    self.trigger_dash()
+            if self.dashing:
+                self.update_dash(all_collidables)
+            if self.dash_cooldown > 0:
+                self.dash_cooldown -= 1
+            
+            # Double Jump (Spacebar) - Only in Level 2
+            if keys[pygame.K_SPACE]:
+                self.double_jump()
+            
+            # Combo System Update
+            if self.combo_timer > 0:
+                self.combo_timer -= 1
+            else:
+                if self.combo_count > 0:
+                    print(f"Combo ended! Final combo: {self.combo_count}x ({self.combo_count * 10} points)")
+                    self.total_score += self.combo_count * 10
+                    self.combo_count = 0
 
         if self.shooting_cooldown > 0:
             self.shooting_cooldown -= 1
@@ -338,16 +407,41 @@ class mainCharacter(WeaponSystem):
                 self.start_charging()
         else:
             if self.is_charging:
-                # Get mouse position for aiming
+                # Get target position for aiming
                 try:
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
-                    projectile = self.stop_charging_and_shoot(mouse_x, mouse_y)
+                    # Try to target nearest Level 2 enemy if available
+                    target_x, target_y = None, None
+                    
+                    if hasattr(self, 'enemies') and self.enemies:
+                        nearest_enemy = None
+                        min_distance = float('inf')
+                        
+                        for enemy in self.enemies:
+                            if hasattr(enemy, 'alive') and enemy.alive:
+                                distance = math.sqrt(
+                                    (enemy.rect.centerx - self.rect.centerx)**2 + 
+                                    (enemy.rect.centery - self.rect.centery)**2
+                                )
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    nearest_enemy = enemy
+                        
+                        if nearest_enemy and min_distance < 500:  # Target within 500 pixels
+                            target_x = nearest_enemy.rect.centerx
+                            target_y = nearest_enemy.rect.centery
+                    
+                    # Fallback to mouse if no enemy found
+                    if target_x is None:
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        target_x, target_y = mouse_x, mouse_y
+                    
+                    projectile = self.stop_charging_and_shoot(target_x, target_y)
                     if projectile:
                         self.projectile_manager.add_projectile(projectile)
                         self.consume_ammo()
                     FISH_THROW_SOUND.play()
                 except:
-                    # Fallback if mouse position unavailable
+                    # Fallback if position unavailable
                     self.stop_charging()
 
         # Update animation based on current state
@@ -401,6 +495,9 @@ class mainCharacter(WeaponSystem):
                     elif effect == "shield":
                         self.shield_active = False
                         print("Shield expired!")
+                    elif effect == "invincibility":
+                        self.invulnerable = False
+                        print("Invincibility expired!")
     
     def apply_powerup(self, powerup_type):
         """Apply powerup effect to player with enhanced feedback"""
@@ -432,6 +529,50 @@ class mainCharacter(WeaponSystem):
             self.reload_ammo(10)  # Restore 10 ammo
             print("Ammo powerup collected!")
             # TODO: Play ammo reload sound effect
+    
+    def apply_level2_powerup(self, powerup_type):
+        """Apply Level 2 enhanced powerup effect to player"""
+        if powerup_type == "health_burst":
+            # Instant full health restoration
+            old_lives = self.lives
+            self.lives = 10  # Full health
+            print(f"HEALTH BURST! Lives restored to maximum: {self.lives}")
+        
+        elif powerup_type == "fire_cloak":
+            # Temporary invincibility with fire protection
+            self.invulnerable = True
+            self.powerup_timers["invincibility"] = 900  # 15 seconds at 60 FPS
+            print("FIRE CLOAK activated! 15 seconds of invincibility!")
+        
+        elif powerup_type == "speed_wind":
+            # Enhanced speed boost - lasts longer
+            self.speed_boost = 2.0  # 2x speed (more than Level 1's 1.5x)
+            self.powerup_timers["speed"] = 900  # 15 seconds at 60 FPS
+            print("SPEED WIND activated! 15 seconds of enhanced speed!")
+        
+        elif powerup_type == "wolf_strength":
+            # Powerful damage multiplier
+            self.damage_boost = 3.0  # 3x damage (more than Level 1's 2.0x)
+            self.powerup_timers["damage"] = 900  # 15 seconds at 60 FPS
+            print("WOLF STRENGTH activated! 15 seconds of massive damage!")
+        
+        elif powerup_type == "grandma_amulet":
+            # Enhanced shield protection
+            self.shield_active = True
+            self.powerup_timers["shield"] = 600  # 10 seconds at 60 FPS
+            print("GRANDMA'S AMULET activated! 10 seconds of protection!")
+        
+        elif powerup_type == "forest_wisdom":
+            # Ultimate ability - combination of multiple effects
+            self.speed_boost = 1.5
+            self.damage_boost = 2.0
+            self.shield_active = True
+            self.powerup_timers["speed"] = 600
+            self.powerup_timers["damage"] = 600
+            self.powerup_timers["shield"] = 600
+            self.lives = min(self.lives + 3, 10)  # Heal 3 lives
+            self.reload_ammo(20)  # Restore ammo
+            print("FOREST WISDOM activated! All abilities enhanced!")
     
     def take_damage(self, damage_amount=1):
         """Take damage, with shield protection"""
@@ -659,6 +800,7 @@ class Enemy:
         self.max_health = 100
         self.speed = 2
         self.ai_type = ai_type
+        self.level = 2  # Default to Level 2 (since this is for Level 2 enemies)
         self.alive = True
         self.direction = 1
         self.ai_timer = 0
@@ -732,12 +874,23 @@ class Enemy:
         
         # Turn around at patrol boundaries
         if self.rect.x <= self.patrol_start - self.patrol_range or \
-           self.rect.x >= self.patrol_start + self.patrol_range:
+        self.rect.x >= self.patrol_start + self.patrol_range:
             self.direction *= -1
     
     def _ai_chase(self, player, dt):
         """Enemy chases the player"""
         distance = abs(player.rect.centerx - self.rect.centerx)
+        
+        # Back away if too close to player (give player escape chance)
+        if distance < 50:  # Increased from 30 to 50
+            # Back away faster
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = 1
+                self.rect.x += self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            else:
+                self.direction = -1
+                self.rect.x -= self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            return
         
         if distance < 300:  # Chase range
             if player.rect.centerx < self.rect.centerx:
@@ -756,7 +909,17 @@ class Enemy:
         """Enemy keeps distance and attacks from range"""
         distance = abs(player.rect.centerx - self.rect.centerx)
         
-        if distance < 100:  # Too close, back away
+        # Back away if too close - gives player chance to escape
+        if distance < 50:  # Increased from 30 to 50
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = 1
+                self.rect.x += self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            else:
+                self.direction = -1
+                self.rect.x -= self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            return
+        
+        if distance < 80:  # Too close, back away
             if player.rect.centerx < self.rect.centerx:
                 self.direction = 1
                 self.rect.x += self.speed * dt
@@ -780,19 +943,44 @@ class Enemy:
         """Advanced boss AI with multiple phases"""
         distance = abs(player.rect.centerx - self.rect.centerx)
         
+        # Back away if too close - gives player chance to escape
+        if distance < 60:  # Increased from 40 to 60
+            if player.rect.centerx < self.rect.centerx:
+                self.direction = 1
+                self.rect.x += self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            else:
+                self.direction = -1
+                self.rect.x -= self.speed * dt * 1.5  # Increased from 0.5 to 1.5
+            return
+        
         # Phase based on health
         if self.health > self.max_health * 0.7:
             # Phase 1: Slow chase
             self._ai_chase(player, dt * 0.5)
         elif self.health > self.max_health * 0.3:
-            # Phase 2: Fast ranged attacks
+            # Phase 2: Fast ranged attacks + combos
             self._ai_ranged(player, dt * 1.5)
             if self.attack_cooldown <= 0:
-                self._attack_ranged(player)
-                self.attack_cooldown = 60  # Faster attacks
+                self._combo_attack_phase2(player)
+                self.attack_cooldown = 60
         else:
-            # Phase 3: Desperate rush
+            # Phase 3: Desperate rush + ultimate combos
             self._ai_chase(player, dt * 2.0)
+            if self.attack_cooldown <= 0:
+                self._desperate_combo_attack(player)
+                self.attack_cooldown = 45  # Even faster
+    
+    def _combo_attack_phase2(self, player):
+        """Phase 2 combo attack - rapid fire projectiles"""
+        for i in range(3):
+            self._attack_ranged(player)
+            print(f"BOSS COMBO ATTACK {i+1}/3!")
+    
+    def _desperate_combo_attack(self, player):
+        """Phase 3 desperate combo - all-out assault"""
+        for i in range(5):
+            self._attack_ranged(player)
+        print("BOSS ULTIMATE COMBO ATTACK!")
     
     def _attack_ranged(self, player):
         """Fire projectile at player"""
@@ -908,7 +1096,7 @@ class MutatedMushroom(Enemy):
         # Stats
         self.health = 150
         self.max_health = 150
-        self.speed = 3.5
+        self.speed = 1.5  # Slower than player for escape ability
         self.attack_damage = 3
         self.melee_range = 70
         self.attack_range = 180
@@ -980,7 +1168,7 @@ class Skeleton(Enemy):
         # Stats
         self.health = 120
         self.max_health = 120
-        self.speed = 4.0
+        self.speed = 1.6  # Slower than player for escape ability
         self.attack_damage = 2
         self.melee_range = 60
         self.attack_range = 250
@@ -1068,7 +1256,7 @@ class FlyingMonster(Enemy):
         # Stats - Flying enemy
         self.health = 100
         self.max_health = 100
-        self.speed = 5.0  # Fast flyer
+        self.speed = 1.7  # Slower than player for escape ability
         self.attack_damage = 2
         self.melee_range = 80
         self.attack_range = 200
@@ -1087,7 +1275,7 @@ class FlyingMonster(Enemy):
             self.diving = True
             self.dive_cooldown = 300
             print("DIVE ATTACK!")
-            self.speed *= 2  # Double speed during dive
+            self.speed *= 1.3  # Slight speed boost during dive (reduced from 2x)
     
     def update(self, player, dt=1.0, obstacles=None):
         # Maintain flight height
@@ -1106,7 +1294,7 @@ class FlyingMonster(Enemy):
         # Reset dive after cooldown
         if self.diving and self.dive_cooldown <= 180:
             self.diving = False
-            self.speed = 5.0
+            self.speed = 1.8  # Match the base BOSS speed
     
     def draw(self, surface, debug_mode=False):
         super().draw(surface, debug_mode)
@@ -1142,7 +1330,7 @@ class Level2Boss(Enemy):
         # Stats - ULTIMATE BOSS
         self.health = 500
         self.max_health = 500
-        self.speed = 4.5
+        self.speed = 1.8  # Slower than player for escape ability
         self.attack_damage = 8
         self.melee_range = 80
         self.attack_range = 300
@@ -1162,7 +1350,7 @@ class Level2Boss(Enemy):
         """Enter rage mode when health is low"""
         if not self.rage_mode and self.health < self.max_health * 0.3:
             self.rage_mode = True
-            self.speed *= 1.5
+            self.speed *= 1.2  # Reduced rage boost
             self.attack_damage *= 2
             print("BOSS RAGE MODE ACTIVATED!")
     
