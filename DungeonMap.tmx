@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="34">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="169">
  <tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
  <tileset firstgid="400" source="assets/forestobjects.tsx"/>
+ <tileset firstgid="461" source="assets/MushroomLevel2Enemies.tsx"/>
  <layer id="1" name="Tile Layer 1" width="160" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -35,5 +36,129 @@
   <object id="31" name="type" type="sawtrap" x="2271" y="375.5" width="32" height="32"/>
   <object id="32" name="type" type="sawtrap" x="2407" y="375" width="32" height="32"/>
   <object id="33" name="type" type="sawtrap" x="378" y="377.5" width="32" height="32"/>
+  <object id="34" name="type" type="mushroom4" gid="463" x="2078.5" y="358" width="16" height="16"/>
+  <object id="35" name="type" type="mushroom4" gid="463" x="1983.5" y="402" width="16" height="16"/>
+  <object id="36" name="type" type="mushroom4" gid="463" x="1919" y="432.5" width="16" height="16"/>
+  <object id="37" name="type" type="mushroom4" gid="466" x="1766.5" y="512" width="16" height="16"/>
+  <object id="38" name="type" type="mushroom4" gid="466" x="1622" y="581" width="16" height="16"/>
+  <object id="39" name="type" type="mushroom4" gid="466" x="320" y="356" width="16" height="16"/>
+  <object id="40" name="type" type="mushroom4" gid="466" x="464" y="355" width="16" height="16"/>
+  <object id="41" name="type" type="mushroom4" gid="466" x="389" y="355" width="16" height="16"/>
+  <object id="42" name="type" type="mushroom4" gid="480" x="478.5" y="542" width="16" height="16"/>
+  <object id="43" name="type" type="mushroom4" gid="480" x="377" y="518" width="16" height="16"/>
+  <object id="44" name="type" type="mushroom4" gid="480" x="298" y="484" width="16" height="16"/>
+  <object id="45" name="type" type="mushroom4" gid="465" x="570.5" y="580" width="16" height="16"/>
+  <object id="46" name="type" type="mushroom4" gid="465" x="674" y="580.5" width="16" height="16"/>
+  <object id="47" name="type" type="mushroom4" gid="465" x="771.5" y="581" width="16" height="16"/>
+  <object id="48" name="type" type="mushroom4" gid="465" x="751" y="197" width="16" height="16"/>
+  <object id="49" name="type" type="mushroom4" gid="465" x="513.5" y="196.5" width="16" height="16"/>
+  <object id="50" name="type" type="mushroom4" gid="465" x="589" y="196.5" width="16" height="16"/>
+  <object id="51" name="type" type="mushroom4" gid="465" x="675" y="197.5" width="16" height="16"/>
+  <object id="52" name="type" type="mushroom4" gid="470" x="4463" y="576" width="16" height="16"/>
+  <object id="53" name="type" type="mushroom4" gid="470" x="4423.5" y="555.5" width="16" height="16"/>
+  <object id="54" name="type" type="mushroom4" gid="470" x="4370.5" y="532.5" width="16" height="16"/>
+  <object id="55" name="type" type="mushroom4" gid="470" x="4314" y="503" width="16" height="16"/>
+  <object id="56" name="type" type="mushroom4" gid="469" x="4241" y="467.5" width="16" height="16"/>
+  <object id="57" name="type" type="mushroom4" gid="469" x="4163.5" y="425" width="16" height="16"/>
+  <object id="58" name="type" type="mushroom4" gid="469" x="4106.5" y="396" width="16" height="16"/>
+  <object id="59" name="type" type="mushroom4" gid="469" x="4044" y="366" width="16" height="16"/>
+  <object id="60" name="type" type="mushroom4" gid="488" x="2515" y="162.5" width="16" height="16"/>
+  <object id="61" name="type" type="mushroom4" gid="488" x="2711" y="354" width="16" height="16"/>
+  <object id="62" name="type" type="mushroom4" gid="488" x="2408.5" y="351.5" width="16" height="16"/>
+  <object id="63" name="type" type="mushroom4" gid="488" x="2224.5" y="352" width="16" height="16"/>
+  <object id="64" name="type" type="mushroom4" gid="488" x="2346.5" y="162" width="16" height="16"/>
+  <object id="65" name="type" type="mushroom4" gid="488" x="2649" y="158.5" width="16" height="16"/>
+  <object id="66" name="type" type="mushroom4" gid="476" x="3344.5" y="573.5" width="16" height="16"/>
+  <object id="67" name="type" type="mushroom4" gid="476" x="3591.5" y="549" width="16" height="16"/>
+  <object id="68" name="type" type="mushroom4" gid="476" x="3484.5" y="546.5" width="16" height="16"/>
+  <object id="69" name="type" type="mushroom4" gid="476" x="3957.5" y="389.5" width="16" height="16"/>
+  <object id="70" name="type" type="mushroom4" gid="476" x="3891" y="421.5" width="16" height="16"/>
+  <object id="71" name="type" type="mushroom4" gid="476" x="3833.5" y="454.5" width="16" height="16"/>
+  <object id="72" name="type" type="mushroom4" gid="476" x="3764.5" y="484.5" width="16" height="16"/>
+  <object id="73" name="type" type="mushroom4" gid="476" x="3701.5" y="517" width="16" height="16"/>
+  <object id="77" name="type" type="mushroom4" gid="477" x="1262" y="580" width="16" height="16"/>
+  <object id="78" name="type" type="mushroom4" gid="477" x="1071" y="580" width="16" height="16"/>
+  <object id="79" name="type" type="mushroom4" gid="477" x="1445.5" y="580" width="16" height="16"/>
+  <object id="80" name="type" type="mushroom4" gid="488" x="1556" y="102" width="16" height="16"/>
+  <object id="81" name="type" type="mushroom4" gid="484" x="1438" y="100" width="16" height="16"/>
+  <object id="82" name="type" type="mushroom4" gid="484" x="1341" y="101.5" width="16" height="16"/>
+  <object id="83" name="type" type="mushroom4" gid="484" x="1119.5" y="131" width="16" height="16"/>
+  <object id="87" name="type" type="mushroom4" gid="484" x="1021.5" y="131" width="16" height="16"/>
+  <object id="88" name="type" type="mushroom4" gid="484" x="917" y="130.5" width="16" height="16"/>
+  <object id="89" name="type" type="mushroom4" gid="476" x="1201" y="131" width="16" height="16"/>
+  <object id="90" name="type" type="mushroom4" gid="476" x="968.5" y="131.5" width="16" height="16"/>
+  <object id="91" name="type" type="mushroom4" gid="476" x="1074.5" y="130" width="16" height="16"/>
+  <object id="92" name="type" type="mushroom4" gid="476" x="4709" y="227" width="16" height="16"/>
+  <object id="93" name="type" type="mushroom4" gid="476" x="4625.5" y="226.5" width="16" height="16"/>
+  <object id="94" name="type" type="mushroom4" gid="476" x="4788" y="225.5" width="16" height="16"/>
+  <object id="95" name="type" type="mushroom4" gid="481" x="5011.5" y="546.5" width="16" height="16"/>
+  <object id="96" name="type" type="mushroom4" gid="481" x="4935" y="575" width="16" height="16"/>
+  <object id="97" name="type" type="mushroom4" gid="481" x="4864.5" y="607.5" width="16" height="16"/>
+  <object id="98" name="type" type="mushroom4" gid="481" x="4756" y="612.5" width="16" height="16"/>
+  <object id="99" name="type" type="mushroom4" gid="481" x="4673.5" y="613.5" width="16" height="16"/>
+  <object id="100" name="type" type="mushroom4" gid="481" x="4584.5" y="611.5" width="16" height="16"/>
+  <object id="101" name="type" type="mushroom4" gid="481" x="1838" y="472" width="16" height="16"/>
+  <object id="102" name="type" type="mushroom4" gid="481" x="2557" y="353" width="16" height="16"/>
+  <object id="103" name="type" type="mushroom4" gid="481" x="3059" y="570" width="16" height="16"/>
+  <object id="104" name="type" type="mushroom4" gid="481" x="3163" y="219" width="16" height="16"/>
+  <object id="105" name="type" type="mushroom4" gid="468" x="2659" y="574" width="16" height="16"/>
+  <object id="106" name="type" type="mushroom4" gid="468" x="2370" y="574" width="16" height="16"/>
+  <object id="107" name="type" type="mushroom4" gid="468" x="2861" y="571" width="16" height="16"/>
+  <object id="108" name="type" type="mushroom4" gid="468" x="2519" y="467" width="16" height="16"/>
+  <object id="109" name="type" type="mushroom4" gid="468" x="2099" y="573" width="16" height="16"/>
+  <object id="110" name="type" type="mushroom4" gid="468" x="1898" y="568" width="16" height="16"/>
+  <object id="111" name="type" type="mushroom4" gid="468" x="3120" y="371" width="16" height="16"/>
+  <object id="112" name="type" type="mushroom4" gid="468" x="3216" y="570" width="16" height="16"/>
+  <object id="113" name="type" type="mushroom4" gid="464" x="1633" y="313" width="16" height="16"/>
+  <object id="114" name="type" type="mushroom4" gid="464" x="1382" y="370" width="16" height="16"/>
+  <object id="115" name="type" type="mushroom4" gid="464" x="1066" y="280" width="16" height="16"/>
+  <object id="116" name="type" type="mushroom4" gid="464" x="1225.75" y="351.375" width="16" height="16"/>
+  <object id="117" name="type" type="mushroom4" gid="481" x="1878.67" y="106.667" width="16" height="16"/>
+  <object id="118" name="type" type="mushroom4" gid="481" x="2041.33" y="209.333" width="16" height="16"/>
+  <object id="119" name="type" type="mushroom4" gid="481" x="4505.33" y="80" width="16" height="16"/>
+  <object id="120" name="type" type="mushroom4" gid="481" x="4994.67" y="269.333" width="16" height="16"/>
+  <object id="121" name="type" type="mushroom4" gid="481" x="4573.33" y="414.667" width="16" height="16"/>
+  <object id="122" name="type" type="mushroom4" gid="496" x="833.333" y="418.667" width="16" height="16"/>
+  <object id="123" name="type" type="mushroom4" gid="496" x="230.667" y="141.333" width="16" height="16"/>
+  <object id="124" name="type" type="mushroom4" gid="496" x="124" y="257.333" width="16" height="16"/>
+  <object id="125" name="type" type="mushroom4" gid="496" x="706.667" y="472" width="16" height="16"/>
+  <object id="126" name="type" type="mushroom4" gid="496" x="1850.67" y="290.667" width="16" height="16"/>
+  <object id="127" name="type" type="mushroom4" gid="496" x="2165.33" y="94.6667" width="16" height="16"/>
+  <object id="128" name="type" type="mushroom4" gid="496" x="2756" y="464" width="16" height="16"/>
+  <object id="129" name="type" type="mushroom4" gid="496" x="3025.33" y="473.333" width="16" height="16"/>
+  <object id="130" name="type" type="mushroom4" gid="496" x="2908" y="141.333" width="16" height="16"/>
+  <object id="131" name="type" type="mushroom4" gid="464" x="3393.33" y="196" width="16" height="16"/>
+  <object id="132" name="type" type="mushroom4" gid="464" x="3602.67" y="346.667" width="16" height="16"/>
+  <object id="133" name="type" type="mushroom4" gid="464" x="3378.67" y="342.667" width="16" height="16"/>
+  <object id="134" name="type" type="mushroom4" gid="464" x="3826.67" y="248" width="16" height="16"/>
+  <object id="135" name="type" type="mushroom4" gid="461" x="4216" y="141.333" width="16" height="16"/>
+  <object id="136" name="type" type="mushroom4" gid="461" x="3886.67" y="120" width="16" height="16"/>
+  <object id="137" name="type" type="mushroom4" gid="461" x="3764" y="110.667" width="16" height="16"/>
+  <object id="138" name="type" type="mushroom4" gid="461" x="3674.67" y="128" width="16" height="16"/>
+  <object id="139" name="type" type="mushroom4" gid="461" x="4208" y="321.333" width="16" height="16"/>
+  <object id="140" name="type" type="mushroom4" gid="461" x="4369.33" y="270.667" width="16" height="16"/>
+  <object id="141" name="type" type="mushroom4" gid="491" x="4760" y="472" width="16" height="16"/>
+  <object id="142" name="type" type="mushroom4" gid="491" x="4965.33" y="129.333" width="16" height="16"/>
+  <object id="143" name="type" type="mushroom4" gid="491" x="381.333" y="124" width="16" height="16"/>
+  <object id="144" name="type" type="mushroom4" gid="491" x="996" y="392" width="16" height="16"/>
+  <object id="145" name="type" type="mushroom4" gid="491" x="1553.33" y="457.333" width="16" height="16"/>
+  <object id="146" name="type" type="mushroom4" gid="491" x="1248" y="461.333" width="16" height="16"/>
+  <object id="147" name="type" type="mushroom4" gid="491" x="910.667" y="492" width="16" height="16"/>
+  <object id="148" name="type" type="mushroom4" gid="491" x="2249.33" y="473.333" width="16" height="16"/>
+  <object id="149" name="type" type="mushroom4" gid="477" x="4392" y="397.333" width="16" height="16"/>
+  <object id="150" name="type" type="mushroom4" gid="477" x="3969.33" y="48" width="16" height="16"/>
+  <object id="151" name="type" type="mushroom4" gid="477" x="3970.67" y="122.667" width="16" height="16"/>
+  <object id="152" name="type" type="mushroom4" gid="477" x="4348" y="458.667" width="16" height="16"/>
+  <object id="153" name="type" type="mushroom4" gid="477" x="4202.67" y="388" width="16" height="16"/>
+  <object id="154" name="type" type="mushroom4" gid="477" x="4545.33" y="506.667" width="16" height="16"/>
+  <object id="155" name="type" type="mushroom4" gid="492" x="3758.67" y="377.333" width="16" height="16"/>
+  <object id="156" name="type" type="mushroom4" gid="492" x="3548" y="465.333" width="16" height="16"/>
+  <object id="162" name="type" type="mushroom4" gid="492" x="297.636" y="49.2727" width="16" height="16"/>
+  <object id="163" name="type" type="mushroom4" gid="492" x="658" y="62" width="16" height="16"/>
+  <object id="164" name="type" type="mushroom4" gid="492" x="611" y="397.75" width="16" height="16"/>
+  <object id="165" name="type" type="mushroom4" gid="492" x="567.25" y="111.5" width="16" height="16"/>
+  <object id="166" name="type" type="mushroom4" gid="492" x="807" y="119" width="16" height="16"/>
+  <object id="167" name="type" type="mushroom4" gid="492" x="917.75" y="233" width="16" height="16"/>
+  <object id="168" name="type" type="mushroom4" gid="487" x="784" y="300.25" width="16" height="16"/>
  </objectgroup>
 </map>
