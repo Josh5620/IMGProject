@@ -66,10 +66,11 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     
     def open_level_select():
         nonlocal running
-        level_select_menu(WIDTH, HEIGHT, screen)
-        # After selecting a level, start the game
-        start_game()
-        running = False
+        level_selected = level_select_menu(WIDTH, HEIGHT, screen)
+        # Only start the game if a level was actually selected (not if they pressed Back)
+        if level_selected:
+            start_game()
+            running = False
     
     levels_button = Button(
         images=(pygame.image.load('assets/start_button.png').convert_alpha(),
@@ -89,7 +90,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     quit_button = Button(
         images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
                 pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 200),
+        pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Quit",
         font=pygame.font.Font(None, 50),
         on_activate=quit_game
@@ -127,20 +128,23 @@ def set_level(level_num):
 
 def level_select_menu(WIDTH, HEIGHT, screen):
     running = True
+    level_selected = False  # Track if a level was selected
     
     def select_level_and_exit(level_num):
-        nonlocal running
+        nonlocal running, level_selected
         set_level(level_num)
+        level_selected = True
         running = False
     
     def go_back():
-        nonlocal running
+        nonlocal running, level_selected
+        level_selected = False
         running = False
     
     level1_button = Button(
         images=(pygame.image.load('assets/level_1_button.png').convert_alpha(),
                 pygame.image.load('assets/level_1_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 - 50),
+        pos=(WIDTH // 2, HEIGHT // 2 + 0),
         text="Level 1",
         font=pygame.font.Font(None, 50),
         on_activate=lambda: select_level_and_exit(1)
@@ -149,7 +153,7 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     level2_button = Button( 
         images=(pygame.image.load('assets/level_2_button.png').convert_alpha(),
                 pygame.image.load('assets/level_2_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Level 2",
         font=pygame.font.Font(None, 50),
         on_activate=lambda: select_level_and_exit(2)
@@ -158,7 +162,7 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     back_button = Button(
         images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
                 pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        pos=(WIDTH // 2, HEIGHT // 2 + 200),
         text="Back",
         font=pygame.font.Font(None, 50),
         on_activate=go_back
@@ -184,6 +188,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
                     running = False
         
         pygame.display.flip()
+    
+    return level_selected  # Return True if level was selected, False if Back was pressed
         
 
 def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
@@ -309,8 +315,8 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
                     pause_menu_obj.move_selection(1)
                 if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     pause_menu_obj.buttons[pause_menu_obj.selected_index].activate()
-                # Allow ESC or P to resume
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                # Allow ESC to resume
+                if event.key == pygame.K_ESCAPE:
                     action = 'resume'
                     running = False
         
