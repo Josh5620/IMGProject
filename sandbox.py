@@ -13,10 +13,39 @@ import os
 import math
 import random
 import inspect
-from entities import mainCharacter, Powerup, Enemy
+from entities import mainCharacter, Enemy
 from Level1Enemies import Level1Enemy
 from Level2Enemies import MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
 from level2_powerups import Level2Powerup, LEVEL2_POWERUP_TYPES
+
+# Powerup class definition for basic powerups (since it was incomplete in entities.py)
+class Powerup:
+    """Basic powerup class for sandbox mode"""
+    def __init__(self, x, y, powerup_type="health"):
+        self.rect = pygame.Rect(x, y, 40, 40)
+        self.powerup_type = powerup_type
+        self.collected = False
+        self.bob_timer = 0
+        self.original_y = y
+    
+    def update(self, player, dt=1.0):
+        if self.collected:
+            return
+        self.bob_timer += dt * 0.15
+        self.rect.y = self.original_y + int(math.sin(self.bob_timer) * 8)
+        if self.rect.colliderect(player.rect):
+            self.collected = True
+            if self.powerup_type == "health":
+                player.lives = min(player.lives + 1, 3)
+            elif self.powerup_type == "speed":
+                player.speed_boost = 1.5
+            elif self.powerup_type == "ammo":
+                player.current_ammo = min(player.current_ammo + 5, player.max_ammo)
+    
+    def draw(self, surface):
+        if not self.collected:
+            color = (255, 0, 0) if self.powerup_type == "health" else (0, 255, 0) if self.powerup_type == "speed" else (255, 255, 0)
+            pygame.draw.circle(surface, color, self.rect.center, 20)
 
 
 class SandboxMode:
