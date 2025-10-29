@@ -63,24 +63,19 @@ class Button():
 
 def start_menu(WIDTH, HEIGHT, screen, start_game):
     running = True
-    start_button = Button(
-        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2),
-        text="Start Game",
-        font=pygame.font.Font(None, 50),
-        on_activate=start_game
-    )
     
     def open_level_select():
         nonlocal running
         level_select_menu(WIDTH, HEIGHT, screen)
+        # After selecting a level, start the game
+        start_game()
+        running = False
     
-    level_button = Button(
-        images=(pygame.image.load('assets/level_button.png').convert_alpha(),
-                pygame.image.load('assets/level_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 100),
-        text="Select Level",
+    levels_button = Button(
+        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2),
+        text="Levels",
         font=pygame.font.Font(None, 50),
         on_activate=open_level_select
     )
@@ -99,7 +94,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         font=pygame.font.Font(None, 50),
         on_activate=quit_game
     )
-    main_menu = baseMenu ([start_button, level_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow_pointer.png').convert_alpha()) 
+    main_menu = baseMenu ([levels_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow_pointer.png').convert_alpha()) 
     while running:
         
         
@@ -143,8 +138,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
         running = False
     
     level1_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/level_1_button.png').convert_alpha(),
+                pygame.image.load('assets/level_1_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 - 50),
         text="Level 1",
         font=pygame.font.Font(None, 50),
@@ -152,8 +147,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     )
     
     level2_button = Button( 
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/level_2_button.png').convert_alpha(),
+                pygame.image.load('assets/level_2_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 50),
         text="Level 2",
         font=pygame.font.Font(None, 50),
@@ -232,6 +227,96 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
                     running = False  
 
         pygame.display.flip()
+
+
+def pause_menu(WIDTH, HEIGHT, screen, game_surface):
+    """
+    Pause menu that overlays the game screen.
+    Returns: 'resume', 'restart', or 'main_menu'
+    """
+    running = True
+    action = 'resume'
+    
+    def resume_game():
+        nonlocal running, action
+        action = 'resume'
+        running = False
+    
+    def restart_level():
+        nonlocal running, action
+        action = 'restart'
+        running = False
+    
+    def return_to_main():
+        nonlocal running, action
+        action = 'main_menu'
+        running = False
+    
+    resume_button = Button(
+        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 - 50),
+        text="Resume",
+        font=pygame.font.Font(None, 50),
+        on_activate=resume_game
+    )
+    
+    restart_button = Button(
+        images=(pygame.image.load('assets/retry_button.png').convert_alpha(),
+                pygame.image.load('assets/retry_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        text="Restart",
+        font=pygame.font.Font(None, 50),
+        on_activate=restart_level
+    )
+    
+    main_menu_button = Button(
+        images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
+                pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        text="Main Menu",
+        font=pygame.font.Font(None, 50),
+        on_activate=return_to_main
+    )
+    
+    # Create a semi-transparent overlay
+    overlay = pygame.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(128)
+    overlay.fill((0, 0, 0))
+    
+    pause_menu_obj = baseMenu([resume_button, restart_button, main_menu_button],
+                              pygame.image.load('assets/title.png').convert_alpha(),
+                              pygame.image.load('assets/arrow.png').convert_alpha())
+    
+    while running:
+        # Draw the frozen game state
+        screen.blit(game_surface, (0, 0))
+        # Draw semi-transparent overlay
+        screen.blit(overlay, (0, 0))
+        
+        # Draw pause menu on top
+        pause_menu_obj.draw(screen)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                action = 'quit'
+                running = False
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    pause_menu_obj.move_selection(-1)
+                if event.key == pygame.K_DOWN:
+                    pause_menu_obj.move_selection(1)
+                if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                    pause_menu_obj.buttons[pause_menu_obj.selected_index].activate()
+                # Allow ESC or P to resume
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                    action = 'resume'
+                    running = False
+        
+        pygame.display.flip()
+    
+    return action
 
 
 class DialogueScreen:

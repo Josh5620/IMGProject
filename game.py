@@ -243,6 +243,26 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
+                
+                # Check for pause key (ESC or P)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        # Import here to avoid circular import
+                        from menus import pause_menu
+                        
+                        # Capture current game state
+                        game_surface = self.screen.copy()
+                        
+                        # Show pause menu
+                        pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
+                        
+                        if pause_action == 'restart':
+                            self.reset_game()
+                        elif pause_action == 'main_menu':
+                            return "start"
+                        elif pause_action == 'quit':
+                            return "quit"
+                        # If 'resume', just continue the game loop
                     
             self.screen.fill((0, 0, 0))
             self.draw_bg()
