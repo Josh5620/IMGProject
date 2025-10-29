@@ -722,7 +722,6 @@ class Mushroom(BreakableBlock):
         self.max_hp = 1
         self.current_hp = self.max_hp
         self.image = image
-        
         self.gravity = 0
         self.y_velocity = 0
         self.on_ground = True

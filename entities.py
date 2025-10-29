@@ -1112,376 +1112,9 @@ class Enemy:
                 pygame.draw.circle(surface, (255, 100, 100), self.rect.center, self.attack_range, 1)
 
 
-# ===== LEVEL 2 ENEMIES (3 Regular Enemies + 1 BOSS) =====
-
-class MutatedMushroom(Enemy):
-    """Level 2 - Mutated Mushroom enemy with poison attacks"""
-    
-    def __init__(self, x, y):
-        super().__init__(x, y, ai_type="chase")
-        self.name = "MutatedMushroom"
-        
-        # Visual - Mushroom-like appearance
-        self.image = pygame.Surface((48, 48))
-        self.image.fill((139, 69, 19))  # Brown stem
-        pygame.draw.ellipse(self.image, (220, 20, 60), (5, 5, 38, 20))  # Red cap with white spots
-        pygame.draw.circle(self.image, (255, 255, 255), (15, 10), 3)
-        pygame.draw.circle(self.image, (255, 255, 255), (30, 12), 3)
-        
-        # Stats
-        self.health = 150
-        self.max_health = 150
-        self.speed = 1.5  # Slower than player for escape ability
-        self.attack_damage = 3
-        self.melee_range = 70
-        self.attack_range = 180
-        self.color = (220, 20, 60)
-        
-        # Special ability - Poison cloud
-        self.poison_clouds = []
-        self.poison_cooldown = 0
-        self.player_in_attack = False  # Initialize attack range tracking
-    
-    def special_attack(self, player):
-        """Create poison cloud attack"""
-        if self.poison_cooldown <= 0:
-            cloud = {
-                'x': self.rect.centerx,
-                'y': self.rect.centery,
-                'radius': 40,
-                'life': 120,
-                'max_life': 120
-            }
-            self.poison_clouds.append(cloud)
-            self.poison_cooldown = 240
-            print("POISON CLOUD!")
-    
-    def update(self, player, dt=1.0, obstacles=None):
-        super().update(player, dt, obstacles)
-        self.poison_cooldown = max(0, self.poison_cooldown - dt)
-        
-        # Random poison cloud attacks
-        if self.alive and self.ai_type == "chase" and random.random() < 0.01:
-            self.special_attack(player)
-        
-        # Update poison clouds
-        for cloud in self.poison_clouds[:]:
-            cloud['life'] -= dt
-            cloud['radius'] = int(40 * (cloud['life'] / cloud['max_life']))
-            
-            if cloud['life'] <= 0:
-                self.poison_clouds.remove(cloud)
-    
-    def draw(self, surface, debug_mode=False):
-        super().draw(surface, debug_mode)
-        
-        # Draw poison clouds
-        for cloud in self.poison_clouds:
-            alpha = int(150 * (cloud['life'] / cloud['max_life']))
-            # Semi-transparent poison cloud
-            for i in range(3):
-                radius = cloud['radius'] - i * 5
-                if radius > 0:
-                    pygame.draw.circle(surface, (0, 200, 0, alpha), 
-                                    (int(cloud['x']), int(cloud['y'])), radius, 2)
-
-
-class Skeleton(Enemy):
-    """Level 2 - Skeleton enemy with ranged attacks"""
-    
-    def __init__(self, x, y):
-        super().__init__(x, y, ai_type="ranged")
-        self.name = "Skeleton"
-        
-        # Visual - Skeleton appearance
-        self.image = pygame.Surface((48, 48))
-        self.image.fill((150, 150, 150))  # Gray body
-        pygame.draw.circle(self.image, (200, 200, 200), (24, 12), 10)  # Skull
-        pygame.draw.rect(self.image, (100, 100, 100), (20, 25, 8, 15))  # Spine
-        pygame.draw.rect(self.image, (100, 100, 100), (10, 38, 20, 6))  # Pelvis
-        
-        # Stats
-        self.health = 120
-        self.max_health = 120
-        self.speed = 1.6  # Slower than player for escape ability
-        self.attack_damage = 2
-        self.melee_range = 60
-        self.attack_range = 250
-        self.color = (150, 150, 150)
-        
-        # Special ability - Bone throwing
-        self.bone_projectiles = []
-        self.bone_cooldown = 0
-        self.player_in_attack = False  # Initialize attack range tracking
-    
-    def special_attack(self, player):
-        """Throw bone projectile"""
-        if self.bone_cooldown <= 0 and self.alive:
-            # Calculate direction to player
-            dx = player.rect.centerx - self.rect.centerx
-            dy = player.rect.centery - self.rect.centery
-            distance = (dx**2 + dy**2)**0.5
-            
-            if distance > 0:
-                dx /= distance
-                dy /= distance
-                
-                bone = {
-                    'x': self.rect.centerx,
-                    'y': self.rect.centery,
-                    'dx': dx * 5,
-                    'dy': dy * 5,
-                    'life': 180
-                }
-                self.bone_projectiles.append(bone)
-                self.bone_cooldown = 180
-                print("BONE THROW!")
-    
-    def update(self, player, dt=1.0, obstacles=None):
-        super().update(player, dt, obstacles)
-        self.bone_cooldown = max(0, self.bone_cooldown - dt)
-        
-        # Check if player is in attack range
-        if player:
-            distance = abs(player.rect.centerx - self.rect.centerx)
-            self.player_in_attack = (distance < self.attack_range)
-        
-        # Throw bones when in ranged mode
-        if self.alive and self.ai_type == "ranged" and self.player_in_attack and self.bone_cooldown <= 0:
-            self.special_attack(player)
-        
-        # Update bone projectiles
-        for bone in self.bone_projectiles[:]:
-            bone['x'] += bone['dx'] * dt
-            bone['y'] += bone['dy'] * dt
-            bone['life'] -= dt
-            
-            if bone['life'] <= 0:
-                self.bone_projectiles.remove(bone)
-    
-    def draw(self, surface, debug_mode=False):
-        super().draw(surface, debug_mode)
-        
-        # Draw bone projectiles
-        for bone in self.bone_projectiles:
-            pygame.draw.line(surface, (200, 200, 200), 
-                        (int(bone['x']), int(bone['y'])), 
-                           (int(bone['x'] - bone['dx'] * 10), int(bone['y'] - bone['dy'] * 10)), 4)
-
-
-class FlyingMonster(Enemy):
-    """Level 2 - Flying Monster with aerial attacks"""
-    
-    def __init__(self, x, y):
-        super().__init__(x, y, ai_type="chase")
-        self.name = "FlyingMonster"
-        
-        # Visual - Flying bat-like creature
-        self.image = pygame.Surface((48, 48))
-        self.image.fill((50, 20, 80))  # Purple body
-        # Wings
-        pygame.draw.ellipse(self.image, (80, 40, 120), (5, 10, 18, 12))
-        pygame.draw.ellipse(self.image, (80, 40, 120), (25, 10, 18, 12))
-        # Head
-        pygame.draw.circle(self.image, (100, 50, 150), (24, 8), 6)
-        # Eyes
-        pygame.draw.circle(self.image, (255, 0, 0), (22, 7), 2)
-        pygame.draw.circle(self.image, (255, 0, 0), (26, 7), 2)
-        
-        # Stats - Flying enemy
-        self.health = 100
-        self.max_health = 100
-        self.speed = 1.7  # Slower than player for escape ability
-        self.attack_damage = 2
-        self.melee_range = 80
-        self.attack_range = 200
-        self.color = (80, 40, 120)
-        self.can_fly = True
-        self.fly_height = y - 50  # Fly above ground
-        
-        # Special ability - Dive attack
-        self.diving = False
-        self.dive_cooldown = 0
-        self.player_in_attack = False  # Initialize attack range tracking
-    
-    def special_attack(self, player):
-        """Dive attack on player"""
-        if self.dive_cooldown <= 0 and not self.diving:
-            self.diving = True
-            self.dive_cooldown = 300
-            print("DIVE ATTACK!")
-            self.speed *= 1.3  # Slight speed boost during dive (reduced from 2x)
-    
-    def update(self, player, dt=1.0, obstacles=None):
-        # Maintain flight height
-        if self.can_fly:
-            self.rect.y = self.fly_height
-            self.on_ground = False  # Never on ground
-        
-        super().update(player, dt, obstacles)
-        self.dive_cooldown = max(0, self.dive_cooldown - dt)
-        
-        # Auto dive attack when close
-        distance = abs(player.rect.centerx - self.rect.centerx)
-        if distance < 100 and self.dive_cooldown <= 0:
-            self.special_attack(player)
-        
-        # Reset dive after cooldown
-        if self.diving and self.dive_cooldown <= 180:
-            self.diving = False
-            self.speed = 1.8  # Match the base BOSS speed
-    
-    def draw(self, surface, debug_mode=False):
-        super().draw(surface, debug_mode)
-        
-        # Draw wings flapping animation
-        if self.ai_type == "chase":
-            # Wing flapping indicator
-            pygame.draw.line(surface, (150, 80, 200), 
-                        (self.rect.left, self.rect.top), 
-                        (self.rect.left - 10, self.rect.top), 2)
-            pygame.draw.line(surface, (150, 80, 200), 
-                        (self.rect.right, self.rect.top), 
-                        (self.rect.right + 10, self.rect.top), 2)
-
-
-class Level2Boss(Enemy):
-    """Level 2 - Ultimate BOSS enemy with devastating attacks"""
-    
-    def __init__(self, x, y):
-        super().__init__(x, y, ai_type="boss")
-        self.name = "Level2Boss"
-        
-        # Visual - Massive intimidating BOSS
-        self.image = pygame.Surface((64, 64))  # Bigger sprite
-        self.image.fill((80, 0, 0))  # Dark red base
-        
-        # BOSS features
-        pygame.draw.circle(self.image, (150, 0, 0), (32, 20), 25)  # Large head
-        pygame.draw.circle(self.image, (255, 0, 0), (28, 18), 5)  # Evil eyes
-        pygame.draw.circle(self.image, (255, 0, 0), (36, 18), 5)
-        pygame.draw.rect(self.image, (200, 100, 0), (24, 32, 16, 24))  # Torso
-        
-        # Stats - ULTIMATE BOSS
-        self.health = 500
-        self.max_health = 500
-        self.speed = 1.8  # Slower than player for escape ability
-        self.attack_damage = 8
-        self.melee_range = 80
-        self.attack_range = 300
-        self.color = (200, 0, 0)
-        
-        # BOSS special abilities
-        self.shockwave_cooldown = 0
-        self.rage_mode = False
-        self.phase = 1  # 5 phases based on health
-        self.boss_particles = []
-        self.player_in_attack = False  # Initialize attack range tracking
-        
-        # Update rect size
-        self.rect = pygame.Rect(x, y, 64, 64)
-    
-    def enter_rage_mode(self):
-        """Enter rage mode when health is low"""
-        if not self.rage_mode and self.health < self.max_health * 0.3:
-            self.rage_mode = True
-            self.speed *= 1.2  # Reduced rage boost
-            self.attack_damage *= 2
-            print("BOSS RAGE MODE ACTIVATED!")
-    
-    def shockwave_attack(self, surface):
-        """Massive shockwave attack"""
-        if self.shockwave_cooldown <= 0:
-            # Create shockwave effect
-            self.shockwave_cooldown = 420
-            self.boss_particles = []  # Will be drawn as screen shake
-            
-            # Damage all nearby
-            print("MASSIVE SHOCKWAVE!")
-            return 15  # Screen shake intensity
-        return 0
-    
-    def check_boss_phase(self):
-        """Check and update boss phase"""
-        health_percent = self.health / self.max_health
-        new_phase = 1
-        
-        if health_percent <= 0.2:
-            new_phase = 5
-        elif health_percent <= 0.4:
-            new_phase = 4
-        elif health_percent <= 0.6:
-            new_phase = 3
-        elif health_percent <= 0.8:
-            new_phase = 2
-        else:
-            new_phase = 1
-        
-        if new_phase != self.phase:
-            print(f"BOSS PHASE {self.phase} -> PHASE {new_phase}!")
-            self.phase = new_phase
-    
-    def take_damage(self, damage):
-        """Enhanced damage with phase transitions"""
-        self.health -= damage
-        self.check_boss_phase()
-        self.enter_rage_mode()
-        
-        if self.health <= 0:
-            self.alive = False
-            print("BOSS DEFEATED!")
-    
-    def update(self, player, dt=1.0, obstacles=None):
-        super().update(player, dt, obstacles)
-        self.shockwave_cooldown = max(0, self.shockwave_cooldown - dt)
-        
-        # BOSS special attack pattern
-        if self.alive and random.random() < 0.003:  # Occasional shockwave
-            self.shockwave_attack(None)
-    
-    def draw(self, surface, debug_mode=False):
-        # Draw boss with special effects
-        surface.blit(self.image, self.rect)
-        
-        # Draw phase indicator
-        font = pygame.font.Font(None, 24)
-        phase_text = f"BOSS - PHASE {self.phase}"
-        text = font.render(phase_text, True, (255, 0, 0))
-        surface.blit(text, (self.rect.x, self.rect.y - 20))
-        
-        if self.rage_mode:
-            rage_text = font.render("RAGE MODE!", True, (255, 200, 0))
-            surface.blit(rage_text, (self.rect.x, self.rect.y - 40))
-        
-        # Draw health bar (larger for boss)
-        bar_width = 64
-        bar_height = 6
-        bar_x = self.rect.x
-        bar_y = self.rect.y - 15
-        
-        # Background
-        pygame.draw.rect(surface, (100, 0, 0), (bar_x, bar_y, bar_width, bar_height))
-        
-        # Health
-        health_width = int((self.health / self.max_health) * bar_width)
-        if self.rage_mode:
-            color = (255, 200, 0)  # Gold when enraged
-        elif self.phase >= 4:
-            color = (200, 0, 255)  # Purple in phase 4-5
-        elif self.phase >= 2:
-            color = (255, 100, 0)  # Orange in phase 2-3
-        else:
-            color = (0, 255, 0)  # Green in phase 1
-        
-        pygame.draw.rect(surface, color, (bar_x, bar_y, health_width, bar_height))
-        
-        if debug_mode:
-            font = pygame.font.Font(None, 20)
-            health_text = font.render(f"HP: {self.health}/{self.max_health}", True, (255, 255, 255))
-            surface.blit(health_text, (self.rect.x, self.rect.y - 55))
-
-
-# ===== LEVEL 2 ENEMIES END =====
+# ===== LEVEL 2 ENEMIES MOVED TO Level2Enemies.py =====
+# All Level 2 enemies (MutatedMushroom, Skeleton, FlyingMonster, Level2Boss) 
+# have been moved to Level2Enemies.py for better organization
 
 class Powerup:
     """Enhanced powerup class with visual effects"""
@@ -1602,14 +1235,14 @@ class Powerup:
         elif self.powerup_type == "shield":
             # Draw shield
             pygame.draw.circle(surface, (*self.color_set["main"], alpha), 
-                             (center_x, center_y), size//2, 3)
+                            (center_x, center_y), size//2, 3)
             pygame.draw.circle(surface, (*self.color_set["glow"], alpha//2), 
-                             (center_x, center_y), size//3)
+                            (center_x, center_y), size//3)
         
         elif self.powerup_type == "ammo":
             # Draw bullet/arrow
             pygame.draw.circle(surface, (*self.color_set["main"], alpha), 
-                             (center_x - size//3, center_y), size//4)
+                            (center_x - size//3, center_y), size//4)
             pygame.draw.polygon(surface, (*self.color_set["main"], alpha), [
                 (center_x - size//3, center_y - size//6),
                 (center_x + size//3, center_y),
@@ -1625,7 +1258,7 @@ class Powerup:
                 if alpha > 0:
                     color = (*particle['color'], min(alpha, 255))
                     pygame.draw.circle(surface, color[:3], 
-                                     (int(particle['x']), int(particle['y'])), 2)
+                                    (int(particle['x']), int(particle['y'])), 2)
             return
         
         center_x = self.rect.centerx
@@ -1641,17 +1274,17 @@ class Powerup:
             radius = glow_radius - i * 3
             if radius > 0:
                 pygame.draw.circle(surface, glow_color[:3], 
-                                 (center_x, center_y), radius)
+                                (center_x, center_y), radius)
         
         # Draw rotating background circle
         main_radius = int(18 * pulse_scale)
         pygame.draw.circle(surface, self.color_set["main"], 
-                         (center_x, center_y), main_radius)
+                        (center_x, center_y), main_radius)
         
         # Draw inner bright circle
         inner_radius = int(12 * pulse_scale)
         pygame.draw.circle(surface, self.color_set["bright"], 
-                         (center_x, center_y), inner_radius)
+                        (center_x, center_y), inner_radius)
         
         # Draw rotating icon
         icon_size = int(20 * pulse_scale)
@@ -1668,6 +1301,6 @@ class Powerup:
             sparkle_alpha = int(128 + 127 * math.sin(self.pulse_timer * 2 + i))
             sparkle_size = 2 + int(math.sin(self.pulse_timer * 3 + i))
             pygame.draw.circle(surface, (*self.color_set["bright"], sparkle_alpha), 
-                             (sparkle_x, sparkle_y), sparkle_size)
+                            (sparkle_x, sparkle_y), sparkle_size)
 
 

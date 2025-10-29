@@ -13,8 +13,9 @@ import os
 import math
 import random
 import inspect
-from entities import mainCharacter, Powerup, Enemy, MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
+from entities import mainCharacter, Powerup, Enemy
 from Level1Enemies import Level1Enemy
+from Level2Enemies import MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
 from level2_powerups import Level2Powerup, LEVEL2_POWERUP_TYPES
 
 
