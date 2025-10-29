@@ -165,8 +165,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     )
     
     level_menu = baseMenu([level1_button, level2_button, back_button],
-                         pygame.image.load('assets/diedtitle.png').convert_alpha(),
-                         pygame.image.load('assets/arrow.png').convert_alpha())
+                         pygame.image.load('assets/leveltitle.png').convert_alpha(),
+                         pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         level_menu.draw(screen)
@@ -190,8 +190,8 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
     running = True
     
     retry_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/retry_button.png').convert_alpha(),
+                pygame.image.load('assets/retry_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2),
         text="Retry",
         font=pygame.font.Font(None, 50),
@@ -209,7 +209,7 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
     
     retry_menu_obj = baseMenu([retry_button, quit_button], 
                              pygame.image.load('assets/diedtitle.png').convert_alpha(), 
-                             pygame.image.load('assets/arrow.png').convert_alpha())
+                             pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         retry_menu_obj.draw(screen)
@@ -253,8 +253,8 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
         running = False
     
     resume_button = Button(
-        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/resume_button.png').convert_alpha(),
+                pygame.image.load('assets/resume_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 - 50),
         text="Resume",
         font=pygame.font.Font(None, 50),
@@ -286,7 +286,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     
     pause_menu_obj = baseMenu([resume_button, restart_button, main_menu_button],
                               pygame.image.load('assets/title.png').convert_alpha(),
-                              pygame.image.load('assets/arrow.png').convert_alpha())
+                              pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         # Draw the frozen game state
