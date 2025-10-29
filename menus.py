@@ -143,8 +143,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
         running = False
     
     level1_button = Button(
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/level_1_button.png').convert_alpha(),
+                pygame.image.load('assets/level_1_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 - 50),
         text="Level 1",
         font=pygame.font.Font(None, 50),
@@ -152,8 +152,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     )
     
     level2_button = Button( 
-        images=(pygame.image.load('assets/button.png').convert_alpha(),
-                pygame.image.load('assets/highlighted.png').convert_alpha()),
+        images=(pygame.image.load('assets/level_2_button.png').convert_alpha(),
+                pygame.image.load('assets/level_2_button_highlighted.png').convert_alpha()),
         pos=(WIDTH // 2, HEIGHT // 2 + 50),
         text="Level 2",
         font=pygame.font.Font(None, 50),
