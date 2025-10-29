@@ -1,6 +1,6 @@
 import pygame
 from game import Level1, BossLevel1, Level2
-from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel
+from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel, pause_menu
 from sandbox import sandbox_mode
 
 
@@ -66,7 +66,13 @@ while running:
     elif game_state == "boss_level1":
         run_BossIntro(WIDTH, HEIGHT, screen) 
         boss_level1 = BossLevel1(WIDTH, HEIGHT)  
-        boss_level1.run(screen) 
+        result = boss_level1.run(screen)
+        if result == "quit":
+            running = False
+        elif result == "game_over":
+            game_state = "retry"
+        else:
+            game_state = "start" 
     else:
         running = False
 
