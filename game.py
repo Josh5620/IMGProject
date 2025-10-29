@@ -2,6 +2,7 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
+from Level2Enemies import MushroomPickup
 from blocks import block, Spikes, start, end, Ice, AnimatedTrap
 from particles import LeafParticle
 import random
@@ -424,6 +425,21 @@ class Level2(Game):
                     trap = AnimatedTrap(anchor_x, anchor_y, 'assets/Level2/Traps/SawTrap.png', 64, 32)
                     trap.level = self
                     self.animated_traps.append(trap)
+                    continue
+                
+                elif typ == "mushroom4":
+                    # Get the mushroom image directly from the tile object's gid
+                    # (since it's placed as a tile from the sprite sheet in Tiled)
+                    mushroom_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
+                    
+                    if mushroom_image:
+                        # The image is already the right sprite from your Level 2 mushroom sheet!
+                        # Scale it if needed
+                        mushroom_image = pygame.transform.scale(mushroom_image, (32, 32))
+                        mushroom = MushroomPickup(obj.x, obj.y, mushroom_image)
+                        self.enemies.append(mushroom)
+                    else:
+                        print(f"Warning: Could not load mushroom image for object at ({obj.x}, {obj.y})")
                     continue
         
         self.build_spatial_hash() # Build spatial hash after obstacles are created

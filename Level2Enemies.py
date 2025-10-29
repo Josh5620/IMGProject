@@ -1,6 +1,34 @@
 """
 Level 2 Enemy Classes for Red Riding Hood Adventure
-Enhanced enemy classes with animations and AI behaviors
+Enhanced enemy classes with PNG sprite sheet animations and AI behaviors
+
+=== ANIMATION SYSTEM ===
+All Level 2 enemies now support frame-based PNG sprite sheet animations, 
+just like Level 1 enemies!
+
+HOW IT WORKS:
+1. Sprite sheets are one-row PNGs with frames arranged horizontally
+2. Each enemy has an ANIM manifest dictionary specifying:
+   - "idle", "run", "attack" animation states
+   - File path to the PNG sprite sheet
+   - frame_width: width of each frame in pixels
+3. The build_state_animations_from_manifest() function automatically:
+   - Loads the sprite sheets
+   - Slices them into individual frames
+   - Scales them to 48x48 pixels (or 64x64 for boss)
+4. Enemies automatically animate based on their state (idle/run/attack)
+
+FALLBACK SYSTEM:
+- If sprite sheets don't exist, enemies use colored placeholder graphics
+- Game will work with or without sprite sheet assets
+
+TO ADD NEW ANIMATIONS:
+1. Create PNG sprite sheets (one row, frames side-by-side)
+2. Place in: assets/Level2/[EnemyName]/[State].png
+3. Set correct frame_width in the ANIM manifest
+4. Done! Animations will load automatically
+
+See Level1Enemies.py for working examples.
 """
 
 import pygame
@@ -16,39 +44,60 @@ import time
 #   Archer Run:     512x64px  → frame_width: 64 (8 frames)
 #   Archer Attack:  704x64px  → frame_width: 64 (11 frames)
 
-# MUSHROOM ENEMY ANIMATIONS (from MushroomLevel2Enemies.tsx)
-# Sprite sheet: 128x80 pixels (8 columns × 5 rows = 40 tiles of 16x16)
-# Using only 6 frames per state to match the 6 Level 2 powerup types
-# Layout:
-#   Row 1 (frames 0-5):   Idle animation (6 frames)
-#   Row 2 (frames 0-5):   Run animation (6 frames)
-#   Row 3 (frames 0-5):   Attack animation (6 frames)
-# Note: Mushroom animations are loaded dynamically via build_mushroom_animations_from_sprite_sheet()
-# This dict is just for reference and not actually used
-MUSHROOM_ENEMY_ANIM = {
-    "idle":     {"file": "assets/mushroom level 2.png", "frame_width": 16, "frames_used": 6},
-    "run":      {"file": "assets/mushroom level 2.png", "frame_width": 16, "frames_used": 6},
-    "attack":   {"file": "assets/mushroom level 2.png", "frame_width": 16, "frames_used": 6}
-}
+# ============ LEVEL 2 ENEMY ANIMATION MANIFESTS ============
+# All Level 2 enemies now support PNG sprite sheet animations with frame_width specification
+# Simply place your sprite sheets in the correct directories and they'll be automatically loaded
 
-# Other Level 2 enemy animations (placeholder for now)
+# WOLF ENEMY - Ferocious wolves
 WOLF_ENEMY_ANIM = {
     "idle":     {"file": "assets/Level2/Wolf/Idle.png",     "frame_width": 48},
     "run":      {"file": "assets/Level2/Wolf/Run.png",      "frame_width": 48},
     "attack":   {"file": "assets/Level2/Wolf/Attack.png",   "frame_width": 48}
 }
 
+# SHADOW CREATURE - Ethereal dark beings
 SHADOW_CREATURE_ANIM = {
     "idle":     {"file": "assets/Level2/ShadowCreature/Idle.png",     "frame_width": 48},
     "run":      {"file": "assets/Level2/ShadowCreature/Run.png",      "frame_width": 48},
     "attack":   {"file": "assets/Level2/ShadowCreature/Attack.png",   "frame_width": 48}
 }
 
+# DARK ENCHANTER - Magical ranged enemy
 DARK_ENCHANTER_ANIM = {
     "idle":     {"file": "assets/Level2/DarkEnchanter/Idle.png",     "frame_width": 64},
     "run":      {"file": "assets/Level2/DarkEnchanter/Run.png",      "frame_width": 64},
     "attack":   {"file": "assets/Level2/DarkEnchanter/Attack.png",   "frame_width": 64}
 }
+
+# SKELETON - Bone-throwing ranged enemy
+SKELETON_ANIM = {
+    "idle":     {"file": "assets/Level2/Skeleton/Idle.png",     "frame_width": 48},
+    "run":      {"file": "assets/Level2/Skeleton/Run.png",      "frame_width": 48},
+    "attack":   {"file": "assets/Level2/Skeleton/Attack.png",   "frame_width": 48}
+}
+
+# FLYING MONSTER - Aerial dive attacker
+FLYING_MONSTER_ANIM = {
+    "idle":     {"file": "assets/Level2/FlyingMonster/Idle.png",     "frame_width": 48},
+    "run":      {"file": "assets/Level2/FlyingMonster/Fly.png",      "frame_width": 48},
+    "attack":   {"file": "assets/Level2/FlyingMonster/Attack.png",   "frame_width": 48}
+}
+
+# FOREST BOSS - Multi-phase ultimate boss
+FOREST_BOSS_ANIM = {
+    "idle":     {"file": "assets/Level2/ForestBoss/Idle.png",     "frame_width": 64},
+    "run":      {"file": "assets/Level2/ForestBoss/Run.png",      "frame_width": 64},
+    "attack":   {"file": "assets/Level2/ForestBoss/Attack.png",   "frame_width": 64}
+}
+
+# MUSHROOM ENEMY ANIMATIONS (Special - uses grid-based sprite sheet)
+# Sprite sheet: 128x80 pixels (8 columns × 5 rows = 40 tiles of 16x16)
+# Using only 6 frames per state to match the 6 Level 2 powerup types
+# Layout:
+#   Row 1 (frames 0-5):   Idle animation (6 frames)
+#   Row 2 (frames 0-5):   Run animation (6 frames)
+#   Row 3 (frames 0-5):   Attack animation (6 frames)
+# Note: Mushroom uses custom loader function below
 
 
 def build_mushroom_animations_from_sprite_sheet(file_path, tile_size=16, frames_per_state=6):
@@ -714,12 +763,27 @@ class Skeleton(Enemy):
         super().__init__(x, y, ai_type="ranged")
         self.name = "Skeleton"
         
-        # Visual - Skeleton appearance
-        self.image = pygame.Surface((48, 48))
-        self.image.fill((150, 150, 150))  # Gray body
-        pygame.draw.circle(self.image, (200, 200, 200), (24, 12), 10)  # Skull
-        pygame.draw.rect(self.image, (100, 100, 100), (20, 25, 8, 15))  # Spine
-        pygame.draw.rect(self.image, (100, 100, 100), (10, 38, 20, 6))  # Pelvis
+        # Try to load sprite animations, fallback to placeholder if not found
+        try:
+            self.anims = build_state_animations_from_manifest(SKELETON_ANIM)
+            if "idle" in self.anims and self.anims["idle"]:
+                self.image = self.anims["idle"][0]
+            else:
+                raise FileNotFoundError("Animations not loaded")
+        except (FileNotFoundError, RuntimeError):
+            # Fallback to simple colored surface if sprite sheets don't exist yet
+            self.anims = {"idle": [], "run": [], "attack": []}
+            self.image = pygame.Surface((48, 48))
+            self.image.fill((150, 150, 150))  # Gray body
+            pygame.draw.circle(self.image, (200, 200, 200), (24, 12), 10)  # Skull
+            pygame.draw.rect(self.image, (100, 100, 100), (20, 25, 8, 15))  # Spine
+            pygame.draw.rect(self.image, (100, 100, 100), (10, 38, 20, 6))  # Pelvis
+        
+        # Animation tracking
+        self.anim_tick = 0
+        self.anim_speed = 10
+        self.current_state = "idle"
+        self._last_x = self.rect.x
         
         # Stats
         self.health = 120
@@ -758,6 +822,31 @@ class Skeleton(Enemy):
                 self.bone_cooldown = 180
                 print("BONE THROW!")
     
+    def update_animation(self):
+        """Update animation frames based on current state"""
+        if not self.anims.get("run"):  # No animations loaded
+            return
+            
+        self.anim_tick = (self.anim_tick + 1) % 10000000
+        
+        # Determine animation state
+        if self.ai_type == "ranged" and self.player_in_attack and self.bone_cooldown <= 60:
+            state = "attack"
+        elif abs(self.rect.x - self._last_x) > 0.1:
+            state = "run"
+        else:
+            state = "idle"
+        
+        # Update animation frame
+        frames = self.anims.get(state, self.anims.get("idle", []))
+        if frames:
+            idx = (self.anim_tick // self.anim_speed) % len(frames)
+            img = frames[idx]
+            self.image = img if self.direction > 0 else pygame.transform.flip(img, True, False)
+        
+        self.current_state = state
+        self._last_x = self.rect.x
+    
     def update(self, player, dt=1.0, obstacles=None):
         super().update(player, dt, obstacles)
         self.bone_cooldown = max(0, self.bone_cooldown - dt)
@@ -779,6 +868,9 @@ class Skeleton(Enemy):
             
             if bone['life'] <= 0:
                 self.bone_projectiles.remove(bone)
+        
+        # Update animations
+        self.update_animation()
     
     def draw(self, surface, debug_mode=False):
         super().draw(surface, debug_mode)
@@ -797,17 +889,32 @@ class FlyingMonster(Enemy):
         super().__init__(x, y, ai_type="chase")
         self.name = "FlyingMonster"
         
-        # Visual - Flying bat-like creature
-        self.image = pygame.Surface((48, 48))
-        self.image.fill((50, 20, 80))  # Purple body
-        # Wings
-        pygame.draw.ellipse(self.image, (80, 40, 120), (5, 10, 18, 12))
-        pygame.draw.ellipse(self.image, (80, 40, 120), (25, 10, 18, 12))
-        # Head
-        pygame.draw.circle(self.image, (100, 50, 150), (24, 8), 6)
-        # Eyes
-        pygame.draw.circle(self.image, (255, 0, 0), (22, 7), 2)
-        pygame.draw.circle(self.image, (255, 0, 0), (26, 7), 2)
+        # Try to load sprite animations, fallback to placeholder if not found
+        try:
+            self.anims = build_state_animations_from_manifest(FLYING_MONSTER_ANIM)
+            if "idle" in self.anims and self.anims["idle"]:
+                self.image = self.anims["idle"][0]
+            else:
+                raise FileNotFoundError("Animations not loaded")
+        except (FileNotFoundError, RuntimeError):
+            # Fallback to simple colored surface if sprite sheets don't exist yet
+            self.anims = {"idle": [], "run": [], "attack": []}
+            self.image = pygame.Surface((48, 48))
+            self.image.fill((50, 20, 80))  # Purple body
+            # Wings
+            pygame.draw.ellipse(self.image, (80, 40, 120), (5, 10, 18, 12))
+            pygame.draw.ellipse(self.image, (80, 40, 120), (25, 10, 18, 12))
+            # Head
+            pygame.draw.circle(self.image, (100, 50, 150), (24, 8), 6)
+            # Eyes
+            pygame.draw.circle(self.image, (255, 0, 0), (22, 7), 2)
+            pygame.draw.circle(self.image, (255, 0, 0), (26, 7), 2)
+        
+        # Animation tracking
+        self.anim_tick = 0
+        self.anim_speed = 10
+        self.current_state = "idle"
+        self._last_x = self.rect.x
         
         # Stats - Flying enemy
         self.health = 100
@@ -833,6 +940,31 @@ class FlyingMonster(Enemy):
             print("DIVE ATTACK!")
             self.speed *= 1.3  # Slight speed boost during dive (reduced from 2x)
     
+    def update_animation(self):
+        """Update animation frames based on current state"""
+        if not self.anims.get("run"):  # No animations loaded
+            return
+            
+        self.anim_tick = (self.anim_tick + 1) % 10000000
+        
+        # Determine animation state
+        if self.diving:
+            state = "attack"
+        elif abs(self.rect.x - self._last_x) > 0.1:
+            state = "run"  # Flying animation
+        else:
+            state = "idle"
+        
+        # Update animation frame
+        frames = self.anims.get(state, self.anims.get("idle", []))
+        if frames:
+            idx = (self.anim_tick // self.anim_speed) % len(frames)
+            img = frames[idx]
+            self.image = img if self.direction > 0 else pygame.transform.flip(img, True, False)
+        
+        self.current_state = state
+        self._last_x = self.rect.x
+    
     def update(self, player, dt=1.0, obstacles=None):
         # Maintain flight height
         if self.can_fly:
@@ -851,6 +983,9 @@ class FlyingMonster(Enemy):
         if self.diving and self.dive_cooldown <= 180:
             self.diving = False
             self.speed = 1.8  # Match the base BOSS speed
+        
+        # Update animations
+        self.update_animation()
     
     def draw(self, surface, debug_mode=False):
         super().draw(surface, debug_mode)
@@ -871,17 +1006,33 @@ class Level2Boss(Enemy):
     
     def __init__(self, x, y):
         super().__init__(x, y, ai_type="boss")
-        self.name = "Level2Boss"
+        self.name = "ForestBoss"
         
-        # Visual - Massive intimidating BOSS
-        self.image = pygame.Surface((64, 64))  # Bigger sprite
-        self.image.fill((80, 0, 0))  # Dark red base
+        # Try to load sprite animations, fallback to placeholder if not found
+        try:
+            self.anims = build_state_animations_from_manifest(FOREST_BOSS_ANIM)
+            if "idle" in self.anims and self.anims["idle"]:
+                self.image = self.anims["idle"][0]
+                # Scale to boss size (64x64)
+                self.image = pygame.transform.scale(self.image, (64, 64))
+            else:
+                raise FileNotFoundError("Animations not loaded")
+        except (FileNotFoundError, RuntimeError):
+            # Fallback to simple colored surface if sprite sheets don't exist yet
+            self.anims = {"idle": [], "run": [], "attack": []}
+            self.image = pygame.Surface((64, 64))  # Bigger sprite
+            self.image.fill((80, 0, 0))  # Dark red base
+            # BOSS features
+            pygame.draw.circle(self.image, (150, 0, 0), (32, 20), 25)  # Large head
+            pygame.draw.circle(self.image, (255, 0, 0), (28, 18), 5)  # Evil eyes
+            pygame.draw.circle(self.image, (255, 0, 0), (36, 18), 5)
+            pygame.draw.rect(self.image, (200, 100, 0), (24, 32, 16, 24))  # Torso
         
-        # BOSS features
-        pygame.draw.circle(self.image, (150, 0, 0), (32, 20), 25)  # Large head
-        pygame.draw.circle(self.image, (255, 0, 0), (28, 18), 5)  # Evil eyes
-        pygame.draw.circle(self.image, (255, 0, 0), (36, 18), 5)
-        pygame.draw.rect(self.image, (200, 100, 0), (24, 32, 16, 24))  # Torso
+        # Animation tracking
+        self.anim_tick = 0
+        self.anim_speed = 10
+        self.current_state = "idle"
+        self._last_x = self.rect.x
         
         # Stats - ULTIMATE BOSS
         self.health = 500
@@ -952,6 +1103,33 @@ class Level2Boss(Enemy):
             self.alive = False
             print("BOSS DEFEATED!")
     
+    def update_animation(self):
+        """Update animation frames based on current state"""
+        if not self.anims.get("run"):  # No animations loaded
+            return
+            
+        self.anim_tick = (self.anim_tick + 1) % 10000000
+        
+        # Determine animation state
+        if self.shockwave_cooldown > 360:  # Just attacked
+            state = "attack"
+        elif abs(self.rect.x - self._last_x) > 0.1:
+            state = "run"
+        else:
+            state = "idle"
+        
+        # Update animation frame
+        frames = self.anims.get(state, self.anims.get("idle", []))
+        if frames:
+            idx = (self.anim_tick // self.anim_speed) % len(frames)
+            img = frames[idx]
+            # Scale to boss size and flip if needed
+            img = pygame.transform.scale(img, (64, 64))
+            self.image = img if self.direction > 0 else pygame.transform.flip(img, True, False)
+        
+        self.current_state = state
+        self._last_x = self.rect.x
+    
     def update(self, player, dt=1.0, obstacles=None):
         super().update(player, dt, obstacles)
         self.shockwave_cooldown = max(0, self.shockwave_cooldown - dt)
@@ -959,6 +1137,9 @@ class Level2Boss(Enemy):
         # BOSS special attack pattern
         if self.alive and random.random() < 0.003:  # Occasional shockwave
             self.shockwave_attack(None)
+        
+        # Update animations
+        self.update_animation()
     
     def draw(self, surface, debug_mode=False):
         # Draw boss with special effects
@@ -1133,13 +1314,13 @@ if __name__ == "__main__":
     analyze_sprite_sheet("assets/Level2/DarkEnchanter/Attack.png")
     
     print("\n" + "=" * 60)
-    print("\n📝 TODO: Add Level 2 enemy animation sprite sheets")
-    print("\nExpected structure:")
+    print("\n📝 Level 2 Animation System - Ready for PNG Sprite Sheets!")
+    print("\nExpected directory structure:")
     print("  assets/Level2/")
     print("    Wolf/")
-    print("      Idle.png")
-    print("      Run.png")
-    print("      Attack.png")
+    print("      Idle.png       (one-row sprite sheet)")
+    print("      Run.png        (one-row sprite sheet)")
+    print("      Attack.png     (one-row sprite sheet)")
     print("    ShadowCreature/")
     print("      Idle.png")
     print("      Run.png")
@@ -1148,7 +1329,87 @@ if __name__ == "__main__":
     print("      Idle.png")
     print("      Run.png")
     print("      Attack.png")
-    print("\nOnce sprites are added, update the ANIM dictionaries at the top")
-    print("of this file with the correct frame_width values.")
+    print("    Skeleton/")
+    print("      Idle.png")
+    print("      Run.png")
+    print("      Attack.png")
+    print("    FlyingMonster/")
+    print("      Idle.png")
+    print("      Fly.png        (flying animation)")
+    print("      Attack.png")
+    print("    ForestBoss/")
+    print("      Idle.png       (64px frame width)")
+    print("      Run.png        (64px frame width)")
+    print("      Attack.png     (64px frame width)")
+    print("\n📌 How to add sprite sheets:")
+    print("  1. Create one-row PNG sprite sheets (frames side-by-side)")
+    print("  2. Place them in the correct folder structure above")
+    print("  3. Update frame_width in the ANIM manifest at top of this file")
+    print("  4. The animation system will automatically load and animate them!")
+    print("\n✅ All enemies now support PNG animations like Level 1!")
+    print("✅ Fallback to colored placeholders if sprites not found")
     print("=" * 60)
 
+
+# ============ COLLECTIBLE ITEMS ============
+
+class MushroomPickup:
+    """Level 2 mushroom pickup - collectible item (NOT an enemy)"""
+    
+    def __init__(self, x, y, image):
+        self.rect = pygame.Rect(x, y, 32, 32)
+        self.original_x = x
+        self.original_y = y
+        self.name = "MushroomPickup"
+        self.image = image
+        
+        self.alive = True
+        self.visible = True
+        
+        # Pickup properties - marks this as collectible
+        self.is_collectible = True
+        self.solid = False
+        
+        # No physics needed for pickups
+        self.gravity = 0
+        self.y_velocity = 0
+        self.on_ground = True
+        self.isIdle = True
+        
+    def get_rect(self):
+        """Return empty rect so it doesn't collide as an obstacle"""
+        return pygame.Rect(self.rect.x, self.rect.y, 0, 0)
+        
+    def check_player_collision(self, player, scroll_offset):
+        """Check if player touches the mushroom pickup"""
+        if not self.alive:
+            return False
+            
+        player_world_rect = player.rect.copy()
+        player_world_rect.x += scroll_offset
+        
+        if self.rect.colliderect(player_world_rect):
+            return True
+        return False
+        
+    def collect(self):
+        """Collect the mushroom - increases mushroom counter"""
+        self.alive = False
+        print("Mushroom collected!")
+        
+    def update(self, player, dt=1.0, obstacles=None, scroll_offset=0):
+        """Pickups don't need to update"""
+        pass
+        
+    def draw(self, surface, scroll_offset=0):
+        """Draw the mushroom pickup"""
+        if not self.alive or not self.visible:
+            return
+        
+        screen_x = self.rect.x - scroll_offset
+        screen_y = self.rect.y
+        surface.blit(self.image, (screen_x, screen_y))
+    
+    def on_attack(self, player):
+        """Pickups don't attack"""
+        pass
