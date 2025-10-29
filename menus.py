@@ -128,6 +128,7 @@ def set_level(level_num):
     global game_level
     game_level = level_num
     print(f"Level selected is {level_num}")
+    
 
 def level_select_menu(WIDTH, HEIGHT, screen):
     running = True
@@ -186,8 +187,9 @@ def level_select_menu(WIDTH, HEIGHT, screen):
                 if event.key == pygame.K_SPACE:
                     level_menu.buttons[level_menu.selected_index].activate()
                     running = False
-
+        
         pygame.display.flip()
+        
 
 def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
     running = True
@@ -369,3 +371,7 @@ def run_BossIntro(WIDTH, HEIGHT, screen):
         intro_dialogue.draw(screen)
         
         pygame.display.flip()
+
+def getLevel():
+    global game_level
+    return game_level

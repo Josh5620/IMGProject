@@ -1,6 +1,6 @@
 import pygame
 from game import Level1, BossLevel1, Level2
-from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro
+from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel
 from sandbox import sandbox_mode
 
 
@@ -17,7 +17,7 @@ level2 = Level2(WIDTH, HEIGHT)
 
 def start_game_wrapper():
     global game_state
-     
+    game_level = getLevel()
     print(f"Starting game with Level {game_level}")
     print(game_state)
 
@@ -26,7 +26,7 @@ def start_game_wrapper():
     if game_level == 1:
         result = level1.run(screen)
     elif game_level == 2:
-        result = Level2(WIDTH, HEIGHT).run(screen)
+        result = level2.run(screen)
     else:
         # Default to Level 1
         result = level1.run(screen)
