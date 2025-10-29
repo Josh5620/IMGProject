@@ -3,13 +3,10 @@ from game import Level1, BossLevel1, Level2
 from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel, pause_menu
 from sandbox import sandbox_mode
 
-
-
 pygame.init()
 WIDTH, HEIGHT = 960, 640
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shroomlight : The Last Bloom")
- 
 game_state = "start"
 
 level1 = Level1(WIDTH, HEIGHT)

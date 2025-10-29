@@ -1,6 +1,6 @@
 import pygame
 
-game_level = 1
+game_level = 2
 class baseMenu():
     def __init__(self,  buttons, title_img, selected_img):
         self.title_image = title_img
