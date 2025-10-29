@@ -65,17 +65,92 @@ class AnimatedTrap(block):
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.image = self.frames[self.current_frame]
     
-    def check_collision(self, player):
+    def check_collision(self, player, scroll_offset=0):
+        """Check collision with player, accounting for scroll offset like Level 1 enemies"""
         now = pygame.time.get_ticks()
-        if self.rect.colliderect(player.rect):
+        
+        # Convert player rect to world space
+        player_world_rect = player.rect.copy()
+        player_world_rect.x += scroll_offset
+        
+        # Check collision using world space coordinates
+        if self.rect.colliderect(player_world_rect):
             if now - self.last_hit_time > self.cooldown_duration:
                 self.last_hit_time = now
                 player.lives -= self.damage
                 player.iFrame()
 
-    def update(self, player):
+    def update(self, player, scroll_offset=0):
         self.update_animation()
-        self.check_collision(player)
+        self.check_collision(player, scroll_offset)
+
+class FrameBasedTrap(AnimatedTrap):
+    """
+    A trap that only damages the player during specific animation frames.
+    Useful for lightning strikes, fire bursts, etc. where only certain frames are dangerous.
+    """
+    def __init__(self, x, y, spritesheet_path, frame_width, frame_height, 
+                 damage=1, cooldown=1000, damage_frames=None, animation_speed=100):
+        """
+        Args:
+            damage_frames: List of frame indices that deal damage. If None, all frames deal damage.
+                          Example: [2, 3] means only frames 2 and 3 hurt the player
+            animation_speed: Milliseconds per frame (default 100)
+        """
+        super().__init__(x, y, spritesheet_path, frame_width, frame_height, damage, cooldown)
+        self.damage_frames = damage_frames if damage_frames is not None else list(range(len(self.frames)))
+        self.animation_speed = animation_speed
+        
+    def check_collision(self, player, scroll_offset=0):
+        """Only check collision if current frame is a damage frame"""
+        # Only deal damage if we're on a damage frame
+        if self.current_frame not in self.damage_frames:
+            return
+            
+        now = pygame.time.get_ticks()
+        
+        # Convert player rect to world space
+        player_world_rect = player.rect.copy()
+        player_world_rect.x += scroll_offset
+        
+        # Check collision using world space coordinates
+        if self.rect.colliderect(player_world_rect):
+            if now - self.last_hit_time > self.cooldown_duration:
+                self.last_hit_time = now
+                player.lives -= self.damage
+                player.iFrame()
+
+class LightningTrap(FrameBasedTrap):
+    """Lightning trap that only damages on the strike frame"""
+    def __init__(self, x, y, damage=1, cooldown=2000):
+        # Lightning sprite: 960x96 = 10 frames at 96x96 each
+        # The actual lightning strike happens in the middle frames
+        super().__init__(
+            x, y, 
+            'assets/Level2/Traps/LightningTrap.png',
+            frame_width=96,
+            frame_height=96,
+            damage=damage,
+            cooldown=cooldown,
+            damage_frames=[4, 5, 6],  # Middle frames where lightning actually strikes
+            animation_speed=200  # Slower animation - more time to walk through
+        )
+
+class FireTrap(FrameBasedTrap):
+    """Fire trap that damages during the flame burst frames"""
+    def __init__(self, x, y, damage=1, cooldown=1500):
+        # Fire sprite: 384x64 = 6 frames at 64x64 each
+        # Fire builds up then bursts
+        super().__init__(
+            x, y,
+            'assets/Level2/Traps/FireTrap.png',
+            frame_width=64,
+            frame_height=64,
+            damage=damage,
+            cooldown=cooldown,
+            damage_frames=[3, 4, 5],  # Later frames where fire is actively burning
+            animation_speed=250  # Slower animation - more time to walk through
+        )
 
 class Spikes(block):
     def __init__(self, x, y):

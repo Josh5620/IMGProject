@@ -4,7 +4,7 @@ import math
 from blocks import Ice, Spikes, block, end
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager
-from particles import ScreenDropletParticle
+from particles import ScreenDropletParticle, DashTrailParticle, DoubleJumpParticle
 
 
 # ===== Sprite Animation System (one-row spritesheets) =====
@@ -128,6 +128,10 @@ class mainCharacter(WeaponSystem):
         self.double_jump_available = True
         self.double_jump_used = False
         
+        # Key state tracking (to detect new key presses vs held keys)
+        self.jump_key_was_pressed = False
+        self.dash_key_was_pressed = False
+        
         # Game variables
         self.visible = True
         self.invulnerable = False
@@ -166,6 +170,10 @@ class mainCharacter(WeaponSystem):
         self.combo_duration = 180  # 3 seconds at 60 FPS
         self.score_multiplier = 1.0
         self.total_score = 0
+        
+        # Visual effect particles
+        self.dash_particles = []
+        self.double_jump_particles = []
 
     def _get_initial_image(self) -> pygame.Surface:
         """Return the first available animation frame for the player sprite."""
@@ -283,6 +291,11 @@ class mainCharacter(WeaponSystem):
             self.y_velocity = -self.jump_height * 0.8  # Slightly weaker than first jump
             self.double_jump_used = True
             print("Double jump!")
+            
+            # Spawn double jump particles (smoke/cloud effect)
+            for _ in range(8):  # Create 8 particles
+                particle = DoubleJumpParticle(0, 0)  # Position is relative
+                self.double_jump_particles.append(particle)
     
     def trigger_dash(self):
         """Trigger dash ability"""
@@ -306,6 +319,11 @@ class mainCharacter(WeaponSystem):
             self.move(self.dash_direction * dash_distance, 0, all_collidables)
             self.invulnerable = True  # During dash
             self.dash_duration -= 1
+            
+            # Spawn dash trail particles continuously during dash
+            for _ in range(3):  # 3 particles per frame
+                particle = DashTrailParticle(0, 0, self.dash_direction)  # Position is relative
+                self.dash_particles.append(particle)
         else:
             # End dash
             self.dashing = False
@@ -346,25 +364,41 @@ class mainCharacter(WeaponSystem):
         if keys[pygame.K_RIGHT]:
             self.move(actual_speed, 0, all_collidables)
             self.scroll_speed = 0.5
-        if keys[pygame.K_UP]:
-            self.jump()
+        
+        # Jump logic with double jump support (all levels)
+        # Use a state variable to track if jump key was pressed last frame
+        if not hasattr(self, 'jump_key_was_pressed'):
+            self.jump_key_was_pressed = False
+        
+        jump_key_pressed = keys[pygame.K_UP]
+        
+        # Only trigger jump/double jump on new key press (not held)
+        if jump_key_pressed and not self.jump_key_was_pressed:
+            if self.on_ground:
+                self.jump()
+            elif self.double_jump_available and not self.double_jump_used:
+                self.double_jump()
+        
+        self.jump_key_was_pressed = jump_key_pressed
+        
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, all_collidables)  # Fast fall
         
         # Level 2 - Special Abilities (ONLY in Level 2)
         if hasattr(self, 'current_level') and self.current_level == 2:
-            # Dash Ability (Shift key)
-            if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            # Dash Ability (Shift key) - only trigger on new key press
+            dash_key_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+            
+            if dash_key_pressed and not self.dash_key_was_pressed:
                 if self.dash_cooldown <= 0 and not self.dashing:
                     self.trigger_dash()
+            
+            self.dash_key_was_pressed = dash_key_pressed
+            
             if self.dashing:
                 self.update_dash(all_collidables)
             if self.dash_cooldown > 0:
                 self.dash_cooldown -= 1
-            
-            # Double Jump (Spacebar) - Only in Level 2
-            if keys[pygame.K_SPACE]:
-                self.double_jump()
             
             # Combo System Update
             if self.combo_timer > 0:
@@ -726,25 +760,63 @@ class mainCharacter(WeaponSystem):
         # Reset double jump when landing
         if self.on_ground:
             self.double_jump_used = False
+        
+        # Update visual effect particles
+        self.update_particles()
             
     def iFrame(self):
         print("You've been hit!!")
         self.invulnerable = True
         self.invulnerable_start = pygame.time.get_ticks()
+    
+    def update_particles(self):
+        """Update all visual effect particles"""
+        # Update dash particles
+        for particle in self.dash_particles[:]:
+            particle.update()
+            if particle.is_dead():
+                self.dash_particles.remove(particle)
+        
+        # Update double jump particles
+        for particle in self.double_jump_particles[:]:
+            particle.update()
+            if particle.is_dead():
+                self.double_jump_particles.remove(particle)
 
     def draw(self, surface):
+        # Calculate anchor position for particles (player center in screen space)
+        anchor_x = self.rect.x + self.rect.width / 2
+        anchor_y = self.rect.y + self.rect.height / 2
+        
+        # Draw dash trail particles behind player
+        if hasattr(self, 'dash_particles'):
+            for particle in self.dash_particles:
+                particle.draw(surface, anchor_x, anchor_y)
+        
+        # Draw double jump particles behind player
+        if hasattr(self, 'double_jump_particles'):
+            for particle in self.double_jump_particles:
+                particle.draw(surface, anchor_x, anchor_y)
+        
         # Handle invulnerability timing
         if self.invulnerable:
             now = pygame.time.get_ticks()
-            if now - self.invulnerable_start >= 2000:  # CHANGE INVI TIMING HERE
+            # Check if invulnerable_start exists (from iFrame), if not, skip blinking
+            if hasattr(self, 'invulnerable_start') and now - self.invulnerable_start >= 2000:
                 self.invulnerable = False
             
-            blink_interval = 100
-            time_since_start = now - self.invulnerable_start
-            should_show = (time_since_start // blink_interval) % 2 == 0
-            
-            if should_show and self.visible:
-                surface.blit(self.image, self.rect)
+            # Only blink if we have an invulnerable_start time
+            if hasattr(self, 'invulnerable_start'):
+                blink_interval = 100
+                time_since_start = now - self.invulnerable_start
+                should_show = (time_since_start // blink_interval) % 2 == 0
+                
+                if should_show and self.visible:
+                    surface.blit(self.image, self.rect)
+            else:
+                # No blink during dash invulnerability
+                if self.visible:
+                    surface.blit(self.image, self.rect)
         else:
             if self.visible:
                 on_screen_pos = (self.rect.x , self.rect.y)
@@ -757,9 +829,53 @@ class mainCharacter(WeaponSystem):
         
         # Draw projectiles
         self.projectile_manager.draw(surface)
+        
+        # Draw dash bar if in Level 2
+        if hasattr(self, 'current_level') and self.current_level == 2:
+            self.draw_dash_bar(surface)
             
     def get_position(self):
         return self.rect.topleft
+
+    def draw_dash_bar(self, surface):
+        """Draw a dash cooldown bar at the bottom right of the screen"""
+        # Bar dimensions and position
+        bar_width = 150
+        bar_height = 20
+        bar_x = surface.get_width() - bar_width - 20  # 20px from right edge
+        bar_y = surface.get_height() - bar_height - 20  # 20px from bottom
+        
+        # Background (dark gray)
+        bg_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+        pygame.draw.rect(surface, (40, 40, 40), bg_rect)
+        pygame.draw.rect(surface, (200, 200, 200), bg_rect, 2)  # Border
+        
+        # Calculate fill percentage (inverted - 120 cooldown = 0%, 0 cooldown = 100%)
+        max_cooldown = 120  # Match the cooldown duration in trigger_dash
+        if self.dash_cooldown <= 0:
+            fill_percent = 1.0  # Ready to dash
+            bar_color = (0, 255, 100)  # Bright green when ready
+        else:
+            fill_percent = 1.0 - (self.dash_cooldown / max_cooldown)
+            bar_color = (255, 200, 50)  # Yellow/orange during cooldown
+        
+        # Draw fill bar
+        if fill_percent > 0:
+            fill_width = int(bar_width * fill_percent)
+            fill_rect = pygame.Rect(bar_x, bar_y, fill_width, bar_height)
+            pygame.draw.rect(surface, bar_color, fill_rect)
+        
+        # Draw text label
+        font = pygame.font.Font(None, 24)
+        if self.dash_cooldown <= 0:
+            text = font.render("DASH READY", True, (255, 255, 255))
+        else:
+            frames_left = self.dash_cooldown
+            seconds_left = frames_left / 60.0  # Convert frames to seconds (60 FPS)
+            text = font.render(f"DASH: {seconds_left:.1f}s", True, (255, 255, 255))
+        
+        text_rect = text.get_rect(center=(bar_x + bar_width // 2, bar_y + bar_height // 2))
+        surface.blit(text, text_rect)
 
 
     def draw_slowdown_effect(self, surface, on_screen_pos):

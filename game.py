@@ -3,7 +3,7 @@ import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from Level2Enemies import MushroomPickup
-from blocks import block, Spikes, start, end, Ice, AnimatedTrap
+from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
 import random
 
@@ -100,7 +100,7 @@ class Game:
     def handle_scrolling(self):
         if not self.player or not self.doScroll:
             return
-            
+
         current_player_x = self.player.rect.x
         
         if current_player_x > (self.WIDTH - self.scroll_threshold):
@@ -299,7 +299,7 @@ class Game:
             # For damage with animated traps
             if self.player:
                 for trap in self.animated_traps:
-                    trap.update(self.player)
+                    trap.update(self.player, scroll_offset=self.ground_scroll)
                     self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
 
             if self.player:
@@ -386,6 +386,7 @@ class Level1(Game):
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
+        self.player.current_level = 1  # Level 1
         self.player.enemies = self.enemies
 
 class Level2(Game):
@@ -394,7 +395,7 @@ class Level2(Game):
 
        #--- Assets loading ---
        self.load_background('assets/BGL2', 5)
-       self.load_tilemap("DungeonMap.tmx")
+       self.load_tilemap("DungeonMapActual.tmx")
        self.load_ui_assets()
        self.animated_traps = []
 
@@ -447,6 +448,22 @@ class Level2(Game):
                     self.animated_traps.append(trap)
                     continue
                 
+                elif typ == "lightningtrap":
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y
+                    trap = LightningTrap(anchor_x, anchor_y, damage=1, cooldown=2000)
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    continue
+                
+                elif typ == "firetrap":
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y
+                    trap = FireTrap(anchor_x, anchor_y, damage=1, cooldown=3000)
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    continue
+                
                 elif typ == "mushroom4":
                     # Get the mushroom image directly from the tile object's gid
                     # (since it's placed as a tile from the sprite sheet in Tiled)
@@ -468,10 +485,12 @@ class Level2(Game):
         if self.start_position:
             self.player = mainCharacter(self.start_position[0], self.start_position[1])
             self.player.level = self
+            self.player.current_level = 2  # Enable Level 2 abilities
         else:
             # Fallback if no start position is found
             self.player = mainCharacter(100, 100)
             self.player.level = self
+            self.player.current_level = 2  # Enable Level 2 abilities
             print("Warning: No start position found in tilemap. Defaulting to (100, 100).")
 
 
@@ -543,6 +562,7 @@ class BossLevel1(Game):
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
+        self.player.current_level = 1  # Boss Level (Level 1 abilities)
         self.player.enemies = self.enemies
     
     def run(self, screen):
