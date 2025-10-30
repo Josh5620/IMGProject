@@ -1,13 +1,13 @@
 {
   "player": {
-    "x": 669,
+    "x": 682,
     "y": 532,
     "lives": 10
   },
   "enemies": [],
   "powerups": [],
   "settings": {
-    "current_ai_index": 3,
+    "current_ai_index": 0,
     "gravity_enabled": true,
     "debug_mode": true
   }

@@ -15,7 +15,7 @@ import random
 import inspect
 from entities import mainCharacter, Enemy
 from Level1Enemies import Level1Enemy
-from Level2Enemies import MutatedMushroom, Skeleton, FlyingMonster, Level2Boss
+from Level2Enemies import MutatedMushroom, Skeleton, FlyingEye
 from level2_powerups import Level2Powerup, LEVEL2_POWERUP_TYPES
 
 # Powerup class definition for basic powerups (since it was incomplete in entities.py)
@@ -232,20 +232,21 @@ class SandboxMode:
                 elif enemy_type == "skeleton":
                     enemy = Skeleton(x, y)
                 elif enemy_type == "flying":
-                    enemy = FlyingMonster(x, y)
+                    enemy = FlyingEye(x, y)
                 else:
                     enemy = MutatedMushroom(x, y)  # Default
             elif current_ai == "hunter":
                 # Hunter is also one of the 3 new enemies
-                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingEye(x, y)])
             elif current_ai == "stealth":
                 # Stealth is also one of the 3 new enemies
-                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingEye(x, y)])
             elif current_ai == "boss":
-                enemy = Level2Boss(x, y)  # Use new Level2Boss from entities.py
+                # Boss enemies removed - use random Level 2 enemy instead
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingEye(x, y)])
             else:
                 # Default to one of the 3 new enemies
-                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingMonster(x, y)])
+                enemy = random.choice([MutatedMushroom(x, y), Skeleton(x, y), FlyingEye(x, y)])
             
             enemy.level = 2  # Add level attribute
             print(f"Spawned Level 2 {current_ai} enemy at ({x}, {y})")

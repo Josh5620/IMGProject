@@ -35,7 +35,25 @@ def _slice_one_row(sheet: pygame.Surface, *, frame_width=None, frame_count=None,
         rect = pygame.Rect(i * frame_width, 0, frame_width, h)
         frame = sheet.subsurface(rect).copy()
         if scale_to:
-            frame = pygame.transform.scale(frame, scale_to)
+            original_width = frame.get_width()
+            original_height = frame.get_height()
+
+            target_height = scale_to[1] 
+
+            # Calculate the scale factor to maintain aspect ratio
+            # (Avoid division by zero if height is 0)
+            if original_height > 0:
+                scale_factor = target_height / original_height
+            else:
+                scale_factor = 1.0
+
+            # Calculate the new width based on the scale factor
+            target_width = int(original_width * scale_factor)
+
+            # Create the new, proportional size
+            new_target_size = (target_width, target_height)
+
+            frame = pygame.transform.scale(frame, new_target_size)
         frames.append(frame)
     return frames
 
@@ -56,6 +74,7 @@ def build_state_animations_from_manifest(manifest: dict[str, dict]) -> dict[str,
         file = spec["file"]
         frame_width = spec.get("frame_width")
         frame_count = spec.get("frame_count")
+        scale_to = spec.get("scale_to", FRAME_TARGET_SIZE)  # Allow custom scale_to from manifest
         if file not in cache:
             try:
                 sheet = pygame.image.load(file).convert_alpha()
@@ -63,7 +82,7 @@ def build_state_animations_from_manifest(manifest: dict[str, dict]) -> dict[str,
                 raise FileNotFoundError(f"Sprite sheet not found: {file}") from exc
             except pygame.error as exc:
                 raise RuntimeError(f"Failed to load sprite sheet '{file}': {exc}") from exc
-            cache[file] = _slice_one_row(sheet, frame_width=frame_width, frame_count=frame_count)
+            cache[file] = _slice_one_row(sheet, frame_width=frame_width, frame_count=frame_count, scale_to=scale_to)
         anims[state] = cache[file]
         return anims[state]
 
@@ -82,8 +101,8 @@ SCRATCH_SOUND = pygame.mixer.Sound("assets/SFX/ScratchAttack.mp3")
 SCRATCH_SOUND.set_volume(0.3)
 
 #==== Hurt Sounds ====
-CAT_HURT_SOUND = pygame.mixer.Sound("assets/SFX/CatDamaged.mp3")
-CAT_HURT_SOUND.set_volume(0.3)
+PLAYER_HURT_SOUND = pygame.mixer.Sound("assets/SFX/playerhurt.mp3")
+PLAYER_HURT_SOUND.set_volume(1.0)
 
 class mainCharacter(WeaponSystem):
 
@@ -623,7 +642,7 @@ class mainCharacter(WeaponSystem):
             print("Player defeated!")
         else:
             # Brief invulnerability after taking damage
-            CAT_HURT_SOUND.play()
+            PLAYER_HURT_SOUND.play()
             self.iFrame()
             self.hurt_timer = self.hurt_frames
             # You might want to add a timer to reset invulnerability
