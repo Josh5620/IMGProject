@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="77">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="97">
  <tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
  <tileset firstgid="400" source="assets/forestobjects.tsx"/>
  <layer id="1" name="Tile Layer 1" width="160" height="20">
@@ -84,5 +84,23 @@
   <object id="74" name="type" type="lightningtrap" x="174.667" y="138.667" width="96" height="96"/>
   <object id="75" name="type" type="lightningtrap" x="349.333" y="137.333" width="96" height="96"/>
   <object id="76" name="type" type="lightningtrap" x="240" y="9.33333" width="96" height="96"/>
+  <object id="77" name="type" type="skeleton" x="1767" y="486.5">
+   <point/>
+  </object>
+  <object id="82" name="type" type="mushroom_enemy" x="978.667" y="166.667">
+   <point/>
+  </object>
+  <object id="83" name="type" type="flyingeye" x="1410.67" y="342">
+   <point/>
+  </object>
+  <object id="86" name="type" type="mushroom_enemy" x="372.75" y="546.75">
+   <point/>
+  </object>
+  <object id="88" name="type" type="health_mushroom" x="223.333" y="530" width="47.3333" height="21.3333"/>
+  <object id="90" name="type" type="fire_mushroom" x="22.6667" y="77.3333" width="63.3333" height="23.3333"/>
+  <object id="92" name="type" type="speed_mushroom" x="893.333" y="364" width="67.3333" height="25.3333"/>
+  <object id="94" name="type" type="strength_mushroom" x="1662" y="561.333" width="82" height="20.6667"/>
+  <object id="95" name="type" type="amulet_mushroom" x="1094" y="422"/>
+  <object id="96" name="type" type="wisdom_mushroom" x="1310" y="546.667"/>
  </objectgroup>
 </map>

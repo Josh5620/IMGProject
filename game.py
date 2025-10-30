@@ -2,9 +2,10 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
-from Level2Enemies import MushroomPickup
+from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
 from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
+from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
 import random
 
 class Game:
@@ -178,9 +179,11 @@ class Game:
     def update_enemies(self):
         for enemy in self.enemies:
             if enemy.alive:
-                if isinstance(enemy, Level1Enemy):
+                # Level 1 and Level 2 enemies both use the same update signature
+                if isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
                     enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
                 else:
+                    # Fallback for other enemy types
                     enemy.update(self.player)
                 
                 enemy.draw(self.screen)
@@ -398,6 +401,11 @@ class Level2(Game):
        self.load_tilemap("DungeonMapActual.tmx")
        self.load_ui_assets()
        self.animated_traps = []
+       self.powerups = []  # Level 2 powerups
+       
+       # Load mushroom sprites for powerups
+       self.mushroom_sprites = load_mushroom_sprites()
+       print(f"✅ Loaded {len(self.mushroom_sprites)} mushroom powerup sprites")
 
        self.process_tilemap()
        self.initialize_game_objects()
@@ -438,9 +446,34 @@ class Level2(Game):
                     self.obstacles.append(start(obj.x, obj.y))
                     self.start_position = (obj.x , obj.y - 70)
                     continue
+                
+                # === LEVEL 2 ENEMY SPAWNING ===
+                elif typ == "skeleton":
+                    # Spawn at ground level - obj.y is bottom of object in Tiled
+                    enemy = Skeleton(obj.x, obj.y - 96)  # Adjusted for 128px sprite + centering
+                    enemy.level = self
+                    self.enemies.append(enemy)
+                    print(f"Spawned Skeleton at ({obj.x}, {obj.y - 96})")
+                    continue
+                
+                elif typ == "mushroom_enemy":
+                    # Spawn at ground level
+                    enemy = MutatedMushroom(obj.x, obj.y - 96)  # Adjusted for 128px sprite + centering
+                    enemy.level = self
+                    self.enemies.append(enemy)
+                    print(f"Spawned Mutated Mushroom at ({obj.x}, {obj.y - 96})")
+                    continue
+                
+                elif typ == "flyingeye":
+                    # Flying enemy - spawn in air
+                    enemy = FlyingEye(obj.x, obj.y - 64)  # Different offset for flying
+                    enemy.level = self
+                    self.enemies.append(enemy)
+                    print(f"Spawned Flying Eye at ({obj.x}, {obj.y - 64})")
+                    continue
+                
+                # === TRAPS ===
                 elif typ == "sawtrap":
-                    
-
                     anchor_x = obj.x + obj.width / 2
                     anchor_y = obj.y 
                     trap = AnimatedTrap(anchor_x, anchor_y, 'assets/Level2/Traps/SawTrap.png', 64, 32)
@@ -464,6 +497,7 @@ class Level2(Game):
                     self.animated_traps.append(trap)
                     continue
                 
+                # === COLLECTIBLES ===
                 elif typ == "mushroom4":
                     # Get the mushroom image directly from the tile object's gid
                     # (since it's placed as a tile from the sprite sheet in Tiled)
@@ -478,6 +512,22 @@ class Level2(Game):
                     else:
                         print(f"Warning: Could not load mushroom image for object at ({obj.x}, {obj.y})")
                     continue
+                
+                # === LEVEL 2 POWERUPS ===
+                elif typ in TILED_OBJECT_TO_POWERUP:
+                    # Map Tiled object name to powerup type
+                    powerup_type = TILED_OBJECT_TO_POWERUP[typ]
+                    powerup = create_level2_powerup_with_sprite(
+                        obj.x, obj.y, powerup_type, self.mushroom_sprites
+                    )
+                    self.powerups.append(powerup)
+                    print(f"Spawned {powerup_type} powerup at ({obj.x}, {obj.y})")
+                    continue
+        
+        print(f"Level 2 - Number of obstacles created: {len(self.obstacles)}")
+        print(f"Level 2 - Number of enemies spawned: {len(self.enemies)}")
+        print(f"Level 2 - Number of traps spawned: {len(self.animated_traps)}")
+        print(f"Level 2 - Number of powerups spawned: {len(self.powerups)}")
         
         self.build_spatial_hash() # Build spatial hash after obstacles are created
 
@@ -492,6 +542,109 @@ class Level2(Game):
             self.player.level = self
             self.player.current_level = 2  # Enable Level 2 abilities
             print("Warning: No start position found in tilemap. Defaulting to (100, 100).")
+    
+    def update_powerups(self):
+        """Update all Level 2 powerups"""
+        for powerup in self.powerups[:]:
+            if not powerup.collected:
+                powerup.update(self.player, dt=1.0)
+            else:
+                # Keep updating until particles are gone
+                powerup.update(self.player, dt=1.0)
+                if not powerup.collection_particles:
+                    self.powerups.remove(powerup)
+    
+    def draw_powerups(self):
+        """Draw all Level 2 powerups with scroll offset"""
+        for powerup in self.powerups:
+            powerup.draw(self.screen, self.scroll_offset)
+    
+    def run(self, screen):
+        """Override run method to include Level 2 powerup logic"""
+        self.screen = screen
+        self.reset_game()
+        
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return "quit"
+                
+                # Check for pause key (ESC or P)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        from menus import pause_menu
+                        game_surface = self.screen.copy()
+                        pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
+                        
+                        if pause_action == 'restart':
+                            self.reset_game()
+                        elif pause_action == 'main_menu':
+                            return "start"
+                        elif pause_action == 'quit':
+                            return "quit"
+                    
+            self.screen.fill((0, 0, 0))
+            self.draw_bg()
+            
+            self.update_obstacles()
+            self.draw_tilemap()
+            self.update_particles()
+            self.update_enemies()
+            
+            # MEMORY LEAK FIX: More efficient arrow cleanup
+            active_arrows = []
+            for arrow in self.arrows:
+                if not arrow.alive:
+                    continue
+
+                arrow.update(self.obstacles)
+                arrow.collide(self.player, scroll_offset=self.ground_scroll)
+
+                if arrow.alive:
+                    active_arrows.append(arrow)
+
+            self.arrows = active_arrows
+
+            for arrow in self.arrows:
+                arrow.draw(self.screen, scroll_offset=self.ground_scroll)
+            
+            # Check for mushroom collection
+            self.check_mushroom_collection()
+            
+            # === LEVEL 2 SPECIFIC: Update and draw powerups ===
+            self.update_powerups()
+            self.draw_powerups()
+            
+            self.draw_debug_info()
+
+            keys = pygame.key.get_pressed()
+            self.handle_input(keys)
+            
+            # For damage with animated traps
+            if self.player:
+                for trap in self.animated_traps:
+                    trap.update(self.player, scroll_offset=self.ground_scroll)
+                    self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+
+            if self.player:
+                self.player.update(keys, self.obstacles, self.enemies)
+                self.player.draw(self.screen)
+            
+            self.handle_scrolling()
+            
+            self.update_lives()
+            self.draw_mushroom_count()
+            self.draw_debug_info()
+            
+            game_state = self.check_win_lose_conditions()
+            if game_state != "playing":
+                return game_state
+            
+            pygame.display.flip()
+            self.clock.tick(60)
+            
+        return "menu"
 
 
     

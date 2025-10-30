@@ -335,7 +335,19 @@ class mainCharacter(WeaponSystem):
         if self.dash_duration > 0:
             # Dash with invincibility
             dash_distance = 15  # Fast dash
+            
+            # Store old position to check if we got blocked
+            old_x = self.rect.x
             self.move(self.dash_direction * dash_distance, 0, all_collidables)
+            
+            # If we didn't move (hit a wall), cancel the dash
+            if self.rect.x == old_x:
+                print("Dash cancelled - hit wall!")
+                self.dashing = False
+                self.dash_duration = 10  # Reset duration
+                self.invulnerable = False
+                return
+            
             self.invulnerable = True  # During dash
             self.dash_duration -= 1
             

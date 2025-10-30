@@ -4,19 +4,19 @@ from entities import build_state_animations_from_manifest
 import time
 
 WARRIOR_ANIM = {
-    "run":       {"file": "assets/Level1/Warrior/Run.png",       "frame_width": 40},
-    "attack": {"file": "assets/Level1/Warrior/Attack.png", "frame_width": 40}
+    "run":       {"file": "assets/Level1/Warrior/Run.png",       "frame_width": 40, "scale_to": (64, 64)},
+    "attack": {"file": "assets/Level1/Warrior/Attack.png", "frame_width": 40, "scale_to": (64, 64)}
 }
 
 ARCHER_ANIM = {
-    "run":       {"file": "assets/Level1/Archer/Run.png",       "frame_width": 64},
-    "attack": {"file": "assets/Level1/Archer/Attack.png", "frame_width": 64}
+    "run":       {"file": "assets/Level1/Archer/Run.png",       "frame_width": 64, "scale_to": (64, 64)},
+    "attack": {"file": "assets/Level1/Archer/Attack.png", "frame_width": 64, "scale_to": (64, 64)}
 }
 
 
 class Level1Enemy:
     
-    def __init__(self, x, y, width=48, height=48, anim_manifest : dict = None):
+    def __init__(self, x, y, width=64, height=64, anim_manifest : dict = None):
         
         
         self.rect        = pygame.Rect(x, y, width, height)
@@ -397,7 +397,7 @@ class Level1Enemy:
 
 class Archer(Level1Enemy):
     
-    def __init__(self, x, y, width=48, height=48):
+    def __init__(self, x, y, width=64, height=64):
         super().__init__(x, y, width, height, anim_manifest=ARCHER_ANIM)
 
         self.sight_range = 250
@@ -510,7 +510,7 @@ class Archer(Level1Enemy):
 class Warrior(Level1Enemy):
     
     
-    def __init__(self, x, y, width=48, height=48):
+    def __init__(self, x, y, width=64, height=64):
         super().__init__(x, y, width, height, anim_manifest=WARRIOR_ANIM)
         
         self.sight_range = 150

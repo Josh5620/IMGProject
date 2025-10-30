@@ -50,33 +50,48 @@ import time
 
 # SKELETON - Melee bone warrior (600x150 for Idle/Walk = 4 frames, 1200x150 for Attack = 8 frames)
 SKELETON_ANIM = {
-    "idle":     {"file": "assets/Level2/Skeleton/Idle.png",     "frame_width": 150, "scale_to": (96, 96)},
-    "run":      {"file": "assets/Level2/Skeleton/Walk.png",     "frame_width": 150, "scale_to": (96, 96)},
-    "attack":   {"file": "assets/Level2/Skeleton/Attack.png",   "frame_width": 150, "scale_to": (96, 96)}
+    "idle":     {"file": "assets/Level2/Skeleton/Idle.png",     "frame_width": 150, "scale_to": (128, 128)},
+    "run":      {"file": "assets/Level2/Skeleton/Walk.png",     "frame_width": 150, "scale_to": (128, 128)},
+    "attack":   {"file": "assets/Level2/Skeleton/Attack.png",   "frame_width": 150, "scale_to": (128, 128)}
 }
 
 # MUSHROOM - Melee poison attacker (600x150 for Idle = 4 frames, 1200x150 for Run/Attack = 8 frames)
 MUSHROOM_ANIM = {
-    "idle":     {"file": "assets/Level2/Mushroom/Idle.png",     "frame_width": 150, "scale_to": (96, 96)},
-    "run":      {"file": "assets/Level2/Mushroom/Run.png",      "frame_width": 150, "scale_to": (96, 96)},
-    "attack":   {"file": "assets/Level2/Mushroom/Attack.png",   "frame_width": 150, "scale_to": (96, 96)}
+    "idle":     {"file": "assets/Level2/Mushroom/Idle.png",     "frame_width": 150, "scale_to": (128, 128)},
+    "run":      {"file": "assets/Level2/Mushroom/Run.png",      "frame_width": 150, "scale_to": (128, 128)},
+    "attack":   {"file": "assets/Level2/Mushroom/Attack.png",   "frame_width": 150, "scale_to": (128, 128)}
 }
 
 # FLYING EYE - Aerial ranged attacker (1200x150 = 8 frames each)
 FLYING_EYE_ANIM = {
-    "idle":     {"file": "assets/Level2/Flying eye/Flight.png", "frame_width": 150, "scale_to": (96, 96)},
-    "run":      {"file": "assets/Level2/Flying eye/Flight.png", "frame_width": 150, "scale_to": (96, 96)},
-    "attack":   {"file": "assets/Level2/Flying eye/Attack.png", "frame_width": 150, "scale_to": (96, 96)}
+    "idle":     {"file": "assets/Level2/Flying eye/Flight.png", "frame_width": 150, "scale_to": (128, 128)},
+    "run":      {"file": "assets/Level2/Flying eye/Flight.png", "frame_width": 150, "scale_to": (128, 128)},
+    "attack":   {"file": "assets/Level2/Flying eye/Attack.png", "frame_width": 150, "scale_to": (128, 128)}
 }
 class Level2Enemy:
     """Base Level 2 enemy class with enhanced AI behaviors"""
     
-    def __init__(self, x, y, width=48, height=48, anim_manifest: dict = None):
+    def __init__(self, x, y, width=128, height=128, anim_manifest: dict = None):
         
-        self.rect = pygame.Rect(x, y, width, height)
+        # Hitbox is smaller than sprite for better collision detection
+        hitbox_width = 80
+        hitbox_height = 80
+        
+        # Center the hitbox position
+        hitbox_x = x + (width - hitbox_width) // 2
+        hitbox_y = y + (height - hitbox_height) // 2
+        
+        self.rect = pygame.Rect(hitbox_x, hitbox_y, hitbox_width, hitbox_height)
+        # IMPORTANT: Keep original spawn position for physics calculations, not centered position
         self.original_x = x
         self.original_y = y
         self.name = "Level2Enemy"
+        
+        # Store sprite dimensions for drawing
+        self.sprite_width = width
+        self.sprite_height = height
+        self.sprite_offset_x = -(width - hitbox_width) // 2
+        self.sprite_offset_y = -(height - hitbox_height) // 2
 
         self.alive = True
         self.visible = True
@@ -95,7 +110,7 @@ class Level2Enemy:
         self.ai_state = "idle"
         self.ai_timer = 0
 
-        self.patrol_start = x
+        self.patrol_start = hitbox_x  # Use hitbox position for patrol
         self.patrol_range = 150
 
         self.sight_range = 250
@@ -103,7 +118,7 @@ class Level2Enemy:
         self.sight_color = (139, 0, 139, 100)  # Dark purple for Level 2
         self.player_spotted = False
 
-        self.debug_mode = True
+        self.debug_mode = False  # Hide debug boxes by default
 
         self.max_hp = 120
         self.current_hp = self.max_hp
@@ -285,7 +300,7 @@ class Level2Enemy:
         else:
             self.y_velocity = 0
         
-        self.rect.y += self.y_velocity
+        self.rect.y += int(self.y_velocity)  # Use int to prevent float accumulation
         self.check_vertical_collision(obstacles)
         
         if not self.check_ground_ahead(self.direction * 5, obstacles):
@@ -406,7 +421,10 @@ class Level2Enemy:
         """Called when enemy attacks"""
         print(f"{self.name} attacks player!")
         self.start_attack_anim(400)
-        pass
+        
+        # Damage the player
+        if player and hasattr(player, 'take_damage'):
+            player.take_damage(1)  # Default 1 damage
 
     def take_damage(self, damage):
         """Take damage from player attacks"""
@@ -422,15 +440,16 @@ class Level2Enemy:
         if not self.alive or not self.visible:
             return
         
-        screen_x = self.rect.x - self.scroll_offset
-        screen_y = self.rect.y
+        # Draw sprite centered over hitbox
+        screen_x = self.rect.x - self.scroll_offset + self.sprite_offset_x
+        screen_y = self.rect.y + self.sprite_offset_y
         
         self.draw_line_of_sight(surface)
         surface.blit(self.image, (screen_x, screen_y))
 
         if self.player_spotted:
             bounce = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 3
-            exclamation_x = screen_x + self.rect.width // 2 - self.exclamation_img.get_width() // 2
+            exclamation_x = screen_x + self.sprite_width // 2 - self.exclamation_img.get_width() // 2
             exclamation_y = screen_y - self.exclamation_img.get_height() - 5 - bounce
             surface.blit(self.exclamation_img, (exclamation_x, exclamation_y))
 
@@ -441,6 +460,10 @@ class Level2Enemy:
         
         if self.debug_mode:
             self.draw_debug_ranges(surface, self.scroll_offset)
+            # Draw hitbox in debug mode
+            hitbox_rect = self.rect.copy()
+            hitbox_rect.x -= self.scroll_offset
+            pygame.draw.rect(surface, (255, 0, 0), hitbox_rect, 2)
              
     def draw_debug_ranges(self, surface, scroll_offset=0):
         """Draw debug attack range"""
@@ -578,7 +601,8 @@ class TeleportParticle:
 class MutatedMushroom(Level2Enemy):
     """Level 2 - Mutated Mushroom melee enemy with poison attacks"""
     
-    def __init__(self, x, y, width=96, height=96):
+    def __init__(self, x, y, width=128, height=128):
+        # Pass dimensions to parent - parent will create centered hitbox
         super().__init__(x, y, width, height, anim_manifest=MUSHROOM_ANIM)
         self.name = "Mushroom"
         
@@ -586,7 +610,7 @@ class MutatedMushroom(Level2Enemy):
         self.max_hp = 150
         self.current_hp = self.max_hp
         self.speed = 1.8
-        self.attack_damage = 12
+        self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
         
         # Melee combat settings
         self.sight_range = 220
@@ -602,6 +626,10 @@ class MutatedMushroom(Level2Enemy):
         """Poison slash attack with cloud effect"""
         self.start_attack_anim(450)
         print(f"{self.name} releases poison spores!")
+        
+        # Damage the player
+        if player and hasattr(player, 'take_damage'):
+            player.take_damage(self.attack_damage)
         
         # Create poison cloud on attack
         if self.poison_cooldown <= 0:
@@ -633,7 +661,8 @@ class MutatedMushroom(Level2Enemy):
 class Skeleton(Level2Enemy):
     """Level 2 - Skeleton melee warrior with bone slash attacks"""
     
-    def __init__(self, x, y, width=96, height=96):
+    def __init__(self, x, y, width=128, height=128):
+        # Pass dimensions to parent - parent will create centered hitbox
         super().__init__(x, y, width, height, anim_manifest=SKELETON_ANIM)
         self.name = "Skeleton"
         
@@ -641,7 +670,7 @@ class Skeleton(Level2Enemy):
         self.max_hp = 120
         self.current_hp = self.max_hp
         self.speed = 2.2
-        self.attack_damage = 15
+        self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
         
         # Melee combat settings
         self.sight_range = 250
@@ -656,6 +685,10 @@ class Skeleton(Level2Enemy):
         """Bone slash melee attack with visual effects"""
         self.start_attack_anim(400)
         print(f"{self.name} slashes with bone sword!")
+        
+        # Damage the player
+        if player and hasattr(player, 'take_damage'):
+            player.take_damage(self.attack_damage)
         
         # Create slash effect particles
         for i in range(5):
@@ -687,7 +720,8 @@ class Skeleton(Level2Enemy):
 class FlyingEye(Level2Enemy):
     """Level 2 - Flying Eye monster with aerial ranged attacks"""
     
-    def __init__(self, x, y, width=96, height=96):
+    def __init__(self, x, y, width=128, height=128):
+        # Pass dimensions to parent - parent will create centered hitbox
         super().__init__(x, y, width, height, anim_manifest=FLYING_EYE_ANIM)
         self.name = "Flying Eye"
         
@@ -695,7 +729,7 @@ class FlyingEye(Level2Enemy):
         self.max_hp = 100
         self.current_hp = self.max_hp
         self.speed = 2.5
-        self.attack_damage = 18
+        self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
         
         # Flying properties
         self.can_fly = True
@@ -726,6 +760,10 @@ class FlyingEye(Level2Enemy):
         """Ranged eye beam attack with teleport effect"""
         self.start_attack_anim(500)
         print(f"{self.name} fires energy beam!")
+        
+        # Damage the player
+        if player and hasattr(player, 'take_damage'):
+            player.take_damage(self.attack_damage)
         
         # Create energy beam particle
         beam = BoneParticle(
