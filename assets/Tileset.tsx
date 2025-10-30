@@ -21,6 +21,16 @@
    <property name="type" value="ice"/>
   </properties>
  </tile>
+ <tile id="46">
+  <properties>
+   <property name="type" value="slope_up_right"/>
+  </properties>
+ </tile>
+ <tile id="47">
+  <properties>
+   <property name="type" value="slope_down_right"/>
+  </properties>
+ </tile>
  <tile id="49">
   <properties>
    <property name="type" value="ice"/>

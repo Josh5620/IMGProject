@@ -2,8 +2,8 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
-from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
-from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
+from Level2Enemies import MushroomPickup
+from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap, Slope
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
 import random
@@ -242,30 +242,38 @@ class Game:
         self.reset_game()
         
         running = True
+        esc_was_pressed = False  # Track ESC key state to avoid multiple triggers
+        
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
                 
-                # Check for pause key (ESC or P)
+                # Check for pause key (ESC only)
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
-                        # Import here to avoid circular import
-                        from menus import pause_menu
-                        
-                        # Capture current game state
-                        game_surface = self.screen.copy()
-                        
-                        # Show pause menu
-                        pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
-                        
-                        if pause_action == 'restart':
-                            self.reset_game()
-                        elif pause_action == 'main_menu':
-                            return "start"
-                        elif pause_action == 'quit':
-                            return "quit"
-                        # If 'resume', just continue the game loop
+                    if event.key == pygame.K_ESCAPE:
+                        if not esc_was_pressed:  # Only trigger once per press
+                            esc_was_pressed = True
+                            # Import here to avoid circular import
+                            from menus import pause_menu
+                            
+                            # Capture current game state
+                            game_surface = self.screen.copy()
+                            
+                            # Show pause menu
+                            pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
+                            
+                            if pause_action == 'restart':
+                                self.reset_game()
+                            elif pause_action == 'main_menu':
+                                return "start"
+                            elif pause_action == 'quit':
+                                return "quit"
+                            # If 'resume', just continue the game loop
+                
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_ESCAPE:
+                        esc_was_pressed = False  # Reset when key is released
                     
             self.screen.fill((0, 0, 0))
             self.draw_bg()
@@ -351,13 +359,26 @@ class Level1(Game):
                 props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
                 typ = props.get("type")
                 
-                # Use dictionary mapping for obstacle types
-                obstacle_map = {
-                    "tombstone": Spikes,
-                    "ice": Ice
-                }
-                obstacle_class = obstacle_map.get(typ, block)
-                self.obstacles.append(obstacle_class(x * TILE_SIZE, y * TILE_SIZE))
+                # Handle different obstacle types
+                if typ == "tombstone":
+                    self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
+                elif typ == "ice":
+                    self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
+                elif typ == "slope_up_right":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-right"))
+                    print(f"✓ Created slope_up_right at ({x * TILE_SIZE}, {y * TILE_SIZE})")
+                elif typ == "slope_up_left":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-left"))
+                    print(f"✓ Created slope_up_left at ({x * TILE_SIZE}, {y * TILE_SIZE})")
+                elif typ == "slope_down_right":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-right"))
+                    print(f"✓ Created slope_down_right at ({x * TILE_SIZE}, {y * TILE_SIZE})")
+                elif typ == "slope_down_left":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-left"))
+                    print(f"✓ Created slope_down_left at ({x * TILE_SIZE}, {y * TILE_SIZE})")
+                else:
+                    # Default block
+                    self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
         
         
         if isinstance(objectLayer, pytmx.TiledObjectGroup):
@@ -427,13 +448,22 @@ class Level2(Game):
                 props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
                 typ = props.get("type")
                 
-                # Use dictionary mapping for obstacle types
-                obstacle_map = {
-                    "tombstone": Spikes,
-                    "ice": Ice
-                }
-                obstacle_class = obstacle_map.get(typ, block)
-                self.obstacles.append(obstacle_class(x * TILE_SIZE, y * TILE_SIZE))
+                # Handle different obstacle types
+                if typ == "tombstone":
+                    self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
+                elif typ == "ice":
+                    self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
+                elif typ == "slope_up_right":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-right"))
+                elif typ == "slope_up_left":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-left"))
+                elif typ == "slope_down_right":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-right"))
+                elif typ == "slope_down_left":
+                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-left"))
+                else:
+                    # Default block
+                    self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
         
         
         if isinstance(objectLayer, pytmx.TiledObjectGroup):

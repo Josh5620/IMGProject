@@ -102,7 +102,8 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         main_menu.draw(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()  # Exit the program when window X is clicked
         
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -114,9 +115,6 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
                 if event.key == pygame.K_SPACE:
                     main_menu.buttons[main_menu.selected_index].activate()
                     running = False  # Exit menu after button press
-                if event.key == pygame.K_p:  # Press P to access sandbox
-                    setattr(pygame, '_game_state', 'sandbox')
-                    running = False
 
         pygame.display.flip()
 
@@ -176,7 +174,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
         level_menu.draw(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()  # Exit the program when window X is clicked
         
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -221,7 +220,8 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
         retry_menu_obj.draw(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()  # Exit the program when window X is clicked
         
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -305,8 +305,8 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                action = 'quit'
-                running = False
+                pygame.quit()
+                exit()  # Exit the program when window X is clicked
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:

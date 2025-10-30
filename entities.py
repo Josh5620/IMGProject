@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-from blocks import Ice, Spikes, block, end
+from blocks import Ice, Spikes, block, end, Slope
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager
 from particles import ScreenDropletParticle, DashTrailParticle, DoubleJumpParticle
@@ -11,12 +11,12 @@ from particles import ScreenDropletParticle, DashTrailParticle, DoubleJumpPartic
 FRAME_TARGET_SIZE = (48, 48)  # final draw size for consistency
 
 ANIM_MANIFEST = {
-    "idle":      {"file": "assets/redhood/idle.png",      "frame_count": 18},
+    "idle":      {"file": "assets/redhood/idle.png",      "frame_width": 32},  # 32x32 per frame
     "run":       {"file": "assets/redhood/run.png",       "frame_width": 32},
     "jump":      {"file": "assets/redhood/jump.png",      "frame_width": 32},
     "fall":      {"alias": "jump"},            # reuse jump frames while falling
     "light_atk": {"file": "assets/redhood/light_atk.png", "frame_width": 40},
-    "hurt":      {"file": "assets/redhood/hurt.png",      "frame_count": 6},
+    "hurt":      {"file": "assets/redhood/hurt.png",      "frame_width": 32},
 }
 
 def _slice_one_row(sheet: pygame.Surface, *, frame_width=None, frame_count=None,
@@ -274,7 +274,23 @@ class mainCharacter(WeaponSystem):
             self.rect.x += dx
             if obstacles and self.check_collision_with_obstacles(obstacles):
                 self.rect.x = old_x
-                
+            
+            # After moving horizontally, check if we're on a slope and adjust Y
+            # This happens AFTER collision check, so slopes don't block horizontal movement
+            if obstacles:
+                for obstacle in obstacles:
+                    obstacle_obj = obstacle if not isinstance(obstacle, pygame.Rect) else None
+                    if obstacle_obj and isinstance(obstacle_obj, Slope):
+                        # Check if player is overlapping with slope horizontally
+                        if (self.rect.right > obstacle_obj.rect.left and 
+                            self.rect.left < obstacle_obj.rect.right):
+                            slope_y = obstacle_obj.get_height_at_x(self.rect.centerx)
+                            # Adjust to slope height if we're close to it
+                            if abs(self.rect.bottom - slope_y) < 16:
+                                self.rect.bottom = int(slope_y)
+                                self.on_ground = True
+                                self.y_velocity = 0
+                                break
 
         if dy != 0:
             self.rect.y += dy
@@ -777,19 +793,39 @@ class mainCharacter(WeaponSystem):
                 self.on_ground = False
 
     def applyGrav(self, obstacles):
-        # Apply gravity to velocity
-        if not self.check_collision_with_obstacles(obstacles):
-            self.on_ground = False
-        if not self.on_ground:
-            self.y_velocity += self.y_gravity
+        # First, check if we're on a slope
+        on_slope = False
+        for obstacle in obstacles:
+            obstacle_obj = obstacle if not isinstance(obstacle, pygame.Rect) else None
+            if obstacle_obj and isinstance(obstacle_obj, Slope):
+                # Check if player is horizontally over the slope
+                if (self.rect.right > obstacle_obj.rect.left and 
+                    self.rect.left < obstacle_obj.rect.right):
+                    slope_y = obstacle_obj.get_height_at_x(self.rect.centerx)
+                    # If we're falling and close to the slope surface
+                    if self.y_velocity >= 0 and self.rect.bottom >= slope_y - 5:
+                        self.rect.bottom = int(slope_y)
+                        self.y_velocity = 0
+                        self.on_ground = True
+                        self.jumping = False
+                        on_slope = True
+                        break
         
-        # Apply velocity to position
-        if self.y_velocity != 0:
-            self.rect.y += self.y_velocity
-            self.check_collision(obstacles)
+        # If not on a slope, apply normal gravity
+        if not on_slope:
+            if not self.check_collision_with_obstacles(obstacles):
+                self.on_ground = False
+            
+            if not self.on_ground:
+                self.y_velocity += self.y_gravity
+            
+            # Apply velocity to position
+            if self.y_velocity != 0:
+                self.rect.y += self.y_velocity
+                self.check_collision(obstacles)
         
-        # Reset double jump when landing
-        if self.on_ground:
+        # Reset double jump when landing (including on slopes)
+        if self.on_ground or on_slope:
             self.double_jump_used = False
         
         # Update visual effect particles
