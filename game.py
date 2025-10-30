@@ -2,7 +2,7 @@ import pygame
 import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
-from Level2Enemies import MushroomPickup
+from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
 from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap, Slope
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
@@ -587,7 +587,7 @@ class Level2(Game):
     def draw_powerups(self):
         """Draw all Level 2 powerups with scroll offset"""
         for powerup in self.powerups:
-            powerup.draw(self.screen, self.scroll_offset)
+            powerup.draw(self.screen, self.ground_scroll)
     
     def run(self, screen):
         """Override run method to include Level 2 powerup logic"""

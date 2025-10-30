@@ -1,6 +1,69 @@
 import pygame
 
 game_level = 2
+
+# ============ MUSIC MANAGER ============
+class MusicManager:
+    """Manages background music for different game states"""
+    
+    def __init__(self):
+        self.current_track = None
+        self.music_volume = 0.5  # 50% volume (adjust as needed)
+        self.initialized = False
+        
+        # Load music files
+        self.tracks = {
+            'menu': 'assets/Music/IntroBackgroundMusic.mp3',
+            'level1': 'assets/Music/ForestLevelBackgroundMusic.mp3',
+            'level2': 'assets/Music/DungeonLevelBackgroundMusic.mp3',
+            'boss': 'assets/Music/BossLevelBackgroundMusic.mp3'
+        }
+    
+    def play(self, track_name):
+        """Play a music track (loops infinitely)"""
+        # Initialize mixer on first use (after pygame.init() has been called)
+        if not self.initialized:
+            try:
+                pygame.mixer.music.set_volume(self.music_volume)
+                self.initialized = True
+            except pygame.error:
+                print("⚠️ Pygame mixer not initialized yet")
+                return
+        
+        if track_name == self.current_track:
+            return  # Already playing this track
+        
+        if track_name in self.tracks:
+            try:
+                pygame.mixer.music.load(self.tracks[track_name])
+                pygame.mixer.music.play(-1)  # -1 means loop forever
+                self.current_track = track_name
+                print(f"🎵 Playing {track_name} music")
+            except pygame.error as e:
+                print(f"⚠️ Could not load music {track_name}: {e}")
+        else:
+            print(f"⚠️ Track {track_name} not found")
+    
+    def stop(self):
+        """Stop the current music"""
+        pygame.mixer.music.stop()
+        self.current_track = None
+    
+    def pause(self):
+        """Pause the current music"""
+        pygame.mixer.music.pause()
+    
+    def unpause(self):
+        """Resume paused music"""
+        pygame.mixer.music.unpause()
+    
+    def set_volume(self, volume):
+        """Set music volume (0.0 to 1.0)"""
+        self.music_volume = max(0.0, min(1.0, volume))
+        pygame.mixer.music.set_volume(self.music_volume)
+
+# Create a global music manager instance
+music_manager = MusicManager()
 class baseMenu():
     def __init__(self,  buttons, title_img, selected_img):
         self.title_image = title_img
@@ -62,6 +125,7 @@ class Button():
             print(self.topLeft)
 
 def start_menu(WIDTH, HEIGHT, screen, start_game):
+    music_manager.play('menu')  # Play menu music
     running = True
     
     def open_level_select():
@@ -240,6 +304,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     Pause menu that overlays the game screen.
     Returns: 'resume', 'restart', or 'main_menu'
     """
+    music_manager.pause()  # Pause music when menu opens
     running = True
     action = 'resume'
     
@@ -321,6 +386,12 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
                     running = False
         
         pygame.display.flip()
+    
+    # Resume music if player continues playing
+    if action == 'resume':
+        music_manager.unpause()
+    elif action == 'main_menu':
+        music_manager.play('menu')  # Return to menu music
     
     return action
 

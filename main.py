@@ -1,6 +1,6 @@
 import pygame
 from game import Level1, BossLevel1, Level2
-from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel, pause_menu
+from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel, pause_menu, music_manager
 from sandbox import sandbox_mode
 
 pygame.init()
@@ -21,11 +21,14 @@ def start_game_wrapper():
     run_game_intro(WIDTH, HEIGHT, screen)
 
     if game_level == 1:
+        music_manager.play('level1')  # Play Level 1 music
         result = level1.run(screen)
     elif game_level == 2:
+        music_manager.play('level2')  # Play Level 2 music
         result = level2.run(screen)
     else:
         # Default to Level 1
+        music_manager.play('level1')  # Play Level 1 music
         result = level1.run(screen)
     
     if result == "quit":
@@ -61,7 +64,8 @@ while running:
     elif game_state == "quit":
         running = False
     elif game_state == "boss_level1":
-        run_BossIntro(WIDTH, HEIGHT, screen) 
+        run_BossIntro(WIDTH, HEIGHT, screen)
+        music_manager.play('boss')  # Play boss music
         boss_level1 = BossLevel1(WIDTH, HEIGHT)  
         result = boss_level1.run(screen)
         if result == "quit":
