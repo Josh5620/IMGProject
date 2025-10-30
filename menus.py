@@ -1,4 +1,5 @@
 import pygame
+import math
 
 game_level = 2
 
@@ -318,6 +319,10 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
         action = 'restart'
         running = False
     
+    def show_controls():
+        # Show controls screen, then return to pause menu
+        run_level2_tutorial(WIDTH, HEIGHT, screen)
+    
     def return_to_main():
         nonlocal running, action
         action = 'main_menu'
@@ -326,16 +331,25 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     resume_button = Button(
         images=(pygame.image.load('assets/resume_button.png').convert_alpha(),
                 pygame.image.load('assets/resume_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 - 50),
+        pos=(WIDTH // 2, HEIGHT // 2 - 100),
         text="Resume",
         font=pygame.font.Font(None, 50),
         on_activate=resume_game
     )
     
+    controls_button = Button(
+        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2),
+        text="Controls",
+        font=pygame.font.Font(None, 50),
+        on_activate=show_controls
+    )
+    
     restart_button = Button(
         images=(pygame.image.load('assets/retry_button.png').convert_alpha(),
                 pygame.image.load('assets/retry_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Restart",
         font=pygame.font.Font(None, 50),
         on_activate=restart_level
@@ -344,7 +358,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     main_menu_button = Button(
         images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
                 pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        pos=(WIDTH // 2, HEIGHT // 2 + 200),
         text="Main Menu",
         font=pygame.font.Font(None, 50),
         on_activate=return_to_main
@@ -355,7 +369,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     overlay.set_alpha(128)
     overlay.fill((0, 0, 0))
     
-    pause_menu_obj = baseMenu([resume_button, restart_button, main_menu_button],
+    pause_menu_obj = baseMenu([resume_button, controls_button, restart_button, main_menu_button],
                               pygame.image.load('assets/title.png').convert_alpha(),
                               pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
@@ -533,6 +547,114 @@ def run_BossIntro(WIDTH, HEIGHT, screen):
         intro_dialogue.draw(screen)
         
         pygame.display.flip()
+
+def run_level2_tutorial(WIDTH, HEIGHT, screen):
+    """Tutorial screen showing Level 2 controls and mechanics"""
+    
+    # Wait for all keys to be released first (prevent key carry-over)
+    pygame.event.clear()
+    waiting_for_release = True
+    while waiting_for_release:
+        keys = pygame.key.get_pressed()
+        if not any(keys):  # All keys released
+            waiting_for_release = False
+        pygame.time.wait(50)  # Small delay
+        pygame.event.pump()
+    
+    running = True
+    font_title = pygame.font.Font("assets/yoster.ttf", 28)
+    font_normal = pygame.font.Font("assets/yoster.ttf", 16)
+    font_small = pygame.font.Font("assets/yoster.ttf", 14)
+    
+    # Tutorial content
+    title = "DUNGEON LEVEL - CONTROLS"
+    controls = [
+        "MOVEMENT:",
+        "  Arrow Keys / WASD - Move left and right",
+        "  Space / Up Arrow - Jump",
+        "",
+        "COMBAT:",
+        "  Z - Light Attack (scratch)",
+        "  X - Throw Fish (ranged attack)",
+        "  C - Dash (quick dodge)",
+        "",
+        "POWERUPS (Mushrooms):",
+        "  Health Burst - Restore health",
+        "  Fire Cloak - Fire protection",
+        "  Speed Wind - Increased speed",
+        "  Wolf Strength - More damage",
+        "  Grandma Amulet - Protection",
+        "  Forest Wisdom - Special ability",
+        "",
+        "Press SPACE to begin!"
+    ]
+    
+    # Animation
+    fade_alpha = 0
+    max_alpha = 255
+    fade_speed = 5
+    pulse_timer = 0
+    
+    while running:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    running = False
+        
+        # Fade in
+        if fade_alpha < max_alpha:
+            fade_alpha = min(max_alpha, fade_alpha + fade_speed)
+        
+        pulse_timer += 0.1
+        pulse_brightness = int(50 + abs(math.sin(pulse_timer) * 50))
+        
+        # Draw
+        screen.fill((20, 20, 30))  # Dark blue-gray background
+        
+        # Title
+        title_surf = font_title.render(title, True, (255, 200, 100))
+        title_surf.set_alpha(fade_alpha)
+        title_rect = title_surf.get_rect(center=(WIDTH // 2, 80))
+        screen.blit(title_surf, title_rect)
+        
+        # Draw decorative line under title
+        pygame.draw.line(screen, (255, 200, 100), 
+                        (WIDTH // 2 - 200, 110), 
+                        (WIDTH // 2 + 200, 110), 2)
+        
+        # Controls text
+        y_offset = 140
+        for line in controls:
+            if line.startswith("MOVEMENT:") or line.startswith("COMBAT:") or line.startswith("POWERUPS"):
+                # Section headers
+                color = (100, 200, 255)
+                text_surf = font_normal.render(line, True, color)
+            elif line == "":
+                y_offset -= 5  # Less spacing for empty lines
+                continue
+            elif line.startswith("Press SPACE"):
+                # Pulsing prompt (clamp values to 255)
+                color = (min(255, pulse_brightness + 100), 
+                        min(255, pulse_brightness + 200), 
+                        min(255, pulse_brightness + 100))
+                text_surf = font_normal.render(line, True, color)
+            else:
+                # Regular text
+                color = (220, 220, 220)
+                text_surf = font_small.render(line, True, color)
+            
+            text_surf.set_alpha(fade_alpha)
+            text_rect = text_surf.get_rect(center=(WIDTH // 2, y_offset))
+            screen.blit(text_surf, text_rect)
+            y_offset += 25
+        
+        pygame.display.flip()
+
 
 def getLevel():
     global game_level

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="97">
- <tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
- <tileset firstgid="400" source="assets/forestobjects.tsx"/>
- <layer id="1" name="Tile Layer 1" width="160" height="20">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="152">
+<tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
+<tileset firstgid="400" source="assets/forestobjects.tsx"/>
+<layer id="1" name="Tile Layer 1" width="160" height="20">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -87,20 +87,104 @@
   <object id="77" name="type" type="skeleton" x="1767" y="486.5">
    <point/>
   </object>
-  <object id="82" name="type" type="mushroom_enemy" x="978.667" y="166.667">
+  <object id="82" name="type" type="mushroom_enemy" x="978.667" y="160.667">
    <point/>
   </object>
   <object id="83" name="type" type="flyingeye" x="1410.67" y="342">
    <point/>
   </object>
-  <object id="86" name="type" type="mushroom_enemy" x="372.75" y="546.75">
+  <object id="86" name="type" type="mushroom_enemy" x="372.083" y="536.75">
    <point/>
   </object>
   <object id="88" name="type" type="health_mushroom" x="223.333" y="530" width="47.3333" height="21.3333"/>
-  <object id="90" name="type" type="fire_mushroom" x="22.6667" y="77.3333" width="63.3333" height="23.3333"/>
-  <object id="92" name="type" type="speed_mushroom" x="893.333" y="364" width="67.3333" height="25.3333"/>
+  <object id="90" name="type" type="fire_mushroom" x="22.6667" y="70" width="63.3333" height="23.3333"/>
+  <object id="92" name="type" type="speed_mushroom" x="892.666" y="346.667" width="67.3333" height="25.3333"/>
   <object id="94" name="type" type="strength_mushroom" x="1662" y="561.333" width="82" height="20.6667"/>
-  <object id="95" name="type" type="amulet_mushroom" x="1094" y="422"/>
-  <object id="96" name="type" type="wisdom_mushroom" x="1310" y="546.667"/>
+  <object id="95" name="type" type="amulet_mushroom" x="1086" y="416"/>
+  <object id="96" name="type" type="wisdom_mushroom" x="1309.33" y="533.334"/>
+  <object id="97" name="type" type="wisdom_mushroom" x="1334" y="179.333" rotation="358.843"/>
+  <object id="98" name="type" type="wisdom_mushroom" x="718.667" y="439.333"/>
+  <object id="99" name="type" type="wisdom_mushroom" x="531.333" y="248"/>
+  <object id="100" name="type" type="wisdom_mushroom" x="4667.33" y="405.333"/>
+  <object id="101" name="type" type="wisdom_mushroom" x="5038.67" y="405.333"/>
+  <object id="102" name="type" type="wisdom_mushroom" x="5059.33" y="148"/>
+  <object id="103" name="type" type="amulet_mushroom" x="1700" y="277.333"/>
+  <object id="104" name="type" type="amulet_mushroom" x="2122.67" y="563.333"/>
+  <object id="105" name="type" type="amulet_mushroom" x="2486" y="278"/>
+  <object id="106" name="type" type="amulet_mushroom" x="2864" y="214.667"/>
+  <object id="107" name="type" type="amulet_mushroom" x="3244" y="276"/>
+  <object id="108" name="type" type="amulet_mushroom" x="3137.33" y="436"/>
+  <object id="109" name="type" type="strength_mushroom" x="1912.33" y="563.667" width="82" height="20.6667"/>
+  <object id="110" name="type" type="strength_mushroom" x="3269.67" y="489.667" width="82" height="20.6667"/>
+  <object id="111" name="type" type="strength_mushroom" x="3754.33" y="393" width="82" height="20.6667"/>
+  <object id="112" name="type" type="strength_mushroom" x="4034.33" y="202.333" width="82" height="20.6667"/>
+  <object id="113" name="type" type="strength_mushroom" x="4377" y="393.667" width="82" height="20.6667"/>
+  <object id="114" name="type" type="strength_mushroom" x="4839.67" y="493" width="82" height="20.6667"/>
+  <object id="115" name="type" type="strength_mushroom" x="4863.67" y="37" width="82" height="20.6667"/>
+  <object id="116" name="type" type="speed_mushroom" x="549" y="100" width="67.3333" height="25.3333"/>
+  <object id="117" name="type" type="speed_mushroom" x="39.6667" y="191.333" width="67.3333" height="25.3333"/>
+  <object id="118" name="type" type="speed_mushroom" x="2691.67" y="548.667" width="67.3333" height="25.3333"/>
+  <object id="119" name="type" type="speed_mushroom" x="2954.33" y="262" width="67.3333" height="25.3333"/>
+  <object id="120" name="type" type="speed_mushroom" x="3720.33" y="200.667" width="67.3333" height="25.3333"/>
+  <object id="121" name="type" type="speed_mushroom" x="4556.33" y="486" width="67.3333" height="25.3333"/>
+  <object id="122" name="type" type="speed_mushroom" x="4969.67" y="583.333" width="67.3333" height="25.3333"/>
+  <object id="123" name="type" type="fire_mushroom" x="1140.33" y="257.333" width="63.3333" height="23.3333"/>
+  <object id="124" name="type" type="fire_mushroom" x="4194.33" y="41.3333" width="63.3333" height="23.3333"/>
+  <object id="125" name="type" type="fire_mushroom" x="4551.33" y="240.333" width="63.3333" height="23.3333"/>
+  <object id="126" name="type" type="health_mushroom" x="2511.33" y="107.333" width="47.3333" height="21.3333"/>
+  <object id="127" name="type" type="mushroom_enemy" x="671" y="290">
+   <point/>
+  </object>
+  <object id="128" name="type" type="mushroom_enemy" x="2386" y="358">
+   <point/>
+  </object>
+  <object id="134" name="type" type="wisdom_mushroom" x="3602.5" y="463"/>
+  <object id="135" name="type" type="wisdom_mushroom" x="3914.67" y="212"/>
+  <object id="136" name="type" type="wisdom_mushroom" x="4402" y="146.667"/>
+  <object id="137" name="type" type="flyingeye" x="1585.33" y="320.667">
+   <point/>
+  </object>
+  <object id="138" name="type" type="flyingeye" x="314" y="307.333">
+   <point/>
+  </object>
+  <object id="139" name="type" type="flyingeye" x="3385.33" y="50">
+   <point/>
+  </object>
+  <object id="140" name="type" type="flyingeye" x="4316.67" y="312.667">
+   <point/>
+  </object>
+  <object id="141" name="type" type="flyingeye" x="5061.33" y="256">
+   <point/>
+  </object>
+  <object id="142" name="type" type="flyingeye" x="2971.33" y="104.667">
+   <point/>
+  </object>
+  <object id="143" name="type" type="flyingeye" x="2822" y="355.333">
+   <point/>
+  </object>
+  <object id="144" name="type" type="flyingeye" x="3266.67" y="367.333">
+   <point/>
+  </object>
+  <object id="145" name="type" type="flyingeye" x="817.333" y="44.6667">
+   <point/>
+  </object>
+  <object id="146" name="type" type="skeleton" x="1567.33" y="192.667">
+   <point/>
+  </object>
+  <object id="147" name="type" type="skeleton" x="1201.33" y="495.333">
+   <point/>
+  </object>
+  <object id="148" name="type" type="skeleton" x="158" y="86.6667">
+   <point/>
+  </object>
+  <object id="149" name="type" type="skeleton" x="2312" y="576">
+   <point/>
+  </object>
+  <object id="150" name="type" type="skeleton" x="4740" y="410">
+   <point/>
+  </object>
+  <object id="151" name="type" type="skeleton" x="4703.33" y="96">
+   <point/>
+  </object>
  </objectgroup>
 </map>

@@ -7,7 +7,7 @@ import pygame
 
 
 def load_mushroom_sprites(sprite_sheet_path="assets/Level2/mushroom level 2.png", 
-                         row=2, sprite_width=16, sprite_height=16):
+                        row=2, sprite_width=16, sprite_height=16):
     """
     Load mushroom sprites from a specific row of the spritesheet
     
@@ -47,8 +47,8 @@ def load_mushroom_sprites(sprite_sheet_path="assets/Level2/mushroom level 2.png"
             sprite_rect = pygame.Rect(x, y, sprite_width, sprite_height)
             sprite = sheet.subsurface(sprite_rect).copy()
             
-            # Scale it up for better visibility (16x16 -> 32x32)
-            sprite = pygame.transform.scale(sprite, (32, 32))
+            # Scale it up for better visibility (16x16 -> 24x24) - smaller, more subtle
+            sprite = pygame.transform.scale(sprite, (24, 24))
             
             mushroom_sprites[powerup_type] = sprite
             print(f"Loaded {powerup_type} mushroom from column {col}")
@@ -110,33 +110,33 @@ def create_level2_powerup_with_sprite(x, y, powerup_type, mushroom_sprites):
                 scaled_width = int(self.sprite_image.get_width() * pulse_scale)
                 scaled_height = int(self.sprite_image.get_height() * pulse_scale)
                 scaled_sprite = pygame.transform.scale(self.sprite_image, 
-                                                      (scaled_width, scaled_height))
+                                                    (scaled_width, scaled_height))
                 
                 # Position centered in screen space
                 sprite_x = screen_x - scaled_width // 2
                 sprite_y = self.rect.y + (self.rect.height - scaled_height) // 2
                 
-                # Draw glow behind sprite (in screen space)
-                glow_radius = int(25 * pulse_scale)  # Reduced from 35
-                for i in range(3):
-                    radius = glow_radius - i * 4
+                # Draw glow behind sprite (in screen space) - more subtle
+                glow_radius = int(15 * pulse_scale)  # Reduced from 25 for subtlety
+                for i in range(2):  # Reduced from 3 layers to 2
+                    radius = glow_radius - i * 5
                     if radius > 0:
-                        alpha = 30 - i * 8
+                        alpha = 20 - i * 10  # Reduced opacity
                         pygame.draw.circle(surface, self.color_set["glow"][:3], 
                                         (int(screen_x), int(screen_y)), radius)
                 
                 # Draw the mushroom sprite
                 surface.blit(scaled_sprite, (int(sprite_x), int(sprite_y)))
                 
-                # Draw sparkles around it (in screen space)
-                sparkle_count = 6
+                # Draw sparkles around it (in screen space) - fewer and smaller
+                sparkle_count = 4  # Reduced from 6 to 4
                 for i in range(sparkle_count):
-                    angle = (self.sparkle_timer * 60 + i * 60) % 360
-                    sparkle_distance = 20 + math.sin(self.sparkle_timer * 2 + i) * 4  # Reduced from 30/6
+                    angle = (self.sparkle_timer * 60 + i * 90) % 360  # Changed spacing
+                    sparkle_distance = 15 + math.sin(self.sparkle_timer * 2 + i) * 3  # Reduced from 20 to 15
                     sparkle_x = screen_x + int(sparkle_distance * math.cos(math.radians(angle)))
                     sparkle_y = screen_y + int(sparkle_distance * math.sin(math.radians(angle)))
                     
-                    sparkle_size = 2 + int(math.sin(self.sparkle_timer * 4 + i))
+                    sparkle_size = 1 + int(math.sin(self.sparkle_timer * 4 + i))  # Smaller sparkles
                     pygame.draw.circle(surface, self.color_set["bright"][:3], 
                                     (int(sparkle_x), int(sparkle_y)), sparkle_size)
             else:

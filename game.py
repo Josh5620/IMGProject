@@ -547,11 +547,13 @@ class Level2(Game):
                 elif typ in TILED_OBJECT_TO_POWERUP:
                     # Map Tiled object name to powerup type
                     powerup_type = TILED_OBJECT_TO_POWERUP[typ]
+                    # Center the 60x60 collision box on the Tiled object position
+                    # Subtract 30 (half of 60) to center it
                     powerup = create_level2_powerup_with_sprite(
-                        obj.x, obj.y, powerup_type, self.mushroom_sprites
+                        obj.x - 30, obj.y - 30, powerup_type, self.mushroom_sprites
                     )
                     self.powerups.append(powerup)
-                    print(f"Spawned {powerup_type} powerup at ({obj.x}, {obj.y})")
+                    print(f"Spawned {powerup_type} powerup at ({obj.x - 30}, {obj.y - 30})")
                     continue
         
         print(f"Level 2 - Number of obstacles created: {len(self.obstacles)}")

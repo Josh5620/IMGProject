@@ -12,7 +12,7 @@ class Level2Powerup:
     """Enhanced powerup class specifically for Level 2 gameplay with red riding hood theming"""
     
     def __init__(self, x, y, powerup_type="health_burst"):
-        self.rect = pygame.Rect(x, y, 45, 45)  # Slightly bigger than Level 1
+        self.rect = pygame.Rect(x, y, 60, 60)  # Larger hitbox for easier collection
         self.powerup_type = powerup_type
         self.collected = False
         self.bob_timer = 0
@@ -22,14 +22,14 @@ class Level2Powerup:
         self.collection_particles = []
         self.sparkle_timer = 0
         
-        # Enhanced colors with fairy tale theming (red, white, gold)
+        # Subtle, faded colors that complement dungeon background
         self.colors = {
-            "health_burst": {"main": (255, 100, 100), "glow": (255, 150, 150), "bright": (255, 200, 200), "theme": "Healing"},
-            "fire_cloak": {"main": (255, 200, 0), "glow": (255, 220, 50), "bright": (255, 240, 100), "theme": "Fire Protection"},
-            "speed_wind": {"main": (100, 200, 255), "glow": (150, 220, 255), "bright": (200, 240, 255), "theme": "Wind Speed"},
-            "wolf_strength": {"main": (139, 69, 19), "glow": (160, 90, 40), "bright": (200, 120, 60), "theme": "Wolf Strength"},
-            "grandma_amulet": {"main": (255, 100, 200), "glow": (255, 150, 220), "bright": (255, 200, 240), "theme": "Protection Amulet"},
-            "forest_wisdom": {"main": (34, 139, 34), "glow": (60, 180, 75), "bright": (100, 220, 120), "theme": "Forest Wisdom"}
+            "health_burst": {"main": (180, 80, 80), "glow": (200, 100, 100), "bright": (220, 130, 130), "theme": "Healing"},
+            "fire_cloak": {"main": (200, 150, 60), "glow": (220, 170, 80), "bright": (240, 190, 100), "theme": "Fire Protection"},
+            "speed_wind": {"main": (80, 150, 200), "glow": (100, 170, 220), "bright": (130, 190, 240), "theme": "Wind Speed"},
+            "wolf_strength": {"main": (120, 80, 50), "glow": (140, 100, 60), "bright": (160, 120, 80), "theme": "Wolf Strength"},
+            "grandma_amulet": {"main": (180, 100, 150), "glow": (200, 120, 170), "bright": (220, 140, 190), "theme": "Protection Amulet"},
+            "forest_wisdom": {"main": (60, 120, 60), "glow": (80, 140, 80), "bright": (100, 160, 100), "theme": "Forest Wisdom"}
         }
         
         self.color_set = self.colors.get(powerup_type, {
