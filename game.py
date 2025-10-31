@@ -3,7 +3,7 @@ import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
-from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap, Slope
+from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
 import random
@@ -364,18 +364,6 @@ class Level1(Game):
                     self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
                 elif typ == "ice":
                     self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
-                elif typ == "slope_up_right":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-right"))
-                    print(f"✓ Created slope_up_right at ({x * TILE_SIZE}, {y * TILE_SIZE})")
-                elif typ == "slope_up_left":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-left"))
-                    print(f"✓ Created slope_up_left at ({x * TILE_SIZE}, {y * TILE_SIZE})")
-                elif typ == "slope_down_right":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-right"))
-                    print(f"✓ Created slope_down_right at ({x * TILE_SIZE}, {y * TILE_SIZE})")
-                elif typ == "slope_down_left":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-left"))
-                    print(f"✓ Created slope_down_left at ({x * TILE_SIZE}, {y * TILE_SIZE})")
                 else:
                     # Default block
                     self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
@@ -453,14 +441,6 @@ class Level2(Game):
                     self.obstacles.append(Spikes(x * TILE_SIZE, y * TILE_SIZE))
                 elif typ == "ice":
                     self.obstacles.append(Ice(x * TILE_SIZE, y * TILE_SIZE))
-                elif typ == "slope_up_right":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-right"))
-                elif typ == "slope_up_left":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "up-left"))
-                elif typ == "slope_down_right":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-right"))
-                elif typ == "slope_down_left":
-                    self.obstacles.append(Slope(x * TILE_SIZE, y * TILE_SIZE, "down-left"))
                 else:
                     # Default block
                     self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
