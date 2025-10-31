@@ -677,7 +677,7 @@ class BossLevel1(Game):
         TILE_SIZE = 32
         self.obstacles = []
         self.enemies = []
-        self.start_position = (0, 100)
+        self.start_position = (0, 50)
         
         for layer in self.tmx_data.visible_layers:
             if isinstance(layer, pytmx.TiledTileLayer):

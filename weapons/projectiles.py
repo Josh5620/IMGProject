@@ -44,18 +44,18 @@ class PlayerProjectile(BaseProjectile):
         self.owner = 'player'
         self.trail_positions = []  # For trail effect
         
-        # Load fish image
+        # Load arrow image
         try:
-            self.image = pygame.image.load("fish.png").convert_alpha()
-            self.image = pygame.transform.scale(self.image, (40, 24))  # Made bigger: doubled size
+            self.image = pygame.image.load("assets/arrow.png").convert_alpha()
+            self.image = pygame.transform.scale(self.image, (10, 14))  # Made bigger: doubled size
             # Flip image if going left
             if direction == -1:
                 self.image = pygame.transform.flip(self.image, True, False)
-            self.width = 40
-            self.height = 24
+            self.width = 10
+            self.height = 14
         except:
             self.image = None
-            print("Could not load fish.png, using default drawing")
+            print("Could not load arrow.png, using default drawing")
         
     def update(self):
         # Add current position to trail
@@ -72,11 +72,11 @@ class PlayerProjectile(BaseProjectile):
         # Draw trail effect (bigger bubbles for visibility)
         for i, (trail_x, trail_y) in enumerate(self.trail_positions):
             alpha = (i + 1) / len(self.trail_positions)
-            trail_color = (int(100 * alpha), int(150 * alpha), int(255 * alpha))  # Blue trail for fish
+            trail_color = (int(100 * alpha), int(150 * alpha), int(230 * alpha))  # Blue trail for arrows
             bubble_size = int(3 + alpha * 2)  # Bigger bubbles: 3-5 pixels
             pygame.draw.circle(screen, trail_color, (int(trail_x), int(trail_y + self.height//2)), bubble_size)
-        
-        # Draw fish projectile
+
+        # Draw arrow projectile
         if self.image:
             screen.blit(self.image, (self.x, self.y))
         else:
@@ -127,7 +127,7 @@ class EnemyProjectile(BaseProjectile):
 
 
 class ChargedProjectile(BaseProjectile):
-    """Charged projectile with arc trajectory based on charge level"""
+    """Charged projectile that fires in a straight line with scaled power"""
     def __init__(self, x, y, direction, charge_level, target_x=None, target_y=None, damage_boost=1.0):
         # Scale properties based on charge level (0.0 to 1.0)
         speed = 5 + (charge_level * 10)  # Speed: 5-15
@@ -137,65 +137,46 @@ class ChargedProjectile(BaseProjectile):
         super().__init__(x, y, direction, speed, damage)
         self.owner = 'player'
         self.charge_level = charge_level
-        self.start_x = x
-        self.start_y = y
-        self.target_x = target_x if target_x else x + (direction * 200 * (1 + charge_level))
-        self.target_y = target_y if target_y else y
         
-        # Arc trajectory calculations
-        self.distance_to_target = abs(self.target_x - self.start_x)
-        self.max_arc_height = 50 + (charge_level * 100)  # Arc height: 50-150 pixels
-        self.distance_traveled = 0
-        self.total_distance = self.distance_to_target
+        # --- All arcing and target logic has been removed ---
         
-        # Load fish image for charged projectile
+        # Load arrow image for charged projectile
         try:
-            self.image = pygame.image.load("fish.png").convert_alpha()
-            # Make charged fish larger based on charge level (30-60 pixels wide)
-            fish_size = int(30 + (charge_level * 30))
-            fish_height = int(fish_size * 0.6)  # Maintain aspect ratio
-            self.image = pygame.transform.scale(self.image, (fish_size, fish_height))
+            self.image = pygame.image.load("assets/arrow.png").convert_alpha()
+            # Make charged arrow larger based on charge level (30-60 pixels wide)
+            arrow_size = int(30 + (charge_level * 30))
+            arrow_height = int(arrow_size * 0.6)  # Maintain aspect ratio
+            self.image = pygame.transform.scale(self.image, (arrow_size, arrow_height))
             # Flip image if going left
             if direction == -1:
                 self.image = pygame.transform.flip(self.image, True, False)
-            self.width = fish_size
-            self.height = fish_height
+            self.width = arrow_size
+            self.height = arrow_height
         except:
             self.image = None
-            print("Could not load fish.png for charged projectile")
-        
+            print("Could not load arrow.png for charged projectile")
+
         # Visual effects based on charge
         self.size = 3 + int(charge_level * 7)  # Size: 3-10 (for fallback circles)
         self.trail_length = int(3 + charge_level * 7)  # Trail: 3-10 points
         self.trail_positions = []
         
-        # Color intensity based on charge (gold/yellow for charged fish)
+        # Color intensity based on charge (gold/yellow for charged arrow)
         self.base_color = (int(255), int(200 + charge_level * 55), int(50))  # Gold color
         self.glow_color = (int(255), int(255), int(150 + charge_level * 105))  # Bright gold
         
     def update(self):
-        # Calculate progress along the arc (0.0 to 1.0)
-        if self.total_distance > 0:
-            progress = self.distance_traveled / self.total_distance
-        else:
-            progress = 1.0
+        # --- NEW Straight-line movement ---
         
-        if progress >= 1.0:
+        # 1. Move in a straight line
+        self.x += self.speed * self.direction
+        
+        # 2. Remove if off screen
+        if self.x < -50 or self.x > 1250:
             self.active = False
             return
-        
-        # Calculate position along arc
-        # X position (linear interpolation)
-        self.x = self.start_x + (self.target_x - self.start_x) * progress
-        
-        # Y position (parabolic arc)
-        arc_factor = 4 * progress * (1 - progress)  # Parabolic curve (0 at start/end, 1 at middle)
-        self.y = self.start_y + (self.target_y - self.start_y) * progress - (self.max_arc_height * arc_factor)
-        
-        # Update distance traveled
-        self.distance_traveled += self.speed
-        
-        # Add current position to trail
+
+        # 3. Add current position to trail
         self.trail_positions.append((self.x, self.y))
         if len(self.trail_positions) > self.trail_length:
             self.trail_positions.pop(0)
@@ -203,8 +184,8 @@ class ChargedProjectile(BaseProjectile):
     def draw(self, screen):
         if not self.active:
             return
-        
-        # Draw trail effect (gold/yellow sparkles for charged fish)
+
+        # Draw trail effect (gold/yellow sparkles for charged arrow)
         for i, (trail_x, trail_y) in enumerate(self.trail_positions):
             trail_alpha = (i + 1) / len(self.trail_positions)
             trail_size = int(self.size * trail_alpha * 0.7)
@@ -215,14 +196,14 @@ class ChargedProjectile(BaseProjectile):
             )
             if trail_size > 0:
                 pygame.draw.circle(screen, trail_color, (int(trail_x), int(trail_y)), trail_size)
-        
-        # Draw charged fish projectile
+
+        # Draw charged arrow projectile
         if self.image:
-            # Add glow effect around fish
+            # Add glow effect around arrow
             glow_rect = self.image.get_rect()
             glow_rect.center = (int(self.x), int(self.y))
-            
-            # Create a glowing effect by drawing multiple slightly offset fish with reduced alpha
+
+            # Create a glowing effect by drawing multiple slightly offset arrows with reduced alpha
             glow_offsets = [(-2, -2), (-2, 2), (2, -2), (2, 2), (-1, 0), (1, 0), (0, -1), (0, 1)]
             glow_surf = pygame.Surface((self.width + 4, self.height + 4), pygame.SRCALPHA)
             glow_surf.fill((*self.glow_color, 100))  # Semi-transparent glow
@@ -230,11 +211,11 @@ class ChargedProjectile(BaseProjectile):
             for offset_x, offset_y in glow_offsets:
                 glow_pos = (glow_rect.x + offset_x, glow_rect.y + offset_y)
                 screen.blit(glow_surf, glow_pos, special_flags=pygame.BLEND_ADD)
-            
-            # Draw the main fish
+
+            # Draw the main arrow
             screen.blit(self.image, glow_rect)
         else:
-            # Fallback: draw circles if fish image failed to load
+            # Fallback: draw circles if arrow image failed to load
             center_x, center_y = int(self.x), int(self.y)
             
             # Outer glow (larger, dimmer)
@@ -265,7 +246,7 @@ class ChargedProjectile(BaseProjectile):
         return {
             'charge_level': self.charge_level,
             'damage': self.damage,
-            'arc_height': self.max_arc_height,
+            'arc_height': 0,  # Arc is no longer used
             'size': self.size
         }
 

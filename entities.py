@@ -150,6 +150,9 @@ class mainCharacter(WeaponSystem):
         # Key state tracking (to detect new key presses vs held keys)
         self.jump_key_was_pressed = False
         self.dash_key_was_pressed = False
+        self.s_key_was_pressed = False
+        self.s_key_held_time = 0
+        self.CHARGE_THRESHOLD_FRAMES = 15  # Frames to hold S key to charge
         
         # Game variables
         self.visible = True
@@ -458,55 +461,31 @@ class mainCharacter(WeaponSystem):
         if self.hurt_timer > 0:
             self.hurt_timer -= 1
 
+        # Quick Shot (press S)
         if keys[pygame.K_s]:  # Straight projectile
             if self.can_shoot():
                 projectile = self.shoot_projectile()
                 if projectile:
                     self.projectile_manager.add_projectile(projectile)
                     self.consume_ammo()
+                    print("Quick Shot fired!")
                     FISH_THROW_SOUND.play()
-        
-        if keys[pygame.K_c]:  # Aimed projectile
+
+        # Charged Shot (hold C)
+        if keys[pygame.K_c]:
             if not self.is_charging and self.can_shoot():
                 self.start_charging()
         else:
             if self.is_charging:
-                # Get target position for aiming
-                try:
-                    # Try to target nearest Level 2 enemy if available
-                    target_x, target_y = None, None
-                    
-                    if hasattr(self, 'enemies') and self.enemies:
-                        nearest_enemy = None
-                        min_distance = float('inf')
-                        
-                        for enemy in self.enemies:
-                            if hasattr(enemy, 'alive') and enemy.alive:
-                                distance = math.sqrt(
-                                    (enemy.rect.centerx - self.rect.centerx)**2 + 
-                                    (enemy.rect.centery - self.rect.centery)**2
-                                )
-                                if distance < min_distance:
-                                    min_distance = distance
-                                    nearest_enemy = enemy
-                        
-                        if nearest_enemy and min_distance < 500:  # Target within 500 pixels
-                            target_x = nearest_enemy.rect.centerx
-                            target_y = nearest_enemy.rect.centery
-                    
-                    # Fallback to mouse if no enemy found
-                    if target_x is None:
-                        mouse_x, mouse_y = pygame.mouse.get_pos()
-                        target_x, target_y = mouse_x, mouse_y
-                    
-                    projectile = self.stop_charging_and_shoot(target_x, target_y)
-                    if projectile:
-                        self.projectile_manager.add_projectile(projectile)
-                        self.consume_ammo()
+                # Fire the projectile with no target (None, None)
+                projectile = self.stop_charging_and_shoot(None, None) 
+                
+                if projectile:
+                    self.projectile_manager.add_projectile(projectile)
+                    self.consume_ammo()
+                    print("Charged Shot fired!")
                     FISH_THROW_SOUND.play()
-                except:
-                    # Fallback if position unavailable
-                    self.stop_charging()
+            
 
         # Update animation based on current state
         self.update_animation(keys)

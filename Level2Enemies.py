@@ -91,7 +91,7 @@ class Level2Enemy:
         self.sprite_width = width
         self.sprite_height = height
         self.sprite_offset_x = -(width - hitbox_width) // 2
-        self.sprite_offset_y = -(height - hitbox_height) // 2
+        self.sprite_offset_y = -(height - hitbox_height) // 10
 
         self.alive = True
         self.visible = True
@@ -607,7 +607,7 @@ class MutatedMushroom(Level2Enemy):
         self.name = "Mushroom"
         
         # Stats - Melee with poison
-        self.max_hp = 150
+        self.max_hp = 40
         self.current_hp = self.max_hp
         self.speed = 1.8
         self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
@@ -667,7 +667,7 @@ class Skeleton(Level2Enemy):
         self.name = "Skeleton"
         
         # Stats - Melee warrior
-        self.max_hp = 120
+        self.max_hp = 50
         self.current_hp = self.max_hp
         self.speed = 2.2
         self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
@@ -726,7 +726,7 @@ class FlyingEye(Level2Enemy):
         self.name = "Flying Eye"
         
         # Stats - Flying ranged enemy
-        self.max_hp = 100
+        self.max_hp = 30
         self.current_hp = self.max_hp
         self.speed = 2.5
         self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
