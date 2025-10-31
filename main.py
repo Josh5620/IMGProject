@@ -19,8 +19,10 @@ def start_game_wrapper():
     print(game_state)
 
     run_game_intro(WIDTH, HEIGHT, screen)
+    
 
     if game_level == 1:
+        run_level2_tutorial(WIDTH, HEIGHT, screen)
         music_manager.play('level1')  # Play Level 1 music
         result = level1.run(screen)
     elif game_level == 2:

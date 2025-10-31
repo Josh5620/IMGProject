@@ -337,14 +337,6 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
         on_activate=resume_game
     )
     
-    controls_button = Button(
-        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2),
-        text="Controls",
-        font=pygame.font.Font(None, 50),
-        on_activate=show_controls
-    )
     
     restart_button = Button(
         images=(pygame.image.load('assets/retry_button.png').convert_alpha(),
@@ -369,7 +361,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     overlay.set_alpha(128)
     overlay.fill((0, 0, 0))
     
-    pause_menu_obj = baseMenu([resume_button, controls_button, restart_button, main_menu_button],
+    pause_menu_obj = baseMenu([resume_button, restart_button, main_menu_button],
                               pygame.image.load('assets/title.png').convert_alpha(),
                               pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
