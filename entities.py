@@ -417,8 +417,8 @@ class mainCharacter(WeaponSystem):
         if keys[pygame.K_DOWN]:
             self.move(0, 3.5, all_collidables)  # Fast fall
         
-        # Level 2 - Special Abilities (ONLY in Level 2)
-        if hasattr(self, 'current_level') and self.current_level == 2:
+        # Level 2+ - Special Abilities (Level 2 and Boss Level)
+        if hasattr(self, 'current_level') and self.current_level >= 2:
             # Dash Ability (Shift key) - only trigger on new key press
             dash_key_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
             
@@ -849,8 +849,8 @@ class mainCharacter(WeaponSystem):
         # Draw projectiles
         self.projectile_manager.draw(surface)
         
-        # Draw dash bar if in Level 2
-        if hasattr(self, 'current_level') and self.current_level == 2:
+        # Draw dash bar if in Level 2 or Boss Level
+        if hasattr(self, 'current_level') and self.current_level >= 2:
             self.draw_dash_bar(surface)
             
     def get_position(self):

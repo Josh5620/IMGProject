@@ -95,9 +95,9 @@ class Game:
                 self.screen.blit(self.heart, (10 + i * 30, 10))
 
     def update_particles(self):
-            
+        # Skip particle-obstacle collision for performance (particles are visual only)
         for particle in self.leaf_particles:
-            particle.update(self.obstacles, self.scroll)
+            particle.update([], self.scroll)  # Pass empty list instead of all obstacles
         
     def handle_scrolling(self):
         if not self.player or not self.doScroll:
@@ -178,20 +178,30 @@ class Game:
             obstacle.draw(self.screen)
             
     def update_enemies(self):
+        # Calculate screen bounds for culling
+        screen_left = self.ground_scroll - 200  # Extra margin for spawning/attacks
+        screen_right = self.ground_scroll + self.WIDTH + 200
+        
         for enemy in self.enemies:
-            if enemy.alive:
-                # Check if it's a boss enemy (from BossEnemy.py)
-                if hasattr(enemy, 'projectiles') and hasattr(enemy, 'difficulty'):
-                    # Boss enemies need obstacles for collision detection
-                    enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
-                # Level 1 and Level 2 enemies both use the same update signature
-                elif isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
-                    enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
-                else:
-                    # Fallback for other enemy types
-                    enemy.update(self.player)
-                
-                enemy.draw(self.screen)
+            if not enemy.alive:
+                continue
+            
+            # Simple culling: skip enemies far off-screen (but still process nearby ones)
+            if enemy.rect.right < screen_left - 500 or enemy.rect.left > screen_right + 500:
+                continue
+            
+            # Check if it's a boss enemy (from BossEnemy.py)
+            if hasattr(enemy, 'projectiles') and hasattr(enemy, 'difficulty'):
+                # Boss enemies need obstacles for collision detection
+                enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+            # Level 1 and Level 2 enemies both use the same update signature
+            elif isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
+                enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+            else:
+                # Fallback for other enemy types
+                enemy.update(self.player)
+            
+            enemy.draw(self.screen)
         
         self.enemies = [e for e in self.enemies if e.alive]
     
@@ -547,14 +557,17 @@ class Level2(Game):
                 elif typ == "EasyEnd":
                     self.obstacles.append(end(obj.x, obj.y))
                     self.boss_difficulty = "easy"
+                    print(f"Found EasyEnd object! Boss difficulty set to: {self.boss_difficulty}")
                 elif typ == "HardEnd":
                     self.obstacles.append(end(obj.x, obj.y))
                     self.boss_difficulty = "hard"
+                    print(f"Found HardEnd object! Boss difficulty set to: {self.boss_difficulty}")
         
         print(f"Level 2 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 2 - Number of enemies spawned: {len(self.enemies)}")
         print(f"Level 2 - Number of traps spawned: {len(self.animated_traps)}")
         print(f"Level 2 - Number of powerups spawned: {len(self.powerups)}")
+        print(f"Level 2 - Final boss difficulty: {self.boss_difficulty}")
         
         self.build_spatial_hash() # Build spatial hash after obstacles are created
 
@@ -730,11 +743,16 @@ class Level2(Game):
             keys = pygame.key.get_pressed()
             self.handle_input(keys)
             
-            # For damage with animated traps
+            # For damage with animated traps - with culling optimization
             if self.player:
+                screen_left = self.ground_scroll - 100
+                screen_right = self.ground_scroll + self.WIDTH + 100
+                
                 for trap in self.animated_traps:
-                    trap.update(self.player, scroll_offset=self.ground_scroll)
-                    self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+                    # Only update traps that are near the screen
+                    if trap.rect.right >= screen_left and trap.rect.left <= screen_right:
+                        trap.update(self.player, scroll_offset=self.ground_scroll)
+                        self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
 
             if self.player:
                 self.player.update(keys, self.obstacles, self.enemies)
@@ -1006,9 +1024,13 @@ class FinalBossLevel(Game):
             self.spawn_boss_minions(self.boss.summon_event)
             self.boss.summon_event = None
         
-        # Update traps
+        # Update traps - with culling optimization
+        screen_left = self.ground_scroll - 100
+        screen_right = self.ground_scroll + self.WIDTH + 100
         for trap in self.animated_traps:
-            trap.update(self.player, scroll_offset=self.ground_scroll)
+            # Only update traps that are near the screen
+            if trap.rect.right >= screen_left and trap.rect.left <= screen_right:
+                trap.update(self.player, scroll_offset=self.ground_scroll)
         
         # Update powerups
         for powerup in self.powerups[:]:
@@ -1210,9 +1232,12 @@ class FinalBossLevel(Game):
             elif result == "game_over":
                 return "game_over"
             
-            # Draw traps and powerups
+            # Draw traps and powerups - with culling
+            screen_left = self.ground_scroll - 100
+            screen_right = self.ground_scroll + self.WIDTH + 100
             for trap in self.animated_traps:
-                self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+                if trap.rect.right >= screen_left and trap.rect.left <= screen_right:
+                    self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
             
             for powerup in self.powerups:
                 powerup.draw(self.screen, self.ground_scroll)
