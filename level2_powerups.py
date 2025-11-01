@@ -39,7 +39,7 @@ class Level2Powerup:
             "theme": "Unknown"
         })
     
-    def update(self, player, dt=1.0):
+    def update(self, player, dt=1.0, scroll_offset=0):
         """Update powerup with fairy tale animations and effects"""
         if self.collected:
             self.update_collection_particles(dt)
@@ -58,8 +58,11 @@ class Level2Powerup:
         self.pulse_timer += dt * 0.15
         self.sparkle_timer += dt * 0.3
         
-        # Check collision with player
-        if self.rect.colliderect(player.rect):
+        # Check collision with player (convert powerup world position to screen position)
+        powerup_screen_rect = self.rect.copy()
+        powerup_screen_rect.x -= scroll_offset
+        
+        if powerup_screen_rect.colliderect(player.rect):
             self.create_collection_particles()
             self.apply_effect(player)
             self.collected = True

@@ -559,10 +559,10 @@ class Level2(Game):
         """Update all Level 2 powerups"""
         for powerup in self.powerups[:]:
             if not powerup.collected:
-                powerup.update(self.player, dt=1.0)
+                powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
             else:
                 # Keep updating until particles are gone
-                powerup.update(self.player, dt=1.0)
+                powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
                 if not powerup.collection_particles:
                     self.powerups.remove(powerup)
     

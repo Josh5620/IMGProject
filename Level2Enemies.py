@@ -9,13 +9,13 @@ just like Level 1 enemies!
 HOW IT WORKS:
 1. Sprite sheets are one-row PNGs with frames arranged horizontally
 2. Each enemy has an ANIM manifest dictionary specifying:
-   - "idle", "run", "attack" animation states
-   - File path to the PNG sprite sheet
-   - frame_width: width of each frame in pixels
+- "idle", "run", "attack" animation states
+- File path to the PNG sprite sheet
+- frame_width: width of each frame in pixels
 3. The build_state_animations_from_manifest() function automatically:
-   - Loads the sprite sheets
-   - Slices them into individual frames
-   - Scales them to 48x48 pixels (or 64x64 for boss)
+- Loads the sprite sheets
+- Slices them into individual frames
+- Scales them to 48x48 pixels (or 64x64 for boss)
 4. Enemies automatically animate based on their state (idle/run/attack)
 
 FALLBACK SYSTEM:
