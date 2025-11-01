@@ -98,8 +98,9 @@ class baseMenu():
         
         # Update and draw ambient particles
         for particle in self.menu_particles:
-            particle['x'] += particle['dx']
-            particle['y'] += particle['dy']
+            SPEED = 0.5
+            particle['x'] += particle['dx'] * SPEED
+            particle['y'] += particle['dy'] * SPEED
             particle['life'] -= 1
             if particle['life'] <= 0:
                 particle['x'] = random.randint(0, 960)
