@@ -66,15 +66,15 @@ while running:
         retry_menu(WIDTH, HEIGHT, screen, start_game_wrapper, quit_to_start)
     elif game_state == "sandbox":
         result = sandbox_mode(screen)
-        if result == "menu": 
+        if result == "menu":
             game_state = "start"
         elif result == "quit":
-            running = False 
+            running = False
     elif game_state == "quit":
         running = False
     elif game_state == "boss_level1":
         run_BossIntro(WIDTH, HEIGHT, screen)
-        music_manager.play('boss')  # Play boss music  
+        music_manager.play('boss')  # Play boss music
         if result == "quit":
             running = False
         elif result == "game_over":
