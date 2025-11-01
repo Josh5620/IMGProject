@@ -560,7 +560,7 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
     font_prompt = pygame.font.Font("assets/yoster.ttf", 22)
     
     # Tutorial content - organized by sections
-    title = "DUNGEON LEVEL - CONTROLS"
+    title = "GAME CONTROLS"
     
     # Animation
     fade_alpha = 0
@@ -609,8 +609,9 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
         y_offset += 33
         
         movement_controls = [
-            "Arrow Keys or WASD  -  Move left and right",
-            "Space or Up Arrow  -  Jump"
+            "Left Right Arrow  -  Move left and right",
+            "Up Arrow  -  Jump",
+            "Up Arrow twice  -  Double Jump"
         ]
         for control in movement_controls:
             text_surf = font_normal.render(control, True, (230, 230, 230))
@@ -627,7 +628,7 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
         y_offset += 33
         
         combat_controls = [
-            "A  -  Attack Enemy",
+            "A  -  Melee or Close Attack",
             "S  -  Shoot Arrow",
             "Shift  -  Dash -> For Dungeon Level Only - Level 2",
             "Hold C  -  Charge Shot"

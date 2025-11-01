@@ -417,6 +417,9 @@ class Level2(Game):
        self.animated_traps = []
        self.powerups = []  # Level 2 powerups
        self.boss_difficulty = "normal"  # Default difficulty
+       self.mushroom_count = 0  # Track collected mushrooms
+       self.min_mushrooms_for_boss = 10  # Minimum required for boss fight
+       self.boss_gate_message_timer = 0  # Timer for showing message
        
        # Load mushroom sprites for powerups
        self.mushroom_sprites = load_mushroom_sprites()
@@ -571,7 +574,12 @@ class Level2(Game):
         """Update all Level 2 powerups"""
         for powerup in self.powerups[:]:
             if not powerup.collected:
+                was_collected = powerup.collected
                 powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
+                # Check if powerup was just collected
+                if not was_collected and powerup.collected:
+                    self.mushroom_count += 1
+                    print(f"Mushroom collected! Total: {self.mushroom_count}/{self.min_mushrooms_for_boss}")
             else:
                 # Keep updating until particles are gone
                 powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
@@ -583,6 +591,69 @@ class Level2(Game):
         for powerup in self.powerups:
             powerup.draw(self.screen, self.ground_scroll)
     
+    def draw_mushroom_count(self):
+        """Draw mushroom counter on the right side of screen"""
+        # Load mushroom sprite icon
+        try:
+            mushroom_icon = pygame.image.load("assets/mushroom.png").convert_alpha()
+            mushroom_icon = pygame.transform.scale(mushroom_icon, (40, 40))
+        except Exception as e:
+            print(f"Error loading mushroom icon: {e}")
+            # Fallback: create a simple surface
+            mushroom_icon = pygame.Surface((40, 40), pygame.SRCALPHA)
+            pygame.draw.circle(mushroom_icon, (220, 80, 80), (20, 20), 18)
+        
+        # Position on right side of screen
+        icon_x = self.WIDTH - 120
+        icon_y = 80
+        
+        # Draw mushroom icon
+        self.screen.blit(mushroom_icon, (icon_x, icon_y))
+        
+        # Draw count text
+        font = pygame.font.Font(None, 48)
+        count_text = f"x {self.mushroom_count}"
+        text_surf = font.render(count_text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(left=icon_x + 40, centery=icon_y + 16)
+        
+        # Draw text with shadow for readability
+        shadow_surf = font.render(count_text, True, (0, 0, 0))
+        shadow_rect = text_surf.get_rect(left=icon_x + 42, centery=icon_y + 18)
+        self.screen.blit(shadow_surf, shadow_rect)
+        self.screen.blit(text_surf, text_rect)
+        
+        # Draw requirement indicator if needed
+        if self.mushroom_count < self.min_mushrooms_for_boss:
+            small_font = pygame.font.Font(None, 20)
+            req_text = f"Need {self.min_mushrooms_for_boss} for boss"
+            req_surf = small_font.render(req_text, True, (255, 200, 100))
+            req_rect = req_surf.get_rect(left=icon_x, top=icon_y + 40)
+            self.screen.blit(req_surf, req_rect)
+        else:
+            # Player has enough mushrooms - show "READY!"
+            small_font = pygame.font.Font(None, 24)
+            ready_text = "BOSS READY!"
+            ready_surf = small_font.render(ready_text, True, (100, 255, 100))
+            ready_rect = ready_surf.get_rect(left=icon_x, top=icon_y + 40)
+            self.screen.blit(ready_surf, ready_rect)
+        
+        # Draw warning message if player tried to enter boss without enough mushrooms
+        if self.boss_gate_message_timer > 0:
+            self.boss_gate_message_timer -= 1
+            warning_font = pygame.font.Font(None, 36)
+            warning_text = f"Need {self.min_mushrooms_for_boss} mushrooms to fight boss!"
+            warning_surf = warning_font.render(warning_text, True, (255, 100, 100))
+            warning_rect = warning_surf.get_rect(center=(self.WIDTH // 2, 100))
+            
+            # Draw with pulsing effect
+            pulse = abs(int(self.boss_gate_message_timer % 30 - 15)) + 10
+            for i in range(3):
+                glow_surf = warning_font.render(warning_text, True, (255, 50, 50, pulse * (3 - i)))
+                glow_rect = warning_surf.get_rect(center=(self.WIDTH // 2 + i, 100 + i))
+                self.screen.blit(glow_surf, glow_rect)
+            
+            self.screen.blit(warning_surf, warning_rect)
+    
     def run(self, screen):
         """Override run method to include Level 2 powerup logic"""
         self.screen = screen
@@ -592,7 +663,8 @@ class Level2(Game):
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return "quit"
+                    pygame.quit()
+                    exit()
                 
                 # Check for pause key (ESC or P)
                 if event.type == pygame.KEYDOWN:
@@ -606,7 +678,8 @@ class Level2(Game):
                         elif pause_action == 'main_menu':
                             return "start"
                         elif pause_action == 'quit':
-                            return "quit"
+                            pygame.quit()
+                            exit()
                     
             self.screen.fill((0, 0, 0))
             self.draw_bg()
@@ -675,6 +748,19 @@ class Level2(Game):
         if self.player.lives <= 0:
             return "game_over"
         if self.player.won:
+            # Check if player has enough mushrooms for boss fight
+            if self.mushroom_count < self.min_mushrooms_for_boss:
+                # Block player from progressing - reset their position back
+                print(f"Not enough mushrooms! {self.mushroom_count}/{self.min_mushrooms_for_boss}")
+                self.player.won = False
+                # Push player back
+                self.player.rect.x -= 50
+                # Show warning message
+                self.boss_gate_message_timer = 180  # 3 seconds at 60fps
+                return "playing"
+            
+            # Player has enough mushrooms - allow boss fight
+            print(f"Boss fight unlocked! Mushrooms collected: {self.mushroom_count}")
             # Return boss level with appropriate difficulty
             if self.boss_difficulty == "easy":
                 return "boss_level_easy"
