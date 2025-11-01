@@ -610,8 +610,11 @@ class Level2(Game):
         # Draw mushroom icon
         self.screen.blit(mushroom_icon, (icon_x, icon_y))
         
-        # Draw count text
-        font = pygame.font.Font(None, 48)
+        # Draw count text with pixel font
+        try:
+            font = pygame.font.Font("assets/yoster.ttf", 36)
+        except:
+            font = pygame.font.Font(None, 48)
         count_text = f"x {self.mushroom_count}"
         text_surf = font.render(count_text, True, (255, 255, 255))
         text_rect = text_surf.get_rect(left=icon_x + 40, centery=icon_y + 16)
@@ -624,14 +627,20 @@ class Level2(Game):
         
         # Draw requirement indicator if needed
         if self.mushroom_count < self.min_mushrooms_for_boss:
-            small_font = pygame.font.Font(None, 20)
+            try:
+                small_font = pygame.font.Font("assets/yoster.ttf", 18)
+            except:
+                small_font = pygame.font.Font(None, 20)
             req_text = f"Need {self.min_mushrooms_for_boss} for boss"
             req_surf = small_font.render(req_text, True, (255, 200, 100))
             req_rect = req_surf.get_rect(left=icon_x, top=icon_y + 40)
             self.screen.blit(req_surf, req_rect)
         else:
             # Player has enough mushrooms - show "READY!"
-            small_font = pygame.font.Font(None, 24)
+            try:
+                small_font = pygame.font.Font("assets/yoster.ttf", 22)
+            except:
+                small_font = pygame.font.Font(None, 24)
             ready_text = "BOSS READY!"
             ready_surf = small_font.render(ready_text, True, (100, 255, 100))
             ready_rect = ready_surf.get_rect(left=icon_x, top=icon_y + 40)
@@ -640,7 +649,10 @@ class Level2(Game):
         # Draw warning message if player tried to enter boss without enough mushrooms
         if self.boss_gate_message_timer > 0:
             self.boss_gate_message_timer -= 1
-            warning_font = pygame.font.Font(None, 36)
+            try:
+                warning_font = pygame.font.Font("assets/yoster.ttf", 32)
+            except:
+                warning_font = pygame.font.Font(None, 36)
             warning_text = f"Need {self.min_mushrooms_for_boss} mushrooms to fight boss!"
             warning_surf = warning_font.render(warning_text, True, (255, 100, 100))
             warning_rect = warning_surf.get_rect(center=(self.WIDTH // 2, 100))
@@ -836,21 +848,16 @@ class FinalBossLevel(Game):
                 
                 # === BOSS SPAWNING ===
                 elif typ == "final_boss" or typ == "boss_spawn":
-                    try:
-                        from BossEnemy import EasyDungeonBoss, HardDungeonBoss
-                        
-                        if self.difficulty == "easy":
-                            self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
-                        elif self.difficulty == "hard":
-                            self.boss = HardDungeonBoss(obj.x, obj.y - 128)
-                        else:  # normal difficulty defaults to easy
-                            self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
-                        
-                        self.boss.level = self
-                        self.enemies.append(self.boss)
-                        print(f"Spawned {self.difficulty.upper()} Boss at ({obj.x}, {obj.y - 128})")
-                    except ImportError as e:
-                        print(f"Error: Could not import boss classes from BossEnemy module: {e}")
+                    if self.difficulty == "easy":
+                        self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
+                    elif self.difficulty == "hard":
+                        self.boss = HardDungeonBoss(obj.x, obj.y - 128)
+                    else:  # normal difficulty defaults to easy
+                        self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
+                    
+                    self.boss.level = self
+                    self.enemies.append(self.boss)
+                    print(f"Spawned {self.difficulty.upper()} Boss at ({obj.x}, {obj.y - 128})")
                     continue
                 
                 # === LEVEL 2 MUSHROOM MINIONS ===
@@ -917,21 +924,16 @@ class FinalBossLevel(Game):
                 
         # If no boss was spawned from tilemap, create one manually
         if not self.boss:
-            try:
-                from BossEnemy import EasyDungeonBoss, HardDungeonBoss
-                
-                if self.difficulty == "easy":
-                    self.boss = EasyDungeonBoss(400, 300)  # Center of screen
-                elif self.difficulty == "hard":
-                    self.boss = HardDungeonBoss(400, 300)
-                else:  # normal difficulty defaults to easy
-                    self.boss = EasyDungeonBoss(400, 300)
-                
-                self.boss.level = self
-                self.enemies.append(self.boss)
-                print(f"Manually spawned {self.difficulty.upper()} Boss at (400, 300)")
-            except ImportError as e:
-                print(f"Error: Could not import boss classes from BossEnemy module: {e}")
+            if self.difficulty == "easy":
+                self.boss = EasyDungeonBoss(400, 300)  # Center of screen
+            elif self.difficulty == "hard":
+                self.boss = HardDungeonBoss(400, 300)
+            else:  # normal difficulty defaults to easy
+                self.boss = EasyDungeonBoss(400, 300)
+            
+            self.boss.level = self
+            self.enemies.append(self.boss)
+            print(f"Manually spawned {self.difficulty.upper()} Boss at (400, 300)")
         
         print(f"Boss Level - Obstacles: {len(self.obstacles)}")
         print(f"Boss Level - Enemies: {len(self.enemies)} (Boss: {'Yes' if self.boss else 'No'})")
@@ -1083,8 +1085,11 @@ class FinalBossLevel(Game):
         if not self.boss:
             return
         
-        # Boss name and difficulty
-        font = pygame.font.Font(None, 36)
+        # Boss name and difficulty - using pixelated font
+        try:
+            font = pygame.font.Font("assets/yoster.ttf", 32)
+        except:
+            font = pygame.font.Font(None, 36)
         boss_name = f"FINAL BOSS - {self.difficulty.upper()} MODE"
         text_surf = font.render(boss_name, True, (255, 215, 0))  # Gold color
         text_rect = text_surf.get_rect(center=(surface.get_width() // 2, 30))
@@ -1095,9 +1100,12 @@ class FinalBossLevel(Game):
         surface.blit(text_surf, text_rect)
         
         # Phase indicator
-        if self.boss.phase == 2:
-            phase_font = pygame.font.Font(None, 28)
-            phase_text = phase_font.render("⚡ PHASE 2 - ENRAGED ⚡", True, (255, 100, 100))
+        if hasattr(self.boss, 'phase') and self.boss.phase == 2:
+            try:
+                phase_font = pygame.font.Font("assets/yoster.ttf", 24)
+            except:
+                phase_font = pygame.font.Font(None, 28)
+            phase_text = phase_font.render("PHASE 2 - ENRAGED", True, (255, 100, 100))
             phase_rect = phase_text.get_rect(center=(surface.get_width() // 2, 60))
             surface.blit(phase_text, phase_rect)
     
@@ -1109,8 +1117,11 @@ class FinalBossLevel(Game):
         victory_rect = victory_surf.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
         surface.blit(victory_surf, victory_rect)
         
-        # Victory text
-        font = pygame.font.Font(None, 48)
+        # Victory text - using pixelated font
+        try:
+            font = pygame.font.Font("assets/yoster.ttf", 48)
+        except:
+            font = pygame.font.Font(None, 48)
         victory_text = font.render("VICTORY!", True, (255, 215, 0))
         text_rect = victory_text.get_rect(center=victory_rect.center)
         text_rect.y -= 30
@@ -1123,7 +1134,10 @@ class FinalBossLevel(Game):
         surface.blit(victory_text, text_rect)
         
         # Difficulty completed text
-        diff_font = pygame.font.Font(None, 32)
+        try:
+            diff_font = pygame.font.Font("assets/yoster.ttf", 28)
+        except:
+            diff_font = pygame.font.Font(None, 32)
         diff_text = diff_font.render(f"{self.difficulty.upper()} MODE COMPLETED", True, (255, 255, 255))
         diff_rect = diff_text.get_rect(center=(victory_rect.centerx, victory_rect.centery + 20))
         surface.blit(diff_text, diff_rect)

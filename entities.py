@@ -651,7 +651,6 @@ class mainCharacter(WeaponSystem):
             
             # Outer shield glow
             for i in range(3):
-                alpha = 60 - i * 15
                 radius = shield_radius + i * 3
                 shield_color = (0, 150, 255)
                 pygame.draw.circle(surface, shield_color, player_center, radius, 2)
@@ -666,18 +665,16 @@ class mainCharacter(WeaponSystem):
             # Energy trails behind player
             for i in range(4):
                 trail_x = player_center[0] - (i + 1) * 10 * speed_intensity
-                trail_alpha = int(200 * speed_intensity) - i * 30
-                if trail_alpha > 0:
-                    trail_size = 8 - i * 2
-                    pygame.draw.circle(surface, (0, 255, 100), 
-                                    (trail_x, player_center[1]), trail_size, 1)
+                trail_size = 8 - i * 2
+                pygame.draw.circle(surface, (0, 255, 100), 
+                                (int(trail_x), player_center[1]), trail_size, 1)
             
             # Speed lines effect
             for i in range(6):
                 line_length = 15 + i * 3
                 line_y = player_center[1] + (i - 3) * 5
-                line_start = (player_center[0] - line_length, line_y)
-                line_end = (player_center[0] - 5, line_y)
+                line_start = (int(player_center[0] - line_length), int(line_y))
+                line_end = (int(player_center[0] - 5), int(line_y))
                 pygame.draw.line(surface, (100, 255, 150), line_start, line_end, 2)
         
         # Damage effect - fiery aura and sparks
@@ -688,12 +685,10 @@ class mainCharacter(WeaponSystem):
             # Fiery aura
             aura_radius = int(55 * damage_pulse * damage_intensity)
             for i in range(3):
-                alpha = int(80 * damage_intensity) - i * 20
-                if alpha > 0:
-                    radius = aura_radius - i * 5
-                    color_intensity = int(255 * damage_intensity)
-                    aura_color = (color_intensity, max(50, color_intensity - 100), 0)
-                    pygame.draw.circle(surface, aura_color, player_center, radius, 1)
+                radius = aura_radius - i * 5
+                color_intensity = int(255 * damage_intensity)
+                aura_color = (color_intensity, max(50, color_intensity - 100), 0)
+                pygame.draw.circle(surface, aura_color, player_center, radius, 1)
             
             # Floating spark particles
             for i in range(8):
@@ -709,6 +704,25 @@ class mainCharacter(WeaponSystem):
                     spark_color = spark_colors[i % 3]
                     pygame.draw.circle(surface, spark_color, (spark_x, spark_y), 3)
                     pygame.draw.circle(surface, (255, 255, 100), (spark_x, spark_y), 1)
+        
+        # Invincibility effect (Fire Cloak) - golden glow
+        if hasattr(self, 'powerup_timers') and self.powerup_timers.get("invincibility", 0) > 0:
+            inv_pulse = math.sin(current_time * 0.015) * 0.2 + 0.8
+            inv_radius = int(65 * inv_pulse)
+            
+            # Golden protective aura
+            for i in range(3):
+                radius = inv_radius + i * 4
+                gold_color = (255, 215, min(50, 100 - i * 20))
+                pygame.draw.circle(surface, gold_color, player_center, radius, 2)
+            
+            # Floating golden sparkles
+            for i in range(12):
+                angle = (current_time * 0.005 + i * 30) % 360
+                sparkle_dist = 30 + math.sin(current_time * 0.04 + i) * 10
+                sparkle_x = player_center[0] + int(sparkle_dist * math.cos(math.radians(angle)))
+                sparkle_y = player_center[1] + int(sparkle_dist * math.sin(math.radians(angle)))
+                pygame.draw.circle(surface, (255, 255, 150), (sparkle_x, sparkle_y), 2)
     
     def draw_with_effects(self, surface):
         """Draw player with all visual effects"""
@@ -799,6 +813,9 @@ class mainCharacter(WeaponSystem):
         if hasattr(self, 'double_jump_particles'):
             for particle in self.double_jump_particles:
                 particle.draw(surface, anchor_x, anchor_y)
+        
+        # Draw powerup effects behind player
+        self.draw_powerup_effects(surface)
         
         # Handle invulnerability timing
         if self.invulnerable:

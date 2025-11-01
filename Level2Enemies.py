@@ -144,7 +144,11 @@ class Level2Enemy:
         self._last_x = self.rect.x
         if not hasattr(self, "facing_right"):
             self.facing_right = True
-            
+        
+        # Visual effects
+        self.hit_particles = []
+        self.hit_flash_timer = 0
+        
     def _anim_index(self, frames):
         if not frames:
             return 0

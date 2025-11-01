@@ -73,7 +73,7 @@ while running:
     elif game_state == "quit":
         running = False
     elif game_state == "boss_level1":
-        run_BossIntro(WIDTH, HEIGHT, screen)
+        run_BossIntro(WIDTH, HEIGHT, screen, "normal")
         music_manager.play('boss')  # Play boss music
         if result == "quit":
             running = False
@@ -90,7 +90,7 @@ while running:
         else:
             difficulty = "normal"
         
-        run_BossIntro(WIDTH, HEIGHT, screen)
+        run_BossIntro(WIDTH, HEIGHT, screen, difficulty)
         music_manager.play('boss')  # Play boss music
         
         # Create and run the boss level
@@ -105,7 +105,7 @@ while running:
             # Player won the boss fight - could go to credits or back to menu
             game_state = "start"
         else:
-            game_state = "start" 
+            game_state = "start"
     else:
         running = False
 

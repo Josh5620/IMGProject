@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 
 game_level = 2
 
@@ -74,6 +75,18 @@ class baseMenu():
         self.font = pygame.font.Font(None, 50)
         self.background = pygame.image.load('assets/menuBack.jpeg').convert()
         self.background = pygame.transform.scale(self.background, (960, 640))
+        # Ambient particles for menu
+        self.menu_particles = []
+        for _ in range(20):
+            self.menu_particles.append({
+                'x': random.randint(0, 960),
+                'y': random.randint(0, 640),
+                'dx': random.uniform(-0.5, 0.5),
+                'dy': random.uniform(-0.5, 0.5),
+                'life': random.randint(200, 400),
+                'max_life': random.randint(200, 400),
+                'size': random.randint(2, 5)
+            })
     
     def move_selection(self, direction):
         self.selected_index = (self.selected_index + direction) % len(self.buttons)
@@ -82,13 +95,38 @@ class baseMenu():
     def draw(self, screen):
         screen.fill((0, 0, 0))  # Clear screen with black
         screen.blit(self.background, (0, 0))
+        
+        # Update and draw ambient particles
+        for particle in self.menu_particles:
+            particle['x'] += particle['dx']
+            particle['y'] += particle['dy']
+            particle['life'] -= 1
+            if particle['life'] <= 0:
+                particle['x'] = random.randint(0, 960)
+                particle['y'] = random.randint(0, 640)
+                particle['life'] = random.randint(200, 400)
+            
+            # Wrap particles
+            if particle['x'] < 0:
+                particle['x'] = 960
+            elif particle['x'] > 960:
+                particle['x'] = 0
+            if particle['y'] < 0:
+                particle['y'] = 640
+            elif particle['y'] > 640:
+                particle['y'] = 0
+            
+            # Draw sparkle
+            alpha = min(255, particle['life'] * 2)
+            pygame.draw.circle(screen, (255, 255, 200), (int(particle['x']), int(particle['y'])), particle['size'])
+        
         if self.title_image:
             title_rect = self.title_image.get_rect(center=(screen.get_width() // 2, 150))
             screen.blit(self.title_image, title_rect)
         for i, button in enumerate(self.buttons):
             button.update(i == self.selected_index)
             button.draw(screen)
-            if i == self.selected_index: 
+            if i == self.selected_index:
                 selectArrowPos = [button.topLeft[0] - 40, button.topLeft[1]  + 18]
                 screen.blit(self.selected_img, selectArrowPos)
 
@@ -110,7 +148,7 @@ class Button():
 
         if self.image == None:
             self.image = self.text
-        self.selected = False    
+        self.selected = False
         self.on_activate = on_activate
         
     def update(self, is_selected):
@@ -140,10 +178,23 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     levels_button = Button(
         images=(pygame.image.load('assets/start_button.png').convert_alpha(),
                 pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2),
+        pos=(WIDTH // 2, HEIGHT // 2 - 50),
         text="Levels",
         font=pygame.font.Font(None, 50),
         on_activate=open_level_select
+    )
+    
+    def show_manual():
+        nonlocal running
+        run_game_manual(WIDTH, HEIGHT, screen)
+    
+    manual_button = Button(
+        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
+                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        text="Manual",
+        font=pygame.font.Font(None, 50),
+        on_activate=show_manual
     )
     
     def quit_game():
@@ -155,12 +206,12 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     quit_button = Button(
         images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
                 pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 100),
+        pos=(WIDTH // 2, HEIGHT // 2 + 150),
         text="Quit",
         font=pygame.font.Font(None, 50),
         on_activate=quit_game
     )
-    main_menu = baseMenu ([levels_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow_pointer.png').convert_alpha()) 
+    main_menu = baseMenu ([levels_button, manual_button, quit_button], pygame.image.load('assets/title.png').convert_alpha(), pygame.image.load('assets/arrow_pointer.png').convert_alpha()) 
     while running:
         
         
@@ -232,8 +283,8 @@ def level_select_menu(WIDTH, HEIGHT, screen):
     )
     
     level_menu = baseMenu([level1_button, level2_button, back_button],
-                         pygame.image.load('assets/leveltitle.png').convert_alpha(),
-                         pygame.image.load('assets/arrow_pointer.png').convert_alpha())
+                        pygame.image.load('assets/leveltitle.png').convert_alpha(),
+                        pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         level_menu.draw(screen)
@@ -277,9 +328,9 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
         on_activate=quit_function
     )
     
-    retry_menu_obj = baseMenu([retry_button, quit_button], 
-                             pygame.image.load('assets/diedtitle.png').convert_alpha(), 
-                             pygame.image.load('assets/arrow_pointer.png').convert_alpha())
+    retry_menu_obj = baseMenu([retry_button, quit_button],
+                            pygame.image.load('assets/diedtitle.png').convert_alpha(),
+                            pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         retry_menu_obj.draw(screen)
@@ -295,7 +346,7 @@ def retry_menu(WIDTH, HEIGHT, screen, retry_function, quit_function):
                     retry_menu_obj.move_selection(1)
                 if event.key == pygame.K_SPACE:
                     retry_menu_obj.buttons[retry_menu_obj.selected_index].activate()
-                    running = False  
+                    running = False
 
         pygame.display.flip()
 
@@ -362,8 +413,8 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     overlay.fill((0, 0, 0))
     
     pause_menu_obj = baseMenu([resume_button, restart_button, main_menu_button],
-                              pygame.image.load('assets/title.png').convert_alpha(),
-                              pygame.image.load('assets/arrow_pointer.png').convert_alpha())
+                            pygame.image.load('assets/title.png').convert_alpha(),
+                            pygame.image.load('assets/arrow_pointer.png').convert_alpha())
     
     while running:
         # Draw the frozen game state
@@ -481,7 +532,7 @@ def run_game_intro(WIDTH, HEIGHT, screen):
         text="Red Hood! Search for the Shroomlight!",
         font_size=20,
         screen_rect=screen.get_rect(),
-        speed=200, 
+        speed=200,
         location="center"
     )
 
@@ -508,13 +559,22 @@ def run_game_intro(WIDTH, HEIGHT, screen):
         pygame.display.flip()
 
 
-def run_BossIntro(WIDTH, HEIGHT, screen):
-
+def run_BossIntro(WIDTH, HEIGHT, screen, difficulty="normal"):
+    """Show boss battle intro with difficulty-specific message"""
+    
+    # Difficulty-specific messages
+    if difficulty == "easy":
+        intro_text = "Through the forest's light path, you face a gentler trial..."
+    elif difficulty == "hard":
+        intro_text = "The dark path awaits! Prepare for the ultimate challenge!"
+    else:
+        intro_text = "The final confrontation approaches..."
+    
     intro_dialogue = DialogueScreen(
-        text="BOSS BATTLE! GET READY TO FIGHT THE BIG BAD SMTH SMTH!",
-        font_size=20,
+        text=intro_text,
+        font_size=24,
         screen_rect=screen.get_rect(),
-        speed=200, 
+        speed=150,
         location="center"
     )
 
@@ -524,21 +584,267 @@ def run_BossIntro(WIDTH, HEIGHT, screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                exit() # Exit the program entirely if window is closed
+                exit()
             
             if event.type == pygame.KEYDOWN:
                 if not intro_dialogue.is_finished:
-                    # If typing, skip to the end
                     intro_dialogue.skip()
                 else:
-                    # If finished, any key press will exit the intro
                     intro_running = False
 
         intro_dialogue.update()
-
         intro_dialogue.draw(screen)
         
         pygame.display.flip()
+
+def run_game_manual(WIDTH, HEIGHT, screen):
+    """Interactive game manual/guide with multiple pages"""
+    
+    # Wait for all keys to be released first
+    pygame.event.clear()
+    waiting_for_release = True
+    while waiting_for_release:
+        keys = pygame.key.get_pressed()
+        if not any(keys):
+            waiting_for_release = False
+        pygame.time.wait(50)
+        pygame.event.pump()
+    
+    running = True
+    current_page = 0
+    
+    font_title = pygame.font.Font("assets/yoster.ttf", 48)
+    font_section = pygame.font.Font("assets/yoster.ttf", 28)
+    font_normal = pygame.font.Font("assets/yoster.ttf", 22)
+    font_small = pygame.font.Font("assets/yoster.ttf", 18)  # Same pixelated font
+    
+    # Define manual pages
+    pages = [
+        {
+            "title": "WELCOME TO SHROOMLIGHT",
+            "content": [
+                "In this game, you play as Little Red Riding Hood",
+                "on her journey through dangerous lands.",
+                "",
+                "Collect powerups to strengthen yourself and",
+                "defeat enemies to progress through levels.",
+                "",
+                "Your goal: Survive and defeat the final boss!",
+                "",
+                "Use arrow keys to navigate through this manual."
+            ]
+        },
+        {
+            "title": "MOVEMENT BASICS",
+            "content": [
+                "Left AND Right Arrow  -  Move left and right",
+                "",
+                "Up Arrow  -  Jump",
+                "",
+                "Up Arrow Twice  -  Double Jump",
+                "",
+                "The double jump can help you reach",
+                "higher platforms and avoid traps!",
+                "",
+                "TIP: Timing is everything for platforming!"
+            ]
+        },
+        {
+            "title": "COMBAT SYSTEM",
+            "content": [
+                "A  -  Melee Attack",
+                "S  -  Shoot Arrow (uses ammo)",
+                "Hold C  -  Charge Shot (more damage)",
+                "",
+                "Shift  -  Dash -> Dungeon Level 2 only!",
+                "",
+                "Charged shots do more damage but",
+                "take time to charge up.",
+                "",
+                "TIP: Dash to dodge enemy attacks!"
+            ]
+        },
+        {
+            "title": "POWERUP MUSHROOMS",
+            "content": [
+                "Health Burst  -  Restores health",
+                "Fire Cloak  -  Fire resistance",
+                "Speed Wind  -  Increases movement speed",
+                "Wolf Strength  -  Boosts attack damage",
+                "Grandma Amulet  -  Temporary invincibility",
+                "Forest Wisdom  -  Special abilities",
+                "",
+                "Collect these strategically to help you!",
+                "",
+                "TIP: Don't waste health items!"
+            ]
+        },
+        {
+            "title": "LEVEL 2 REQUIREMENTS",
+            "content": [
+                "In Level 2 Dungeon Level, you must collect",
+                "at least 10 mushrooms before you can",
+                "fight the boss!",
+                "",
+                "Watch the mushroom counter in the top",
+                "right corner to track your progress.",
+                "",
+                "Collect more mushrooms to unlock the",
+                "boss fight and proceed!",
+                "",
+                "TIP: Explore thoroughly for hidden items!"
+            ]
+        },
+        {
+            "title": "COMBAT TIPS",
+            "content": [
+                "1. Attack enemies from above when possible",
+                "2. Keep moving to avoid enemy attacks",
+                "3. Use ranged attacks for flying enemies",
+                "4. Don't rush in to attack, observe enemy patterns",
+                "5. Save dash for critical moments",
+                "6. Charge shot for heavy enemies",
+                "",
+                "Learn enemy attack patterns!",
+                "",
+                "TIP: Practice makes perfect!"
+            ]
+        },
+        {
+            "title": "SURVIVAL GUIDE",
+            "content": [
+                "You have 3 hearts as lives, use them wisely!",
+                "",
+                "If you die, you can retry from the start.",
+                "",
+                "Take breaks if you're getting frustrated,",
+                "and come back with fresh focus!",
+                "",
+                "Explore every corner! There might be",
+                "secret powerups or helpful items!",
+                "",
+                "TIP: Sometimes retreating is smart!"
+            ]
+        },
+        {
+            "title": "READY TO PLAY?",
+            "content": [
+                "You now know the basics!",
+                "",
+                "Remember:",
+                "1 - Practice the controls",
+                "2 - Collect powerups",
+                "3 - Learn enemy patterns",
+                "4 - Have fun!",
+                "",
+                "Good luck on your adventure!"
+            ]
+        }
+    ]
+    
+    # Animation
+    fade_alpha = 0
+    max_alpha = 255
+    fade_speed = 5
+    pulse_timer = 0
+    
+    while running:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+                    # Previous page
+                    if current_page > 0:
+                        current_page -= 1
+                        fade_alpha = 0  # Reset fade for page transition
+                elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+                    # Next page
+                    if current_page < len(pages) - 1:
+                        current_page += 1
+                        fade_alpha = 0  # Reset fade for page transition
+                elif event.key == pygame.K_SPACE:
+                    # Return to menu
+                    running = False
+        
+        # Fade in
+        if fade_alpha < max_alpha:
+            fade_alpha = min(max_alpha, fade_alpha + fade_speed)
+        
+        pulse_timer += 0.1
+        pulse_brightness = int(50 + abs(math.sin(pulse_timer) * 50))
+        
+        # Draw
+        screen.fill((20, 20, 30))  # Dark blue-gray background
+        
+        # Get current page
+        page = pages[current_page]
+        
+        # Title
+        title_surf = font_title.render(page["title"], True, (255, 220, 120))
+        title_surf.set_alpha(fade_alpha)
+        title_rect = title_surf.get_rect(center=(WIDTH // 2, 50))
+        screen.blit(title_surf, title_rect)
+        
+        # Draw decorative line under title
+        pygame.draw.line(screen, (255, 200, 100), 
+                        (WIDTH // 2 - 250, 82), 
+                        (WIDTH // 2 + 250, 82), 3)
+        
+        # Content with color coding - better centered with more width
+        y_offset = 120
+        for line in page["content"]:
+            if line == "":
+                y_offset += 35  # Same spacing as regular lines for consistency
+                continue
+            
+            # Determine text color based on content
+            if "TIP:" in line:
+                text_color = (255, 255, 100)  # Yellow for tips
+            elif " - " in line or ":" in line:
+                text_color = (200, 255, 200)  # Light green for key bindings
+            elif line[0].isdigit() and "." in line:
+                text_color = (150, 200, 255)  # Light blue for numbered lists
+            else:
+                text_color = (230, 230, 230)  # White for normal text
+            
+            text_surf = font_normal.render(line, True, text_color)
+            text_surf.set_alpha(fade_alpha)
+            # Center each line properly
+            screen.blit(text_surf, (WIDTH // 2 - text_surf.get_width() // 2, y_offset))
+            y_offset += 35
+        
+        # Page indicator with same white color as body text
+        page_text = f"Page {current_page + 1} / {len(pages)}"
+        page_surf = font_small.render(page_text, True, (220, 220, 220))
+        page_rect = page_surf.get_rect(center=(WIDTH // 2, HEIGHT - 120))
+        screen.blit(page_surf, page_rect)
+        
+        # Navigation hints - single centered line with same white color
+        nav_y = HEIGHT - 80
+        nav_color = (220, 220, 220)  # White, same as body text
+        
+        # Build navigation text with more spacing
+        if current_page < len(pages) - 1:
+            nav_text = "<  Previous        |        Next  >"
+        else:
+            nav_text = "<  Previous"
+        
+        nav_surf = font_small.render(nav_text, True, nav_color)
+        nav_rect = nav_surf.get_rect(center=(WIDTH // 2, nav_y))
+        screen.blit(nav_surf, nav_rect)
+        
+        # SPACE hint below with same white color and more spacing
+        space_text = "- Press SPACE to Return to Main Menu -"
+        space_surf = font_small.render(space_text, True, nav_color)
+        space_rect = space_surf.get_rect(center=(WIDTH // 2, nav_y + 40))
+        screen.blit(space_surf, space_rect)
+        
+        pygame.display.flip()
+
 
 def run_level2_tutorial(WIDTH, HEIGHT, screen):
     """Tutorial screen showing Level 2 controls and mechanics"""

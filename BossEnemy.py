@@ -360,7 +360,7 @@ class DungeonBoss(Level2Enemy):
         elif self.is_slamming:
             self.execute_ground_slam(player, dt)
         elif self.shield_active:
-            self.execute_shield_mode(player, dt)
+            self.execute_shield_mode(player, obstacles, dt)
         else:
             self.execute_current_pattern(player, obstacles, dt)
         
