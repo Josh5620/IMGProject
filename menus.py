@@ -383,7 +383,7 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     resume_button = Button(
         images=(pygame.image.load('assets/resume_button.png').convert_alpha(),
                 pygame.image.load('assets/resume_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 - 100),
+        pos=(WIDTH // 2, HEIGHT // 2),
         text="Resume",
         font=pygame.font.Font(None, 50),
         on_activate=resume_game
