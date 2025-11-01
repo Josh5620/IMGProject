@@ -178,7 +178,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     levels_button = Button(
         images=(pygame.image.load('assets/start_button.png').convert_alpha(),
                 pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 - 50),
+        pos=(WIDTH // 2, HEIGHT // 2),
         text="Levels",
         font=pygame.font.Font(None, 50),
         on_activate=open_level_select
@@ -189,9 +189,9 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
         run_game_manual(WIDTH, HEIGHT, screen)
     
     manual_button = Button(
-        images=(pygame.image.load('assets/start_button.png').convert_alpha(),
-                pygame.image.load('assets/start_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        images=(pygame.image.load('assets/howtoplay_button.png').convert_alpha(),
+                pygame.image.load('assets/howtoplay_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 100),
         text="Manual",
         font=pygame.font.Font(None, 50),
         on_activate=show_manual
@@ -206,7 +206,7 @@ def start_menu(WIDTH, HEIGHT, screen, start_game):
     quit_button = Button(
         images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
                 pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
-        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        pos=(WIDTH // 2, HEIGHT // 2 + 200),
         text="Quit",
         font=pygame.font.Font(None, 50),
         on_activate=quit_game
