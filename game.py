@@ -3,7 +3,7 @@ import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
-from Level2Boss import EasyDungeonBoss, HardDungeonBoss
+from BossEnemy import EasyDungeonBoss, HardDungeonBoss
 from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
@@ -180,8 +180,12 @@ class Game:
     def update_enemies(self):
         for enemy in self.enemies:
             if enemy.alive:
+                # Check if it's a boss enemy (from BossEnemy.py)
+                if hasattr(enemy, 'projectiles') and hasattr(enemy, 'difficulty'):
+                    # Boss enemies need obstacles for collision detection
+                    enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
                 # Level 1 and Level 2 enemies both use the same update signature
-                if isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
+                elif isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
                     enemy.update(self.player, dt=1.0, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
                 else:
                     # Fallback for other enemy types
@@ -412,6 +416,7 @@ class Level2(Game):
        self.load_ui_assets()
        self.animated_traps = []
        self.powerups = []  # Level 2 powerups
+       self.boss_difficulty = "normal"  # Default difficulty
        
        # Load mushroom sprites for powerups
        self.mushroom_sprites = load_mushroom_sprites()
@@ -483,21 +488,6 @@ class Level2(Game):
                     print(f"Spawned Flying Eye at ({obj.x}, {obj.y - 64})")
                     continue
                 
-                # === BOSSES ===
-                elif typ == "boss_easy":
-                    boss = EasyDungeonBoss(obj.x, obj.y - 96)
-                    boss.level = self
-                    self.enemies.append(boss)
-                    print(f"Spawned EASY BOSS at ({obj.x}, {obj.y - 96})")
-                    continue
-                
-                elif typ == "boss_hard":
-                    boss = HardDungeonBoss(obj.x, obj.y - 96)
-                    boss.level = self
-                    self.enemies.append(boss)
-                    print(f"Spawned HARD BOSS at ({obj.x}, {obj.y - 96})")
-                    continue
-                
                 # === TRAPS ===
                 elif typ == "sawtrap":
                     anchor_x = obj.x + obj.width / 2
@@ -530,8 +520,6 @@ class Level2(Game):
                     mushroom_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
                     
                     if mushroom_image:
-                        # The image is already the right sprite from your Level 2 mushroom sheet!
-                        # Scale it if needed
                         mushroom_image = pygame.transform.scale(mushroom_image, (32, 32))
                         mushroom = MushroomPickup(obj.x, obj.y, mushroom_image)
                         self.enemies.append(mushroom)
@@ -551,6 +539,14 @@ class Level2(Game):
                     self.powerups.append(powerup)
                     print(f"Spawned {powerup_type} powerup at ({obj.x - 30}, {obj.y - 30})")
                     continue
+
+                # ===BOSS FIGHT DIFFICULTIES===
+                elif typ == "EasyEnd":
+                    self.obstacles.append(end(obj.x, obj.y))
+                    self.boss_difficulty = "easy"
+                elif typ == "HardEnd":
+                    self.obstacles.append(end(obj.x, obj.y))
+                    self.boss_difficulty = "hard"
         
         print(f"Level 2 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 2 - Number of enemies spawned: {len(self.enemies)}")
@@ -673,80 +669,460 @@ class Level2(Game):
             self.clock.tick(60)
             
         return "menu"
-
-
     
-class BossLevel1(Game):
-    def __init__(self, width=960, height=640):
+    def check_win_lose_conditions(self):
+        """Override to handle boss level transition with difficulty"""
+        if self.player.lives <= 0:
+            return "game_over"
+        if self.player.won:
+            # Return boss level with appropriate difficulty
+            if self.boss_difficulty == "easy":
+                return "boss_level_easy"
+            elif self.boss_difficulty == "hard":
+                return "boss_level_hard"
+            else:
+                return "boss_level_normal"
+        return "playing"
+
+class FinalBossLevel(Game):
+    """Final boss level with Level 2 mushrooms, traps, and boss fight"""
+    
+    def __init__(self, width=960, height=640, difficulty="normal"):
         super().__init__(width, height)
+        self.difficulty = difficulty
+        self.boss = None
+        self.boss_defeated = False
+        self.boss_summoned_minions = []
+        self.animated_traps = []
+        self.powerups = []
         
+        # Track level completion
+        self.level_complete = False
+        self.victory_timer = 0
         
-        self.load_background('assets/BossBGL', 5)
-        self.load_tilemap("forestBossMap.tmx")
+        # Load Level 2 powerups
+        from level2_powerup_loader import load_mushroom_sprites
+        self.mushroom_sprites = load_mushroom_sprites()
+        print(f'Boss Level - Loaded {len(self.mushroom_sprites)} mushroom powerup sprites')
+
+        # Load boss level assets
+        self.load_background('assets/BossBGL', 7)
+        self.load_tilemap("FinalBossMap.tmx")
         self.load_ui_assets()
-        
         self.process_tilemap()
         self.initialize_game_objects()
         
-        
+        print(f"Final Boss Level initialized with difficulty: {self.difficulty}")
+
     def process_tilemap(self):
+        """Process tilemap to spawn boss, Level 2 mushrooms and traps"""
         TILE_SIZE = 32
         self.obstacles = []
         self.enemies = []
-        self.start_position = (0, 50)
+        self.start_position = (0, 100)
         
-        for layer in self.tmx_data.visible_layers:
-            if isinstance(layer, pytmx.TiledTileLayer):
-                for x, y, gid in layer:
-                    if gid == 0:
-                        continue
+        # Process tile layer for solid blocks
+        tile_layer = self.tmx_data.get_layer_by_name("Tile Layer 1")
+        if isinstance(tile_layer, pytmx.TiledTileLayer):
+            for x, y, gid in tile_layer.iter_data():
+                if not gid:
+                    continue
+
+                props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
+                typ = props.get("type")
+                
+                # Create solid blocks
+                self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
+        
+        # Process object layer for entities
+        objectLayer = self.tmx_data.get_layer_by_name("Object Layer 1")
+        if isinstance(objectLayer, pytmx.TiledObjectGroup):
+            for obj in objectLayer:
+                typ = getattr(obj, "type", None) or (obj.properties or {}).get("type")
+                
+                # === LEVEL MARKERS ===
+                if typ == "end":
+                    self.obstacles.append(end(obj.x, obj.y))
+                elif typ == "start":
+                    self.obstacles.append(start(obj.x, obj.y))
+                    self.start_position = (obj.x, obj.y - 70)
+                    continue
+                
+                # === BOSS SPAWNING ===
+                elif typ == "final_boss" or typ == "boss_spawn":
+                    try:
+                        from BossEnemy import EasyDungeonBoss, HardDungeonBoss
                         
-                    props = self.tmx_data.get_tile_properties_by_gid(gid)
+                        if self.difficulty == "easy":
+                            self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
+                        elif self.difficulty == "hard":
+                            self.boss = HardDungeonBoss(obj.x, obj.y - 128)
+                        else:  # normal difficulty defaults to easy
+                            self.boss = EasyDungeonBoss(obj.x, obj.y - 128)
+                        
+                        self.boss.level = self
+                        self.enemies.append(self.boss)
+                        print(f"Spawned {self.difficulty.upper()} Boss at ({obj.x}, {obj.y - 128})")
+                    except ImportError as e:
+                        print(f"Error: Could not import boss classes from BossEnemy module: {e}")
+                    continue
+                
+                # === LEVEL 2 MUSHROOM MINIONS ===
+                elif typ == "mushroom_enemy" or typ == "mushroom_minion":
+                    from Level2Enemies import MutatedMushroom
+                    enemy = MutatedMushroom(obj.x, obj.y - 96)
+                    enemy.level = self
+                    enemy.max_hp = 50  # Reduced HP for boss level
+                    enemy.current_hp = 50
+                    self.enemies.append(enemy)
+                    print(f"Spawned Mushroom Minion at ({obj.x}, {obj.y - 96})")
+                    continue
+                
+                # === COLLECTIBLE MUSHROOMS ===
+                elif typ == "mushroom4":
+                    mushroom_image = self.tmx_data.get_tile_image_by_gid(obj.gid)
                     
-                    # Handle enemy spawns - check if enemy property exists and get its AI type
-                    if props and "enemy" in props:
-                        ai_type = props.get("enemy")
-                        enemy_x = x * TILE_SIZE
-                        enemy_y = (y * TILE_SIZE) - 32
-                        
-                        # Use dictionary mapping for enemy types
-                        enemy_map = {
-                            "archer": Archer,
-                            "warrior": Warrior
-                        }
-                        if ai_type in enemy_map:
-                            enemy = enemy_map[ai_type](enemy_x, enemy_y)
-                            enemy.level = self
-                            self.enemies.append(enemy)
-                            print(f"Spawned {ai_type} enemy at ({enemy_x}, {enemy_y})")
-                    
-                    # Handle obstacle types
-                    elif props:
-                        typ = props.get("type")
-                        obstacle_map = {
-                            "tombstone": Spikes,
-                            "ice": Ice,
-                            "start": start,
-                            "end": end
-                        }
-                        
-                        if typ in obstacle_map:
-                            obstacle = obstacle_map[typ](x * TILE_SIZE, y * TILE_SIZE)
-                            self.obstacles.append(obstacle)
-                            
-                            if typ == "start":
-                                self.start_position = (x * TILE_SIZE + 30, y * TILE_SIZE - 70)
-                        else:
-                            # Regular block
-                            self.obstacles.append(block(x * TILE_SIZE, y * TILE_SIZE))
-                            
+                    if mushroom_image:
+                        mushroom_image = pygame.transform.scale(mushroom_image, (32, 32))
+                        mushroom = MushroomPickup(obj.x, obj.y, mushroom_image)
+                        self.enemies.append(mushroom)
+                        print(f"Spawned collectible mushroom at ({obj.x}, {obj.y})")
+                    else:
+                        print(f"Warning: Could not load mushroom image for object at ({obj.x}, {obj.y})")
+                    continue
+
+                # === LEVEL 2 POWERUPS ===
+                elif typ in TILED_OBJECT_TO_POWERUP:
+                    powerup_type = TILED_OBJECT_TO_POWERUP[typ]
+                    powerup = create_level2_powerup_with_sprite(
+                        obj.x - 30, obj.y - 30, powerup_type, self.mushroom_sprites
+                    )
+                    self.powerups.append(powerup)
+                    print(f"Spawned {powerup_type} powerup at ({obj.x - 30}, {obj.y - 30})")
+                    continue
+                
+                # === LEVEL 2 TRAPS ===
+                elif typ == "firetrap":
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y
+                    trap = FireTrap(anchor_x, anchor_y, damage=2, cooldown=2000)  # Increased damage for boss level
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    print(f"Spawned Fire Trap at ({anchor_x}, {anchor_y})")
+                    continue
+                
+                elif typ == "lightningtrap":
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y
+                    trap = LightningTrap(anchor_x, anchor_y, damage=2, cooldown=1500)  # Increased damage
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    print(f"Spawned Lightning Trap at ({anchor_x}, {anchor_y})")
+                    continue
+                
+                elif typ == "sawtrap":
+                    anchor_x = obj.x + obj.width / 2
+                    anchor_y = obj.y
+                    trap = AnimatedTrap(anchor_x, anchor_y, 'assets/Level2/Traps/SawTrap.png', 64, 32)
+                    trap.level = self
+                    self.animated_traps.append(trap)
+                    print(f"Spawned Saw Trap at ({anchor_x}, {anchor_y})")
+                    continue
+                
+        # If no boss was spawned from tilemap, create one manually
+        if not self.boss:
+            try:
+                from BossEnemy import EasyDungeonBoss, HardDungeonBoss
+                
+                if self.difficulty == "easy":
+                    self.boss = EasyDungeonBoss(400, 300)  # Center of screen
+                elif self.difficulty == "hard":
+                    self.boss = HardDungeonBoss(400, 300)
+                else:  # normal difficulty defaults to easy
+                    self.boss = EasyDungeonBoss(400, 300)
+                
+                self.boss.level = self
+                self.enemies.append(self.boss)
+                print(f"Manually spawned {self.difficulty.upper()} Boss at (400, 300)")
+            except ImportError as e:
+                print(f"Error: Could not import boss classes from BossEnemy module: {e}")
+        
+        print(f"Boss Level - Obstacles: {len(self.obstacles)}")
+        print(f"Boss Level - Enemies: {len(self.enemies)} (Boss: {'Yes' if self.boss else 'No'})")
+        print(f"Boss Level - Traps: {len(self.animated_traps)}")
+        print(f"Boss Level - Powerups: {len(self.powerups)}")
+        self.build_spatial_hash()
+
     def initialize_game_objects(self):
-        self.player = mainCharacter(self.start_position[0], self.start_position[1])
-        self.player.level = self
-        self.player.current_level = 1  # Boss Level (Level 1 abilities)
-        self.player.enemies = self.enemies
+        """Initialize player with full abilities for boss fight"""
+        if self.start_position:
+            self.player = mainCharacter(self.start_position[0], self.start_position[1])
+            self.player.level = self
+            self.player.current_level = 3  # Enable all abilities for boss fight
+            
+            # Give player some health advantage for boss fight
+            if self.difficulty == "hard":
+                self.player.max_hp = 8  # Extra HP for hard mode
+                self.player.current_hp = 8
+            else:
+                self.player.max_hp = 6
+                self.player.current_hp = 6
+                
+        else:
+            self.player = mainCharacter(0, 100)
+            self.player.level = self
+            self.player.current_level = 3
+            print("Warning: No start position found in tilemap. Defaulting to (0, 100).")
+
+    def update(self, dt):
+        """Update boss level with special boss mechanics"""
+        if self.level_complete:
+            self.victory_timer += dt
+            if self.victory_timer > 180:  # 3 seconds
+                return "victory"  # Signal victory to main game
+            return
+        
+        # Update player (get current key state)
+        keys = pygame.key.get_pressed()
+        self.player.update(keys, self.obstacles, self.enemies)
+        
+        # Update enemies (including boss) using proper method
+        for enemy in self.enemies[:]:  # Copy list to avoid modification issues
+            if enemy.alive:
+                # Check if it's a boss enemy (from BossEnemy.py)
+                if hasattr(enemy, 'projectiles') and hasattr(enemy, 'difficulty'):
+                    # Boss enemies need obstacles for collision detection
+                    enemy.update(self.player, dt=dt, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+                # Level 1 and Level 2 enemies both use the same update signature
+                elif isinstance(enemy, Level1Enemy) or hasattr(enemy, 'scroll_offset'):
+                    enemy.update(self.player, dt=dt, obstacles=self.obstacles, scroll_offset=self.ground_scroll)
+                else:
+                    # Fallback for other enemy types
+                    enemy.update(self.player)
+            
+            # Remove dead enemies
+            if hasattr(enemy, 'alive') and not enemy.alive:
+                if enemy == self.boss:
+                    self.boss_defeated = True
+                    self.level_complete = True
+                    print("BOSS DEFEATED! Victory!")
+                self.enemies.remove(enemy)
+        
+        # Handle boss summoning minions (hard mode)
+        if self.boss and hasattr(self.boss, 'summon_event') and self.boss.summon_event:
+            self.spawn_boss_minions(self.boss.summon_event)
+            self.boss.summon_event = None
+        
+        # Update traps
+        for trap in self.animated_traps:
+            trap.update(self.player, scroll_offset=self.ground_scroll)
+        
+        # Update powerups
+        for powerup in self.powerups[:]:
+            if powerup.update(self.player, dt, scroll_offset=self.ground_scroll):
+                self.powerups.remove(powerup)
+        
+        # Handle scrolling
+        self.handle_scrolling()
+        
+        # Update particles
+        self.update_particles()
+        
+        # Check if player died
+        if self.player.lives <= 0:
+            return "game_over"
+    
+    def spawn_boss_minions(self, summon_event):
+        """Spawn minions when boss summons them (hard mode)"""
+        from Level2Enemies import Skeleton
+        
+        count = summon_event.get('count', 2)
+        positions = summon_event.get('positions', [])
+        
+        for i in range(min(count, len(positions))):
+            pos_x, pos_y = positions[i]
+            minion = Skeleton(pos_x, pos_y)
+            minion.level = self
+            minion.max_hp = 30  # Weaker minions
+            minion.current_hp = 30
+            minion.speed = 1.5  # Faster minions
+            self.enemies.append(minion)
+            self.boss_summoned_minions.append(minion)
+            print(f"Boss summoned minion {i+1} at ({pos_x}, {pos_y})")
+
+    def draw(self, surface):
+        """Draw boss level with enhanced effects"""
+        # Draw background
+        self.draw_bg()
+        
+        # Draw obstacles
+        self.update_obstacles()
+        
+        # Draw tilemap
+        self.draw_tilemap()
+        
+        # Draw traps
+        for trap in self.animated_traps:
+            surface.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+        
+        # Draw powerups
+        for powerup in self.powerups:
+            powerup.draw(surface, self.ground_scroll)
+        
+        # Draw enemies (boss will have special effects)
+        for enemy in self.enemies:
+            enemy.draw(surface)
+        
+        # Draw player
+        self.player.draw(surface)
+        
+        # Draw particles
+        self.update_particles()
+        
+        # Draw UI elements
+        self.update_lives()
+        self.draw_mushroom_count()
+        self.draw_debug_info()
+        
+        # Draw boss-specific UI elements
+        if self.boss and self.boss.alive:
+            self.draw_boss_ui(surface)
+        
+        # Draw victory message
+        if self.level_complete:
+            self.draw_victory_message(surface)
+    
+    def draw_boss_ui(self, surface):
+        """Draw boss-specific UI elements"""
+        if not self.boss:
+            return
+        
+        # Boss name and difficulty
+        font = pygame.font.Font(None, 36)
+        boss_name = f"FINAL BOSS - {self.difficulty.upper()} MODE"
+        text_surf = font.render(boss_name, True, (255, 215, 0))  # Gold color
+        text_rect = text_surf.get_rect(center=(surface.get_width() // 2, 30))
+        
+        # Text shadow
+        shadow_surf = font.render(boss_name, True, (0, 0, 0))
+        surface.blit(shadow_surf, (text_rect.x + 2, text_rect.y + 2))
+        surface.blit(text_surf, text_rect)
+        
+        # Phase indicator
+        if self.boss.phase == 2:
+            phase_font = pygame.font.Font(None, 28)
+            phase_text = phase_font.render("⚡ PHASE 2 - ENRAGED ⚡", True, (255, 100, 100))
+            phase_rect = phase_text.get_rect(center=(surface.get_width() // 2, 60))
+            surface.blit(phase_text, phase_rect)
+    
+    def draw_victory_message(self, surface):
+        """Draw victory message when boss is defeated"""
+        # Victory background
+        victory_surf = pygame.Surface((400, 200), pygame.SRCALPHA)
+        victory_surf.fill((0, 0, 0, 180))
+        victory_rect = victory_surf.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
+        surface.blit(victory_surf, victory_rect)
+        
+        # Victory text
+        font = pygame.font.Font(None, 48)
+        victory_text = font.render("VICTORY!", True, (255, 215, 0))
+        text_rect = victory_text.get_rect(center=victory_rect.center)
+        text_rect.y -= 30
+        
+        # Text glow effect
+        for offset in [(2, 2), (-2, -2), (2, -2), (-2, 2)]:
+            glow_surf = font.render("VICTORY!", True, (255, 255, 100))
+            surface.blit(glow_surf, (text_rect.x + offset[0], text_rect.y + offset[1]))
+        
+        surface.blit(victory_text, text_rect)
+        
+        # Difficulty completed text
+        diff_font = pygame.font.Font(None, 32)
+        diff_text = diff_font.render(f"{self.difficulty.upper()} MODE COMPLETED", True, (255, 255, 255))
+        diff_rect = diff_text.get_rect(center=(victory_rect.centerx, victory_rect.centery + 20))
+        surface.blit(diff_text, diff_rect)
+    
+    def check_win_lose_conditions(self):
+        """Check if boss is defeated or player died"""
+        if self.boss_defeated:
+            return "victory"
+        elif self.player.lives <= 0:
+            return "game_over"
+        return None
     
     def run(self, screen):
-        self.doScroll = False
-        return super().run(screen)
+        """Run the boss level game loop"""
+        self.screen = screen
+        self.reset_game()
+        
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return "quit"
+                
+                # Check for pause key (ESC or P)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        from menus import pause_menu
+                        game_surface = self.screen.copy()
+                        pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
+                        
+                        if pause_action == 'restart':
+                            self.reset_game()
+                        elif pause_action == 'main_menu':
+                            return "start"
+                        elif pause_action == 'quit':
+                            return "quit"
+            
+            # Clear screen and draw background
+            self.screen.fill((0, 0, 0))
+            self.draw_bg()
+            
+            # Update and draw obstacles and tilemap
+            self.update_obstacles()
+            self.draw_tilemap()
+            self.update_particles()
+            self.update_enemies()
+            
+            # Update boss level specific elements
+            dt = 1.0
+            result = self.update(dt)
+            
+            # Check for level completion or game over
+            if result == "victory":
+                return "victory"
+            elif result == "game_over":
+                return "game_over"
+            
+            # Draw traps and powerups
+            for trap in self.animated_traps:
+                self.screen.blit(trap.image, (trap.rect.x - self.ground_scroll, trap.rect.y))
+            
+            for powerup in self.powerups:
+                powerup.draw(self.screen, self.ground_scroll)
+            
+            # Draw player
+            if self.player:
+                self.player.draw(self.screen)
+            
+            # Handle scrolling and UI
+            self.handle_scrolling()
+            self.update_lives()
+            self.draw_mushroom_count()
+            self.draw_debug_info()
+            
+            # Draw boss-specific UI elements
+            if self.boss and self.boss.alive:
+                self.draw_boss_ui(self.screen)
+            
+            # Draw victory message
+            if self.level_complete:
+                self.draw_victory_message(self.screen)
+            
+            pygame.display.flip()
+            self.clock.tick(60)
+        
+        return "menu"
+
         

@@ -1,5 +1,5 @@
 import pygame
-from game import Level1, BossLevel1, Level2
+from game import Level1, Level2, FinalBossLevel
 from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, getLevel, pause_menu, music_manager, run_level2_tutorial
 from sandbox import sandbox_mode
 
@@ -40,6 +40,12 @@ def start_game_wrapper():
         game_state = "retry"
     elif result == "boss_level1":
         game_state = "boss_level1"
+    elif result == "boss_level_easy":
+        game_state = "boss_level_easy"
+    elif result == "boss_level_normal":
+        game_state = "boss_level_normal"
+    elif result == "boss_level_hard":
+        game_state = "boss_level_hard"
     else:
         game_state = "start"
 
@@ -68,13 +74,36 @@ while running:
         running = False
     elif game_state == "boss_level1":
         run_BossIntro(WIDTH, HEIGHT, screen)
-        music_manager.play('boss')  # Play boss music
-        boss_level1 = BossLevel1(WIDTH, HEIGHT)  
-        result = boss_level1.run(screen)
+        music_manager.play('boss')  # Play boss music  
         if result == "quit":
             running = False
         elif result == "game_over":
             game_state = "retry"
+        else:
+            game_state = "start"
+    elif game_state in ["boss_level_easy", "boss_level_normal", "boss_level_hard"]:
+        # Determine difficulty from game state
+        if game_state == "boss_level_easy":
+            difficulty = "easy"
+        elif game_state == "boss_level_hard":
+            difficulty = "hard"
+        else:
+            difficulty = "normal"
+        
+        run_BossIntro(WIDTH, HEIGHT, screen)
+        music_manager.play('boss')  # Play boss music
+        
+        # Create and run the boss level
+        boss_level = FinalBossLevel(WIDTH, HEIGHT, difficulty)
+        result = boss_level.run(screen)
+        
+        if result == "quit":
+            running = False
+        elif result == "game_over":
+            game_state = "retry"
+        elif result == "victory":
+            # Player won the boss fight - could go to credits or back to menu
+            game_state = "start"
         else:
             game_state = "start" 
     else:

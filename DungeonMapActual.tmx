@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="152">
-<tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
-<tileset firstgid="400" source="assets/forestobjects.tsx"/>
-<layer id="1" name="Tile Layer 1" width="160" height="20">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="155">
+ <tileset firstgid="1" source="DungeonInsideHouse.tsx"/>
+ <tileset firstgid="400" source="assets/forestobjects.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="160" height="20">
   <data encoding="csv">
 113,0,0,0,110,110,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,110,110,110,110,110,110,110,110,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,113,
 134,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,134,
@@ -25,8 +25,8 @@
 23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,24,24,24,24,24,24,24,24,91,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,90,45,45,29,0,0,0,0,0,0,0,0,30,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,197,
 23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,45,45,45,45,50,32,32,32,32,32,32,32,32,51,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,25,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,218
 </data>
-</layer>
-<objectgroup id="2" name="Object Layer 1">
+ </layer>
+ <objectgroup id="2" name="Object Layer 1">
   <object id="2" name="type" type="start" gid="449" x="147.333" y="556.667" width="47" height="57"/>
   <object id="4" name="type" type="HardEnd" gid="451" x="5012.33" y="623.333" width="57" height="30"/>
   <object id="5" name="type" type="EasyEnd" gid="450" x="5025.33" y="69.6666" width="52" height="63"/>
@@ -85,16 +85,16 @@
   <object id="75" name="type" type="lightningtrap" x="349.333" y="137.333" width="96" height="96"/>
   <object id="76" name="type" type="lightningtrap" x="240" y="9.33333" width="96" height="96"/>
   <object id="77" name="type" type="skeleton" x="1767" y="486.5">
-  <point/>
+   <point/>
   </object>
   <object id="82" name="type" type="mushroom_enemy" x="978.667" y="160.667">
-  <point/>
+   <point/>
   </object>
   <object id="83" name="type" type="flyingeye" x="1334.67" y="379.333">
-  <point/>
+   <point/>
   </object>
   <object id="86" name="type" type="mushroom_enemy" x="901.083" y="393.75">
-  <point/>
+   <point/>
   </object>
   <object id="88" name="type" type="health_mushroom" x="300.333" y="531" width="47.3333" height="21.3333"/>
   <object id="90" name="type" type="fire_mushroom" x="22.6667" y="70" width="63.3333" height="23.3333"/>
@@ -133,58 +133,60 @@
   <object id="125" name="type" type="fire_mushroom" x="4551.33" y="240.333" width="63.3333" height="23.3333"/>
   <object id="126" name="type" type="health_mushroom" x="2511.33" y="107.333" width="47.3333" height="21.3333"/>
   <object id="127" name="type" type="mushroom_enemy" x="671" y="290">
-  <point/>
+   <point/>
   </object>
   <object id="128" name="type" type="mushroom_enemy" x="2386" y="358">
-  <point/>
+   <point/>
   </object>
   <object id="134" name="type" type="wisdom_mushroom" x="3602.5" y="463"/>
   <object id="135" name="type" type="wisdom_mushroom" x="3914.67" y="212"/>
   <object id="136" name="type" type="wisdom_mushroom" x="4402" y="146.667"/>
   <object id="137" name="type" type="flyingeye" x="1585.33" y="378">
-  <point/>
+   <point/>
   </object>
   <object id="138" name="type" type="flyingeye" x="234" y="366">
-  <point/>
+   <point/>
   </object>
   <object id="139" name="type" type="flyingeye" x="3385.33" y="50">
-  <point/>
+   <point/>
   </object>
   <object id="140" name="type" type="flyingeye" x="4316.67" y="312.667">
-  <point/>
+   <point/>
   </object>
-  <object id="141" name="type" type="flyingeye" x="5061.33" y="256">
-  <point/>
+  <object id="141" name="type" type="flyingeye" x="5046" y="256.667">
+   <point/>
   </object>
   <object id="142" name="type" type="flyingeye" x="2971.33" y="104.667">
-  <point/>
+   <point/>
   </object>
   <object id="143" name="type" type="flyingeye" x="2822" y="355.333">
-  <point/>
+   <point/>
   </object>
   <object id="144" name="type" type="flyingeye" x="3266.67" y="367.333">
-  <point/>
+   <point/>
   </object>
   <object id="145" name="type" type="flyingeye" x="796" y="102">
-  <point/>
+   <point/>
   </object>
   <object id="146" name="type" type="skeleton" x="1567.33" y="192.667">
-  <point/>
+   <point/>
   </object>
   <object id="147" name="type" type="skeleton" x="1201.33" y="495.333">
-  <point/>
+   <point/>
   </object>
   <object id="148" name="type" type="skeleton" x="158" y="105.333">
-  <point/>
+   <point/>
   </object>
   <object id="149" name="type" type="skeleton" x="2312" y="576">
-  <point/>
+   <point/>
   </object>
   <object id="150" name="type" type="skeleton" x="4740" y="410">
-  <point/>
+   <point/>
   </object>
   <object id="151" name="type" type="skeleton" x="4703.33" y="96">
-  <point/>
+   <point/>
   </object>
-</objectgroup>
+  <object id="153" name="type" type="HardEnd" gid="451" x="519.5" y="270" width="57" height="30"/>
+  <object id="154" name="type" type="EasyEnd" gid="450" x="790" y="297.5" width="52" height="63"/>
+ </objectgroup>
 </map>
