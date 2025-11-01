@@ -554,32 +554,13 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
         pygame.event.pump()
     
     running = True
-    font_title = pygame.font.Font("assets/yoster.ttf", 28)
-    font_normal = pygame.font.Font("assets/yoster.ttf", 16)
-    font_small = pygame.font.Font("assets/yoster.ttf", 14)
+    font_title = pygame.font.Font("assets/yoster.ttf", 42)
+    font_section = pygame.font.Font("assets/yoster.ttf", 24)
+    font_normal = pygame.font.Font("assets/yoster.ttf", 20)
+    font_prompt = pygame.font.Font("assets/yoster.ttf", 22)
     
-    # Tutorial content
+    # Tutorial content - organized by sections
     title = "DUNGEON LEVEL - CONTROLS"
-    controls = [
-        "MOVEMENT:",
-        "  Arrow Keys / WASD - Move left and right",
-        "  Space / Up Arrow - Jump",
-        "",
-        "COMBAT:",
-        "  Z - Light Attack (scratch)",
-        "  X - Throw Fish (ranged attack)",
-        "  C - Dash (quick dodge)",
-        "",
-        "POWERUPS (Mushrooms):",
-        "  Health Burst - Restore health",
-        "  Fire Cloak - Fire protection",
-        "  Speed Wind - Increased speed",
-        "  Wolf Strength - More damage",
-        "  Grandma Amulet - Protection",
-        "  Forest Wisdom - Special ability",
-        "",
-        "Press SPACE to begin!"
-    ]
     
     # Animation
     fade_alpha = 0
@@ -608,42 +589,87 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
         # Draw
         screen.fill((20, 20, 30))  # Dark blue-gray background
         
-        # Title
-        title_surf = font_title.render(title, True, (255, 200, 100))
+        # Title with glow effect
+        title_surf = font_title.render(title, True, (255, 220, 120))
         title_surf.set_alpha(fade_alpha)
-        title_rect = title_surf.get_rect(center=(WIDTH // 2, 80))
+        title_rect = title_surf.get_rect(center=(WIDTH // 2, 50))
         screen.blit(title_surf, title_rect)
         
         # Draw decorative line under title
         pygame.draw.line(screen, (255, 200, 100), 
-                        (WIDTH // 2 - 200, 110), 
-                        (WIDTH // 2 + 200, 110), 2)
+                        (WIDTH // 2 - 250, 82), 
+                        (WIDTH // 2 + 250, 82), 3)
         
-        # Controls text
-        y_offset = 140
-        for line in controls:
-            if line.startswith("MOVEMENT:") or line.startswith("COMBAT:") or line.startswith("POWERUPS"):
-                # Section headers
-                color = (100, 200, 255)
-                text_surf = font_normal.render(line, True, color)
-            elif line == "":
-                y_offset -= 5  # Less spacing for empty lines
-                continue
-            elif line.startswith("Press SPACE"):
-                # Pulsing prompt (clamp values to 255)
-                color = (min(255, pulse_brightness + 100), 
-                        min(255, pulse_brightness + 200), 
-                        min(255, pulse_brightness + 100))
-                text_surf = font_normal.render(line, True, color)
-            else:
-                # Regular text
-                color = (220, 220, 220)
-                text_surf = font_small.render(line, True, color)
-            
+        y_offset = 110
+        
+        # === MOVEMENT SECTION ===
+        section_surf = font_section.render("MOVEMENT:", True, (120, 220, 255))
+        section_surf.set_alpha(fade_alpha)
+        screen.blit(section_surf, (WIDTH // 2 - 230, y_offset))
+        y_offset += 33
+        
+        movement_controls = [
+            "Arrow Keys or WASD  -  Move left and right",
+            "Space or Up Arrow  -  Jump"
+        ]
+        for control in movement_controls:
+            text_surf = font_normal.render(control, True, (230, 230, 230))
             text_surf.set_alpha(fade_alpha)
-            text_rect = text_surf.get_rect(center=(WIDTH // 2, y_offset))
-            screen.blit(text_surf, text_rect)
-            y_offset += 25
+            screen.blit(text_surf, (WIDTH // 2 - 200, y_offset))
+            y_offset += 28
+        
+        y_offset += 15
+        
+        # === COMBAT SECTION ===
+        section_surf = font_section.render("COMBAT:", True, (255, 150, 150))
+        section_surf.set_alpha(fade_alpha)
+        screen.blit(section_surf, (WIDTH // 2 - 230, y_offset))
+        y_offset += 33
+        
+        combat_controls = [
+            "A  -  Attack Enemy",
+            "S  -  Shoot Arrow",
+            "Shift  -  Dash -> For Dungeon Level Only - Level 2",
+            "Hold C  -  Charge Shot"
+        ]
+        for control in combat_controls:
+            text_surf = font_normal.render(control, True, (230, 230, 230))
+            text_surf.set_alpha(fade_alpha)
+            screen.blit(text_surf, (WIDTH // 2 - 200, y_offset))
+            y_offset += 28
+        
+        y_offset += 15
+        
+        # === POWERUPS SECTION ===
+        section_surf = font_section.render("POWERUPS - Mushrooms:", True, (150, 255, 180))
+        section_surf.set_alpha(fade_alpha)
+        screen.blit(section_surf, (WIDTH // 2 - 230, y_offset))
+        y_offset += 33
+        
+        powerups = [
+            "Health Burst  -  Restore health",
+            "Fire Cloak  -  Fire protection",
+            "Speed Wind  -  Increased speed",
+            "Wolf Strength  -  More damage",
+            "Grandma Amulet  -  Protection",
+            "Forest Wisdom  -  Special ability"
+        ]
+        for powerup in powerups:
+            text_surf = font_normal.render(powerup, True, (230, 230, 230))
+            text_surf.set_alpha(fade_alpha)
+            screen.blit(text_surf, (WIDTH // 2 - 200, y_offset))
+            y_offset += 26
+        
+        # === PROMPT TO START ===
+        y_offset += 25
+        # Pulsing "Press SPACE" prompt (clamp values to 255)
+        prompt_color = (min(255, pulse_brightness + 150), 
+                    min(255, pulse_brightness + 200), 
+                    min(255, pulse_brightness + 100))
+        prompt_surf = font_prompt.render("Press SPACE to begin!", True, prompt_color)
+        prompt_surf.set_alpha(fade_alpha)
+        prompt_rect = prompt_surf.get_rect(center=(WIDTH // 2, y_offset))
+        screen.blit(prompt_surf, prompt_rect)
         
         pygame.display.flip()
 

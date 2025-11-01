@@ -3,7 +3,7 @@ import random
 import math
 from blocks import Ice, Spikes, block, end
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
-from weapons.projectiles import ProjectileManager
+from weapons.projectiles import ProjectileManager, ChargedProjectile
 from particles import ScreenDropletParticle, DashTrailParticle, DoubleJumpParticle
 
 
@@ -38,7 +38,7 @@ def _slice_one_row(sheet: pygame.Surface, *, frame_width=None, frame_count=None,
             original_width = frame.get_width()
             original_height = frame.get_height()
 
-            target_height = scale_to[1] 
+            target_height = scale_to[1]
 
             # Calculate the scale factor to maintain aspect ratio
             # (Avoid division by zero if height is 0)

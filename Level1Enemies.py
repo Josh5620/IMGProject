@@ -51,14 +51,14 @@ class Level1Enemy:
 
         self.debug_mode = True
 
-        self.max_hp = 100
+        self.max_hp = 60
         self.current_hp = self.max_hp
 
         self.attack_range     = pygame.Vector2(40, 40)
         self.player_in_attack = False
-        self.attack_cooldown = 3000  
+        self.attack_cooldown = 3000
         self.last_attack_time = 0
-        self.attack_flash_time = 1500  
+        self.attack_flash_time = 1500
         self.attack_flash_until = 0
         
         self.exclamation_img = pygame.image.load("assets/exclamation.png").convert_alpha()
@@ -111,7 +111,7 @@ class Level1Enemy:
             frames = self.anims.get("run", [])
             if state and frames:
                 if self.rect.x == self._last_x:
-                    idx = 0  
+                    idx = 0
                 else:
                     idx = (self.anim_tick // self.anim_speed) % len(frames)
             else:
@@ -154,7 +154,7 @@ class Level1Enemy:
             self.attack(player)
         self.update_anim_timers(dt)
         self.update_animation()
-  
+
     def update_timers(self, dt):
         self.ai_timer += dt
             
@@ -171,7 +171,7 @@ class Level1Enemy:
             else:
                 self.facing_right = False
                 self.direction = -1
-            return  
+            return
             
         if self.ai_timer > 120:
             self.direction *= -1
@@ -206,13 +206,13 @@ class Level1Enemy:
             
     def check_ground_ahead(self, dx, obstacles):
 
-        if dx > 0: 
+        if dx > 0:
             check_x = self.rect.right + 5  # Look ahead a bit more
         else:  # Moving left
             check_x = self.rect.left - 5   # Look ahead a bit more
             
         # Create ground check rectangle below the projected position
-        ground_check = pygame.Rect(check_x - 5, self.rect.bottom, 32, 20)  
+        ground_check = pygame.Rect(check_x - 5, self.rect.bottom, 32, 20)
         
         self.debug_ground_check = ground_check
         
@@ -230,7 +230,7 @@ class Level1Enemy:
         return ground_found
         
     def should_ignore_edges(self):
-        return False  
+        return False
         
     def handle_edge_detection(self):
         if not hasattr(self, 'last_direction_change'):
@@ -250,7 +250,7 @@ class Level1Enemy:
         for obstacle in obstacles:
             # Convert obstacle rect back to world space for collision testing
             world_obstacle_rect = obstacle.get_rect().copy()
-            world_obstacle_rect.x = obstacle.original_x 
+            world_obstacle_rect.x = obstacle.original_x
             world_obstacle_rect.y = obstacle.original_y
             
             if self.rect.colliderect(world_obstacle_rect):
@@ -352,7 +352,7 @@ class Level1Enemy:
 
         if self.debug_mode:
             self.draw_debug_ranges(surface, self.scroll_offset)
-                         
+                        
     def draw_debug_ranges(self, surface, scroll_offset=0):
         attack_rect = self.get_attack_rect().move(-scroll_offset, 0)
         pygame.draw.rect(surface, (255, 100, 0), attack_rect, 1)
@@ -413,13 +413,13 @@ class Archer(Level1Enemy):
         self.debug_mode = False
 
 
-        self.shoot_cooldown = 2000  
+        self.shoot_cooldown = 2000
         self.last_shot_time = 0
         self.arrow_speed = 6
         self.isIdle = False
         
         # Shooting delay after spotting player
-        self.shoot_delay = 2000  
+        self.shoot_delay = 2000
         self.first_spotted_time = 0
         self.player_spotted_recently = False
         
@@ -470,8 +470,8 @@ class Archer(Level1Enemy):
             distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
             
 
-            if distance_to_player < 60: 
-                return 
+            if distance_to_player < 60:
+                return
             if not self.player_spotted_recently:
                 self.player_spotted_recently = True
                 self.first_spotted_time = pygame.time.get_ticks()
@@ -537,7 +537,7 @@ class Warrior(Level1Enemy):
         except:
             self.exclamation_img = None
         
-    def update_ai(self, player, obstacles, dt): 
+    def update_ai(self, player, obstacles, dt):
         # Update detection timer
         if self.detection_timer > 0:
             self.detection_timer -= dt
@@ -555,8 +555,8 @@ class Warrior(Level1Enemy):
             distance_to_player = abs(self.player_world_rect.centerx - self.rect.centerx)
 
 
-            if distance_to_player < 60: 
-                return 
+            if distance_to_player < 60:
+                return
             
             if distance_from_start < self.chase_range:
                 if player.rect.centerx + self.scroll_offset > self.rect.centerx:
@@ -610,7 +610,7 @@ class Warrior(Level1Enemy):
             screen_hit_box.x -= self.scroll_offset
             
             green_surf = pygame.Surface((screen_hit_box.width, screen_hit_box.height), pygame.SRCALPHA)
-            green_surf.fill((0, 255, 0, 120))  
+            green_surf.fill((0, 255, 0, 120))
             surface.blit(green_surf, screen_hit_box.topleft)
             pygame.display.update(screen_hit_box)
 
@@ -679,9 +679,9 @@ class Arrow:
 class BreakableBlock(Level1Enemy): # <-- Inherit from Enemy
     def __init__(self, x, y, image):
         
-        super().__init__(x, y) 
+        super().__init__(x, y)
         self.debug_mode = False
-        self.isIdle = True 
+        self.isIdle = True
         self.max_hp = 40
         self.current_hp = self.max_hp
         self.image = image
@@ -690,7 +690,7 @@ class BreakableBlock(Level1Enemy): # <-- Inherit from Enemy
         self.y_velocity = 0
         
     def should_ignore_edges(self):
-        return True  
+        return True
         
     def apply_physics(self, obstacles):
         pass
@@ -718,7 +718,7 @@ class Mushroom(BreakableBlock):
         super().__init__(x, y, image)
         self.name = "Mushroom"
         self.debug_mode = False
-        self.isIdle = True 
+        self.isIdle = True
         self.max_hp = 1
         self.current_hp = self.max_hp
         self.image = image
