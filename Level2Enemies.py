@@ -464,7 +464,7 @@ class Level2Enemy:
             hitbox_rect = self.rect.copy()
             hitbox_rect.x -= self.scroll_offset
             pygame.draw.rect(surface, (255, 0, 0), hitbox_rect, 2)
-             
+            
     def draw_debug_ranges(self, surface, scroll_offset=0):
         """Draw debug attack range"""
         attack_rect = self.get_attack_rect().move(-scroll_offset, 0)

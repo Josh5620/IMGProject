@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="160" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="253">
- <tileset firstgid="1" source="assets/Tileset.tsx"/>
- <tileset firstgid="61" source="assets/goodly-2x.tsx"/>
- <tileset firstgid="317" source="assets/forestobjects.tsx"/>
- <objectgroup id="2" name="Object Layer 1">
+<tileset firstgid="1" source="assets/Tileset.tsx"/>
+<tileset firstgid="61" source="assets/goodly-2x.tsx"/>
+<tileset firstgid="317" source="assets/forestobjects.tsx"/>
+<objectgroup id="2" name="Object Layer 1">
   <object id="4" gid="345" x="256" y="480" width="16" height="21"/>
   <object id="5" gid="335" x="512" y="576" width="17" height="18"/>
   <object id="6" gid="336" x="864" y="576" width="17" height="16"/>

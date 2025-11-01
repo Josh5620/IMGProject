@@ -3,6 +3,7 @@ import pytmx
 from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
+from Level2Boss import EasyDungeonBoss, HardDungeonBoss
 from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
@@ -480,6 +481,21 @@ class Level2(Game):
                     enemy.level = self
                     self.enemies.append(enemy)
                     print(f"Spawned Flying Eye at ({obj.x}, {obj.y - 64})")
+                    continue
+                
+                # === BOSSES ===
+                elif typ == "boss_easy":
+                    boss = EasyDungeonBoss(obj.x, obj.y - 96)
+                    boss.level = self
+                    self.enemies.append(boss)
+                    print(f"Spawned EASY BOSS at ({obj.x}, {obj.y - 96})")
+                    continue
+                
+                elif typ == "boss_hard":
+                    boss = HardDungeonBoss(obj.x, obj.y - 96)
+                    boss.level = self
+                    self.enemies.append(boss)
+                    print(f"Spawned HARD BOSS at ({obj.x}, {obj.y - 96})")
                     continue
                 
                 # === TRAPS ===
