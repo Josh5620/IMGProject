@@ -816,6 +816,12 @@ class FinalBossLevel(Game):
         self.level_complete = False
         self.victory_timer = 0
         
+        # Ending sequence variables
+        self.fade_alpha = 0  # For fade to black effect
+        self.fade_complete = False
+        self.ending_text_alpha = 0
+        self.ending_timer = 0
+        
         # Mushroom tracking for boss level
         self.mushroom_count = 0
         self.min_mushrooms_for_boss = 10  # Not required for boss fight, but track anyway
@@ -988,9 +994,30 @@ class FinalBossLevel(Game):
     def update(self, dt):
         """Update boss level with special boss mechanics"""
         if self.level_complete:
+            if self.victory_timer == 0:  # First frame of victory
+                print("🎉 Level complete! Starting ending sequence...")
+            
             self.victory_timer += dt
-            if self.victory_timer > 180:  # 3 seconds
-                return "victory"  # Signal victory to main game
+            self.ending_timer += dt
+            
+            # Wait 2 seconds showing victory message, then fade to black
+            if self.victory_timer > 120:  # 2 seconds
+                # Fade to black over 3 seconds
+                if self.fade_alpha < 255:
+                    self.fade_alpha += dt * 1.4  # Slow fade
+                    self.fade_alpha = min(255, self.fade_alpha)
+                else:
+                    self.fade_complete = True
+                
+                # Show ending text after fade is complete
+                if self.fade_complete and self.ending_text_alpha < 255:
+                    self.ending_text_alpha += dt * 2  # Text fades in
+                    self.ending_text_alpha = min(255, self.ending_text_alpha)
+                
+                # Exit after showing text for 5 seconds
+                if self.ending_timer > 420:  # 7 seconds total (2 victory + 3 fade + 5 text)
+                    return "victory"
+            
             return
         
         # Update player (get current key state)
@@ -1016,7 +1043,7 @@ class FinalBossLevel(Game):
                 if enemy == self.boss:
                     self.boss_defeated = True
                     self.level_complete = True
-                    print("BOSS DEFEATED! Victory!")
+                    print(f"🏆 BOSS DEFEATED! Victory!")
                 self.enemies.remove(enemy)
         
         # Handle boss summoning minions (hard mode)
@@ -1113,9 +1140,9 @@ class FinalBossLevel(Game):
         if self.boss and self.boss.alive:
             self.draw_boss_ui(surface)
         
-        # Draw victory message
+        # Draw ending sequence (fade and text)
         if self.level_complete:
-            self.draw_victory_message(surface)
+            self.draw_ending_sequence(surface)
     
     def draw_boss_ui(self, surface):
         """Draw boss-specific UI elements"""
@@ -1146,38 +1173,86 @@ class FinalBossLevel(Game):
             phase_rect = phase_text.get_rect(center=(surface.get_width() // 2, 60))
             surface.blit(phase_text, phase_rect)
     
+    def draw_ending_sequence(self, surface):
+        """Draw the ending sequence: victory message -> fade to black -> ending text"""
+        # Show victory message for first 2 seconds
+        if self.victory_timer <= 120:
+            # Victory background
+            victory_surf = pygame.Surface((400, 200), pygame.SRCALPHA)
+            victory_surf.fill((0, 0, 0, 180))
+            victory_rect = victory_surf.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
+            surface.blit(victory_surf, victory_rect)
+            
+            # Victory text
+            try:
+                font = pygame.font.Font("assets/yoster.ttf", 48)
+            except:
+                font = pygame.font.Font(None, 48)
+            victory_text = font.render("VICTORY!", True, (255, 215, 0))
+            text_rect = victory_text.get_rect(center=victory_rect.center)
+            text_rect.y -= 30
+            
+            # Text glow effect
+            for offset in [(2, 2), (-2, -2), (2, -2), (-2, 2)]:
+                glow_surf = font.render("VICTORY!", True, (255, 255, 100))
+                surface.blit(glow_surf, (text_rect.x + offset[0], text_rect.y + offset[1]))
+            
+            surface.blit(victory_text, text_rect)
+            
+            # Difficulty completed text
+            try:
+                diff_font = pygame.font.Font("assets/yoster.ttf", 28)
+            except:
+                diff_font = pygame.font.Font(None, 32)
+            diff_text = diff_font.render(f"{self.difficulty.upper()} MODE COMPLETED", True, (255, 255, 255))
+            diff_rect = diff_text.get_rect(center=(victory_rect.centerx, victory_rect.centery + 20))
+            surface.blit(diff_text, diff_rect)
+        
+        # After 2 seconds, start fade to black
+        if self.victory_timer > 120 and self.fade_alpha > 0:
+            fade_surf = pygame.Surface((surface.get_width(), surface.get_height()))
+            fade_surf.fill((0, 0, 0))
+            fade_surf.set_alpha(int(self.fade_alpha))
+            surface.blit(fade_surf, (0, 0))
+        
+        # Ending text (appears after fade is complete)
+        if self.fade_complete and self.ending_text_alpha > 0:
+            try:
+                title_font = pygame.font.Font("assets/yoster.ttf", 48)
+                text_font = pygame.font.Font("assets/yoster.ttf", 24)
+            except:
+                title_font = pygame.font.Font(None, 52)
+                text_font = pygame.font.Font(None, 28)
+            
+            # Title
+            title_text = title_font.render("The End", True, (255, 215, 0))
+            title_rect = title_text.get_rect(center=(surface.get_width() // 2, 150))
+            title_text.set_alpha(int(self.ending_text_alpha))
+            surface.blit(title_text, title_rect)
+            
+            # Ending remarks (placeholder)
+            ending_lines = [
+                "With the darkness vanquished,",
+                "peace returns to the land.",
+                "",
+                "[Ending remarks here]",
+                "",
+                "Thank you for playing!",
+                "Shroomlight: The Last Bloom"
+            ]
+            
+            y_offset = 250
+            for line in ending_lines:
+                text_surf = text_font.render(line, True, (255, 255, 255))
+                text_rect = text_surf.get_rect(center=(surface.get_width() // 2, y_offset))
+                text_surf.set_alpha(int(self.ending_text_alpha))
+                surface.blit(text_surf, text_rect)
+                y_offset += 35
+    
     def draw_victory_message(self, surface):
-        """Draw victory message when boss is defeated"""
-        # Victory background
-        victory_surf = pygame.Surface((400, 200), pygame.SRCALPHA)
-        victory_surf.fill((0, 0, 0, 180))
-        victory_rect = victory_surf.get_rect(center=(surface.get_width() // 2, surface.get_height() // 2))
-        surface.blit(victory_surf, victory_rect)
-        
-        # Victory text - using pixelated font
-        try:
-            font = pygame.font.Font("assets/yoster.ttf", 48)
-        except:
-            font = pygame.font.Font(None, 48)
-        victory_text = font.render("VICTORY!", True, (255, 215, 0))
-        text_rect = victory_text.get_rect(center=victory_rect.center)
-        text_rect.y -= 30
-        
-        # Text glow effect
-        for offset in [(2, 2), (-2, -2), (2, -2), (-2, 2)]:
-            glow_surf = font.render("VICTORY!", True, (255, 255, 100))
-            surface.blit(glow_surf, (text_rect.x + offset[0], text_rect.y + offset[1]))
-        
-        surface.blit(victory_text, text_rect)
-        
-        # Difficulty completed text
-        try:
-            diff_font = pygame.font.Font("assets/yoster.ttf", 28)
-        except:
-            diff_font = pygame.font.Font(None, 32)
-        diff_text = diff_font.render(f"{self.difficulty.upper()} MODE COMPLETED", True, (255, 255, 255))
-        diff_rect = diff_text.get_rect(center=(victory_rect.centerx, victory_rect.centery + 20))
-        surface.blit(diff_text, diff_rect)
+        """Draw victory message when boss is defeated (kept for compatibility)"""
+        # This is now handled by draw_ending_sequence
+        pass
     
     def check_win_lose_conditions(self):
         """Check if boss is defeated or player died"""

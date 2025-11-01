@@ -38,8 +38,6 @@ def start_game_wrapper():
         game_state = "quit"
     elif result == "game_over":
         game_state = "retry"
-    elif result == "boss_level1":
-        game_state = "boss_level1"
     elif result == "boss_level_easy":
         game_state = "boss_level_easy"
     elif result == "boss_level_normal":
