@@ -1,7 +1,7 @@
 import pygame
 from game import Level1, Level2, FinalBossLevel
 from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, run_level1_intro, run_level2_intro, run_victory_screen, run_defeat_screen, getLevel, pause_menu, music_manager, run_level2_tutorial, level1_completion_menu
-from sandbox import sandbox_mode
+
 
 pygame.init()
 WIDTH, HEIGHT = 960, 640
@@ -54,22 +54,11 @@ def quit_to_start():
     game_state = "start"
 
 running = True
-while running:
-    # Check for sandbox mode trigger from menu
-    if hasattr(pygame, '_game_state') and pygame._game_state == 'sandbox':
-        game_state = 'sandbox'
-        delattr(pygame, '_game_state')
-    
+while running:    
     if game_state == "start":
         start_menu(WIDTH, HEIGHT, screen, start_game_wrapper)
     elif game_state == "retry":
         retry_menu(WIDTH, HEIGHT, screen, start_game_wrapper, quit_to_start)
-    elif game_state == "sandbox":
-        result = sandbox_mode(screen)
-        if result == "menu":
-            game_state = "start"
-        elif result == "quit":
-            running = False
     elif game_state == "quit":
         running = False
     elif game_state == "level1_completion_menu":
