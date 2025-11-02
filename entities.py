@@ -322,6 +322,7 @@ class mainCharacter(WeaponSystem):
         """Trigger dash ability"""
         self.dashing = True
         self.dash_cooldown = 120  # 2 seconds cooldown
+        self.dash_duration = 10  # Reset duration for new dash
         # Determine dash direction based on input
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
