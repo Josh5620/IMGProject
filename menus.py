@@ -497,38 +497,17 @@ def level1_completion_menu(WIDTH, HEIGHT, screen, level_name="Level 1"):
     completion_menu_obj = baseMenu([dungeon_button, quit_button],
                                   pygame.image.load('assets/wontitle.png').convert_alpha(),
                                   pygame.image.load('assets/arrow_pointer.png').convert_alpha())
+
+    font_title = pygame.font.Font("assets/yoster.ttf", 56)
+    font_subtitle = pygame.font.Font("assets/yoster.ttf", 32)
     
-    # Load fonts for completion message
-    try:
-        font_title = pygame.font.Font("assets/yoster.ttf", 56)
-        font_subtitle = pygame.font.Font("assets/yoster.ttf", 32)
-    except:
-        font_title = pygame.font.Font(None, 60)
-        font_subtitle = pygame.font.Font(None, 36)
-    
-    # Animation variables
-    frame = 0
-    
+
     while running:
         # Draw menu background
         completion_menu_obj.draw(screen)
         
         # Draw "LEVEL COMPLETE!" title with glow effect
-        title_text = f"{level_name.upper()} COMPLETE!"
-        title_surf = font_title.render(title_text, True, (255, 215, 0))  # Gold
-        title_rect = title_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 150))
-        
-        # Draw subtitle
-        subtitle_text = "The forest has been saved!"
-        subtitle_surf = font_subtitle.render(subtitle_text, True, (200, 255, 200))
-        subtitle_rect = subtitle_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 80))
-        screen.blit(subtitle_surf, subtitle_rect)
-        
-        # Draw instructions
-        instruction_text = "Choose your next adventure:"
-        instruction_surf = font_subtitle.render(instruction_text, True, (255, 255, 255))
-        instruction_rect = instruction_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
-        screen.blit(instruction_surf, instruction_rect)
+
         
         # Handle events
         for event in pygame.event.get():
@@ -545,7 +524,6 @@ def level1_completion_menu(WIDTH, HEIGHT, screen, level_name="Level 1"):
                     completion_menu_obj.buttons[completion_menu_obj.selected_index].activate()
         
         pygame.display.flip()
-        frame += 1
     
     return action
 
