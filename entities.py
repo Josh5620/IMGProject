@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-from blocks import Ice, Spikes, block, end
+from blocks import Ice, Spikes, block, end, EndWithDifficulty
 from weapons.weapons import WeaponSystem, handle_projectile_collisions
 from weapons.projectiles import ProjectileManager, ChargedProjectile
 from particles import ScreenDropletParticle, DashTrailParticle, DoubleJumpParticle
@@ -289,7 +289,7 @@ class mainCharacter(WeaponSystem):
             obstacle_rect = self._resolve_rect(obstacle)
 
             if self.rect.colliderect(obstacle_rect):
-                if isinstance(obstacle, (Spikes, end, Ice)):
+                if isinstance(obstacle, (Spikes, end, EndWithDifficulty, Ice)):
                     obstacle.collideHurt(self)
 
                 if getattr(obstacle, 'solid', True):
@@ -737,7 +737,7 @@ class mainCharacter(WeaponSystem):
             entity_rect = self._resolve_rect(entity)
 
             if self.rect.colliderect(entity_rect):
-                if isinstance(entity, (Spikes, Ice, end)):
+                if isinstance(entity, (Spikes, Ice, end, EndWithDifficulty)):
                     entity.collideHurt(self)
                 if getattr(entity, 'solid', True):
                     if self.y_velocity > 0:

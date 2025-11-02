@@ -4,7 +4,7 @@ from entities import mainCharacter
 from Level1Enemies import BreakableBlock, Level1Enemy, Archer, Warrior, Mushroom
 from Level2Enemies import MushroomPickup, MutatedMushroom, Skeleton, FlyingEye
 from BossEnemy import EasyDungeonBoss, HardDungeonBoss
-from blocks import block, Spikes, start, end, Ice, AnimatedTrap, LightningTrap, FireTrap
+from blocks import block, Spikes, start, end, EndWithDifficulty, Ice, AnimatedTrap, LightningTrap, FireTrap
 from particles import LeafParticle
 from level2_powerup_loader import load_mushroom_sprites, create_level2_powerup_with_sprite, TILED_OBJECT_TO_POWERUP
 import random
@@ -269,22 +269,22 @@ class Game:
                     if event.key == pygame.K_ESCAPE:
                         if not esc_was_pressed:  # Only trigger once per press
                             esc_was_pressed = True
-                            # Import here to avoid circular import
-                            from menus import pause_menu
-                            
-                            # Capture current game state
-                            game_surface = self.screen.copy()
-                            
-                            # Show pause menu
-                            pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
-                            
-                            if pause_action == 'restart':
-                                self.reset_game()
-                            elif pause_action == 'main_menu':
-                                return "start"
-                            elif pause_action == 'quit':
-                                return "quit"
-                            # If 'resume', just continue the game loop
+                        # Import here to avoid circular import
+                        from menus import pause_menu
+                        
+                        # Capture current game state
+                        game_surface = self.screen.copy()
+                        
+                        # Show pause menu
+                        pause_action = pause_menu(self.WIDTH, self.HEIGHT, self.screen, game_surface)
+                        
+                        if pause_action == 'restart':
+                            self.reset_game()
+                        elif pause_action == 'main_menu':
+                            return "start"
+                        elif pause_action == 'quit':
+                            return "quit"
+                        # If 'resume', just continue the game loop
                 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_ESCAPE:
@@ -426,7 +426,7 @@ class Level2(Game):
        self.load_ui_assets()
        self.animated_traps = []
        self.powerups = []  # Level 2 powerups
-       self.boss_difficulty = "normal"  # Default difficulty
+       self.boss_difficulty = None  # Will be set by which end object player touches
        self.mushroom_count = 0  # Track collected mushrooms
        self.min_mushrooms_for_boss = 10  # Minimum required for boss fight
        self.boss_gate_message_timer = 0  # Timer for showing message
@@ -555,13 +555,11 @@ class Level2(Game):
 
                 # ===BOSS FIGHT DIFFICULTIES===
                 elif typ == "EasyEnd":
-                    self.obstacles.append(end(obj.x, obj.y))
-                    self.boss_difficulty = "easy"
-                    print(f"Found EasyEnd object! Boss difficulty set to: {self.boss_difficulty}")
+                    self.obstacles.append(EndWithDifficulty(obj.x, obj.y, "easy"))
+                    print(f"Found EasyEnd object at ({obj.x}, {obj.y})")
                 elif typ == "HardEnd":
-                    self.obstacles.append(end(obj.x, obj.y))
-                    self.boss_difficulty = "hard"
-                    print(f"Found HardEnd object! Boss difficulty set to: {self.boss_difficulty}")
+                    self.obstacles.append(EndWithDifficulty(obj.x, obj.y, "hard"))
+                    print(f"Found HardEnd object at ({obj.x}, {obj.y})")
         
         print(f"Level 2 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 2 - Number of enemies spawned: {len(self.enemies)}")
@@ -582,7 +580,7 @@ class Level2(Game):
             self.player.level = self
             self.player.current_level = 2  # Enable Level 2 abilities
             print("Warning: No start position found in tilemap. Defaulting to (100, 100).")
-    
+
     def update_powerups(self):
         """Update all Level 2 powerups"""
         for powerup in self.powerups[:]:
@@ -796,8 +794,13 @@ class Level2(Game):
                 return "boss_level_easy"
             elif self.boss_difficulty == "hard":
                 return "boss_level_hard"
-            else:
+            elif self.boss_difficulty is not None:
+                # Fallback for any other difficulty setting
                 return "boss_level_normal"
+            else:
+                # If boss_difficulty was never set (shouldn't happen), default to easy
+                print("Warning: boss_difficulty was None, defaulting to easy")
+                return "boss_level_easy"
         return "playing"
 
 class FinalBossLevel(Game):
@@ -840,7 +843,7 @@ class FinalBossLevel(Game):
         self.initialize_game_objects()
         
         print(f"Final Boss Level initialized with difficulty: {self.difficulty}")
-
+        
     def process_tilemap(self):
         """Process tilemap to spawn boss, Level 2 mushrooms and traps"""
         TILE_SIZE = 32
@@ -853,8 +856,8 @@ class FinalBossLevel(Game):
         if isinstance(tile_layer, pytmx.TiledTileLayer):
             for x, y, gid in tile_layer.iter_data():
                 if not gid:
-                    continue
-
+                        continue
+                        
                 props = self.tmx_data.get_tile_properties_by_gid(gid) or {}
                 typ = props.get("type")
                 
@@ -969,7 +972,7 @@ class FinalBossLevel(Game):
         print(f"Boss Level - Traps: {len(self.animated_traps)}")
         print(f"Boss Level - Powerups: {len(self.powerups)}")
         self.build_spatial_hash()
-
+                            
     def initialize_game_objects(self):
         """Initialize player with full abilities for boss fight"""
         if self.start_position:
@@ -984,7 +987,6 @@ class FinalBossLevel(Game):
             else:
                 self.player.max_hp = 6
                 self.player.current_hp = 6
-                
         else:
             self.player = mainCharacter(0, 100)
             self.player.level = self
@@ -995,28 +997,13 @@ class FinalBossLevel(Game):
         """Update boss level with special boss mechanics"""
         if self.level_complete:
             if self.victory_timer == 0:  # First frame of victory
-                print("🎉 Level complete! Starting ending sequence...")
+                print("🎉 Level complete! Starting burst effect...")
             
             self.victory_timer += dt
-            self.ending_timer += dt
             
-            # Wait 2 seconds showing victory message, then fade to black
-            if self.victory_timer > 120:  # 2 seconds
-                # Fade to black over 3 seconds
-                if self.fade_alpha < 255:
-                    self.fade_alpha += dt * 1.4  # Slow fade
-                    self.fade_alpha = min(255, self.fade_alpha)
-                else:
-                    self.fade_complete = True
-                
-                # Show ending text after fade is complete
-                if self.fade_complete and self.ending_text_alpha < 255:
-                    self.ending_text_alpha += dt * 2  # Text fades in
-                    self.ending_text_alpha = min(255, self.ending_text_alpha)
-                
-                # Exit after showing text for 5 seconds
-                if self.ending_timer > 420:  # 7 seconds total (2 victory + 3 fade + 5 text)
-                    return "victory"
+            # Quick 1-second burst effect, then go to victory screen
+            if self.victory_timer > 60:  # 1 second
+                return "victory"
             
             return
         
@@ -1232,10 +1219,11 @@ class FinalBossLevel(Game):
             
             # Ending remarks (placeholder)
             ending_lines = [
-                "With the darkness vanquished,",
-                "peace returns to the land.",
+                "With the magic mushroom's power,",
+                "Red Riding Hood has purified the world.",
                 "",
-                "[Ending remarks here]",
+                "All corruption is gone,",
+                "and peace returns to the land.",
                 "",
                 "Thank you for playing!",
                 "Shroomlight: The Last Bloom"
@@ -1306,6 +1294,13 @@ class FinalBossLevel(Game):
                 return "victory"
             elif result == "game_over":
                 return "game_over"
+            
+            # Check for player death
+            win_lose_result = self.check_win_lose_conditions()
+            if win_lose_result == "game_over":
+                return "game_over"
+            elif win_lose_result == "victory":
+                return "victory"
             
             # Draw traps and powerups - with culling
             screen_left = self.ground_scroll - 100

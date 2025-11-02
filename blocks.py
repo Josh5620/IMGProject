@@ -203,6 +203,25 @@ class end(block):
             player.won = True
             return 0
 
+class EndWithDifficulty(block):
+    """End object with specific boss difficulty for Level 2"""
+    def __init__(self, x, y, difficulty):
+        super().__init__(x, y)
+        self.solid = False
+        self.difficulty = difficulty  # Store which difficulty this end triggers
+        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+    
+    def collideHurt(self, player):
+        if self.rect.colliderect(player.rect):
+            print(f"You Win! Boss difficulty: {self.difficulty}")
+            player.won = True
+            # Store difficulty on player so Level2 can read it
+            if hasattr(player, 'level') and player.level:
+                player.level.boss_difficulty = self.difficulty
+            return 0
+
 class Ice(block):
     def __init__(self, x, y):
         super().__init__(x, y)

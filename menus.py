@@ -463,15 +463,23 @@ class DialogueScreen:
         self.font = pygame.font.Font("assets/yoster.ttf", font_size)
         self.text_color = text_color
         
-
-        text_height = self.font.size(text)[1] 
+        # Text wrapping logic
+        max_width = screen_rect.width - 100  # Leave 50px margin on each side
+        self.wrapped_text = self._wrap_text(text, max_width)
+        
+        # Calculate height based on wrapped lines (matching draw method spacing)
+        line_height = self.font.size("Test")[1]
+        line_spacing = line_height + 18  # Add extra 18px spacing between lines
+        total_height = line_spacing * len(self.wrapped_text)
+        
         if location == "top":
             y_pos = screen_rect.top + 50
         elif location == "bottom":
-            y_pos = screen_rect.bottom - text_height - 50
+            y_pos = screen_rect.bottom - total_height - 50
         else: # Default to "center"
-            y_pos = screen_rect.centery - (text_height // 2)
-        self.position = (screen_rect.left + 50, y_pos) 
+            y_pos = screen_rect.centery - (total_height // 2)
+        self.position = (screen_rect.left + 50, y_pos)
+        self.screen_rect = screen_rect
 
         # --- Typing Logic ---
         self.typing_delay = speed
@@ -490,6 +498,31 @@ class DialogueScreen:
 
         self.prompt_surf = self.prompt_font.render(self.prompt_text, True, self.text_color)
         self.prompt_rect = self.prompt_surf.get_rect(center=(prompt_pos_x, prompt_pos_y))
+    
+    def _wrap_text(self, text, max_width):
+        """Wrap text to fit within max_width pixels"""
+        words = text.split(' ')
+        lines = []
+        current_line = []
+        
+        for word in words:
+            # Try adding the word to the current line
+            test_line = ' '.join(current_line + [word])
+            width, _ = self.font.size(test_line)
+            
+            if width <= max_width:
+                current_line.append(word)
+            else:
+                # If current_line is not empty, save it and start new line
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        
+        # Don't forget the last line
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        return lines
 
 
     def update(self):
@@ -511,9 +544,16 @@ class DialogueScreen:
     def draw(self, surface):
         surface.fill((0, 0, 0))
         
-        # Draw the main text
-        rendered_text = self.font.render(self.current_text, True, self.text_color)
-        surface.blit(rendered_text, self.position)
+        # Draw the main text (wrapped)
+        wrapped_current = self._wrap_text(self.current_text, self.screen_rect.width - 100)
+        line_height = self.font.size("Test")[1]
+        line_spacing = line_height + 18  # Add extra 18px spacing between lines
+        y_offset = 0
+        for line in wrapped_current:
+            if line:  # Only draw non-empty lines
+                rendered_text = self.font.render(line, True, self.text_color)
+                surface.blit(rendered_text, (self.position[0], self.position[1] + y_offset))
+                y_offset += line_spacing
         
         # If finished, draw the continue prompt with its current alpha
         if self.is_finished:
@@ -530,8 +570,8 @@ class DialogueScreen:
 def run_game_intro(WIDTH, HEIGHT, screen):
 
     intro_dialogue = DialogueScreen(
-        text="Red Hood! Search for the Shroomlight!",
-        font_size=20,
+        text="Red Riding Hood! Find the magic mushroom and save the world from corruption!",
+        font_size=25,
         screen_rect=screen.get_rect(),
         speed=200,
         location="center"
@@ -565,15 +605,15 @@ def run_BossIntro(WIDTH, HEIGHT, screen, difficulty="normal"):
     
     # Difficulty-specific messages
     if difficulty == "easy":
-        intro_text = "Through the forest's light path, you face a gentler trial..."
+        intro_text = "A fragment of darkness remains... face this final shadow with courage..."
     elif difficulty == "hard":
-        intro_text = "The dark path awaits! Prepare for the ultimate challenge!"
+        intro_text = "The darkest corruption manifests! This is your true test, Red Riding Hood!"
     else:
-        intro_text = "The final confrontation approaches..."
+        intro_text = "The final confrontation with the corruption awaits..."
     
     intro_dialogue = DialogueScreen(
         text=intro_text,
-        font_size=24,
+        font_size=25,
         screen_rect=screen.get_rect(),
         speed=150,
         location="center"
@@ -654,8 +694,8 @@ def run_game_manual(WIDTH, HEIGHT, screen):
             "title": "COMBAT SYSTEM",
             "content": [
                 "A  -  Melee Attack",
-                "S  -  Shoot Arrow (uses ammo)",
-                "Hold C  -  Charge Shot (more damage)",
+                "S  -  Shoot Arrow -> uses ammo",
+                "Hold C  -  Charge Shot -> more damage",
                 "",
                 "Shift  -  Dash -> Dungeon Level 2 only!",
                 "",
@@ -985,3 +1025,186 @@ def run_level2_tutorial(WIDTH, HEIGHT, screen):
 def getLevel():
     global game_level
     return game_level
+
+
+def run_level1_intro(WIDTH, HEIGHT, screen):
+    """Forest Level intro"""
+    intro_dialogue = DialogueScreen(
+        text="The corruption spreads... brave Red Riding Hood must venture into the forest to save all who have fallen...",
+        font_size=25,
+        screen_rect=screen.get_rect(),
+        speed=200,
+        location="center"
+    )
+    intro_running = True
+    while intro_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if not intro_dialogue.is_finished:
+                    intro_dialogue.skip()
+                else:
+                    intro_running = False
+        intro_dialogue.update()
+        intro_dialogue.draw(screen)
+        pygame.display.flip()
+
+
+def run_level2_intro(WIDTH, HEIGHT, screen):
+    """Dungeon Level intro"""
+    intro_dialogue = DialogueScreen(
+        text="Deeper into darkness... the source of corruption lies ahead. Only the magic mushroom can purify this evil...",
+        font_size=25,
+        screen_rect=screen.get_rect(),
+        speed=200,
+        location="center"
+    )
+    intro_running = True
+    while intro_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if not intro_dialogue.is_finished:
+                    intro_dialogue.skip()
+                else:
+                    intro_running = False
+        intro_dialogue.update()
+        intro_dialogue.draw(screen)
+        pygame.display.flip()
+
+
+def run_victory_screen(WIDTH, HEIGHT, screen):
+    """Victory/End screen when player wins with animated mushroom"""
+    font_title = pygame.font.Font("assets/yoster.ttf", 48)
+    font_normal = pygame.font.Font("assets/yoster.ttf", 24)
+    
+    # Load the victory mushroom sprite (bottom row, second from left = row 2, column 1)
+    try:
+        sheet = pygame.image.load("assets/Level2/mushroom level 2.png").convert_alpha()
+        sprite_width = 16
+        sprite_height = 16
+        row = 2  # Bottom row
+        col = 1  # Second from left
+        x = col * sprite_width
+        y = row * sprite_height
+        sprite_rect = pygame.Rect(x, y, sprite_width, sprite_height)
+        mushroom_sprite = sheet.subsurface(sprite_rect).copy()
+        # Scale it up for better visibility
+        mushroom_sprite = pygame.transform.scale(mushroom_sprite, (128, 128))
+    except Exception as e:
+        print(f"Error loading victory mushroom: {e}")
+        mushroom_sprite = None
+    
+    # Animation variables
+    animation_timer = 0
+    pop_in_frames = 60  # 1 second at 60fps for pop-in animation
+    glow_pulse_speed = 0.15
+    
+    running = True
+    clock = pygame.time.Clock()
+    
+    while running:
+        dt = clock.tick(60) / 16.67  # Normalize to 60fps
+        
+        screen.fill((0, 0, 0))
+        
+        # Update animation timer
+        animation_timer += dt
+        
+        # Draw victory text
+        title = font_title.render("VICTORY!", True, (255, 255, 0))
+        title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//2 - 150))
+        screen.blit(title, title_rect)
+        
+        # Draw the mushroom with pop-in and glow effect
+        if mushroom_sprite:
+            mushroom_center_x = WIDTH // 2
+            mushroom_center_y = HEIGHT // 2 - 20
+            
+            # Pop-in effect: scale from 0 to full size
+            if animation_timer < pop_in_frames:
+                pop_progress = animation_timer / pop_in_frames
+                # Ease out cubic for smooth pop
+                pop_progress = 1 - (1 - pop_progress) ** 3
+                current_scale = pop_progress
+            else:
+                current_scale = 1.0
+            
+            # Glow pulse effect
+            glow_intensity = abs(math.sin(animation_timer * glow_pulse_speed))
+            glow_radius = 60 + glow_intensity * 40  # Pulse between 60-100
+            glow_alpha = int(100 + glow_intensity * 100)  # Pulse between 100-200
+            
+            # Draw bright glowing effect behind mushroom (multiple rings for bright light)
+            for ring in range(5, 0, -1):
+                ring_radius = glow_radius - ring * 8
+                if ring_radius > 0:
+                    # Create a surface for the glow ring with alpha
+                    glow_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+                    glow_color = (255, 255, 200, min(glow_alpha // (ring + 1), 255))
+                    pygame.draw.circle(glow_surf, glow_color, 
+                                    (mushroom_center_x, mushroom_center_y), ring_radius)
+                    screen.blit(glow_surf, (0, 0))
+            
+            # Draw the mushroom sprite scaled
+            if current_scale > 0:
+                scaled_width = int(mushroom_sprite.get_width() * current_scale)
+                scaled_height = int(mushroom_sprite.get_height() * current_scale)
+                scaled_mushroom = pygame.transform.scale(mushroom_sprite, (scaled_width, scaled_height))
+                
+                mushroom_pos = (mushroom_center_x - scaled_width // 2, 
+                               mushroom_center_y - scaled_height // 2)
+                screen.blit(scaled_mushroom, mushroom_pos)
+        
+        subtext = font_normal.render("The magic mushroom has purified the world! Corruption is no more!", True, (255, 255, 255))
+        subtext_rect = subtext.get_rect(center=(WIDTH//2, HEIGHT//2 + 80))
+        screen.blit(subtext, subtext_rect)
+        
+        prompt = font_normal.render("Press any key to continue...", True, (200, 200, 200))
+        prompt_rect = prompt.get_rect(center=(WIDTH//2, HEIGHT//2 + 130))
+        screen.blit(prompt, prompt_rect)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                running = False
+        
+        pygame.display.flip()
+
+
+def run_defeat_screen(WIDTH, HEIGHT, screen):
+    """Defeat screen when player loses"""
+    font_title = pygame.font.Font("assets/yoster.ttf", 48)
+    font_normal = pygame.font.Font("assets/yoster.ttf", 24)
+    
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+        
+        # Draw defeat text
+        title = font_title.render("DEFEATED!", True, (255, 50, 50))
+        title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//2 - 100))
+        screen.blit(title, title_rect)
+        
+        subtext = font_normal.render("Red Riding Hood has fallen... the corruption spreads unchecked...", True, (255, 200, 200))
+        subtext_rect = subtext.get_rect(center=(WIDTH//2, HEIGHT//2))
+        screen.blit(subtext, subtext_rect)
+        
+        prompt = font_normal.render("Press any key to continue...", True, (200, 200, 200))
+        prompt_rect = prompt.get_rect(center=(WIDTH//2, HEIGHT//2 + 100))
+        screen.blit(prompt, prompt_rect)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                running = False
+        
+        pygame.display.flip()
