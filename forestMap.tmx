@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="137" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="258">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="137" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="277">
  <tileset firstgid="1" source="assets/Tileset.tsx"/>
  <tileset firstgid="61" source="assets/goodly-2x.tsx"/>
  <tileset firstgid="317" source="assets/forestobjects.tsx"/>
@@ -156,6 +156,23 @@
   <object id="255" gid="340" x="3909.33" y="163" width="11" height="9"/>
   <object id="256" gid="337" x="3781.33" y="227" width="14" height="16"/>
   <object id="257" gid="335" x="613.333" y="579" width="17" height="18"/>
+  <object id="258" name="type" type="fire_mushroom" x="406.667" y="527"/>
+  <object id="260" name="type" type="wisdom_mushroom" x="430.667" y="326.667"/>
+  <object id="261" name="type" type="health_mushroom" x="588" y="166.667"/>
+  <object id="262" name="type" type="amulet_mushroom" x="1297.33" y="346.667"/>
+  <object id="263" name="type" type="speed_mushroom" x="1070.67" y="542.667"/>
+  <object id="265" name="type" type="strength_mushroom" x="1708" y="246.667"/>
+  <object id="266" name="type" type="wisdom_mushroom" x="2124" y="262.667"/>
+  <object id="267" name="type" type="fire_mushroom" x="2436" y="550.667"/>
+  <object id="268" name="type" type="health_mushroom" x="2501.33" y="172"/>
+  <object id="269" name="type" type="amulet_mushroom" x="3000" y="232"/>
+  <object id="270" name="type" type="fire_mushroom" x="2881.33" y="552"/>
+  <object id="271" name="type" type="wisdom_mushroom" x="3205.33" y="456"/>
+  <object id="272" name="type" type="speed_mushroom" x="3425.33" y="248"/>
+  <object id="273" name="type" type="amulet_mushroom" x="3737.33" y="206.667"/>
+  <object id="274" name="type" type="health_mushroom" x="3605.33" y="549.333"/>
+  <object id="275" name="type" type="fire_mushroom" x="3985.33" y="322.667"/>
+  <object id="276" name="type" type="speed_mushroom" x="4137.33" y="230.667"/>
  </objectgroup>
  <layer id="1" name="Tile Layer 1" width="137" height="20" offsetx="-32" offsety="0">
   <data encoding="csv">

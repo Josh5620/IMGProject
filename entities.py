@@ -1251,6 +1251,7 @@ class Powerup:
         self.rotation = 0
         self.pulse_timer = 0
         self.collection_particles = []
+        self.sparkle_timer = 0
         
         # Enhanced colors with glow effects
         self.colors = {
@@ -1285,6 +1286,7 @@ class Powerup:
         
         # Pulsing effect
         self.pulse_timer += dt * 0.2
+        self.sparkle_timer += dt * 0.3
         
         # Check collision with player
         if self.rect.colliderect(player.rect):
@@ -1308,7 +1310,8 @@ class Powerup:
                 'dy': random.uniform(-4, 1),
                 'life': 30,  # Frames to live
                 'max_life': 30,
-                'color': self.color_set["bright"]
+                'color': self.color_set["bright"],
+                'size': random.randint(2, 5)
             }
             self.collection_particles.append(particle)
     

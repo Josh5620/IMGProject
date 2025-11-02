@@ -100,7 +100,7 @@
   <object id="90" name="type" type="fire_mushroom" x="22.6667" y="70" width="63.3333" height="23.3333"/>
   <object id="92" name="type" type="speed_mushroom" x="920.666" y="371.667" width="67.3333" height="25.3333"/>
   <object id="94" name="type" type="strength_mushroom" x="1662" y="561.333" width="82" height="20.6667"/>
-  <object id="95" name="type" type="amulet_mushroom" x="1086" y="416"/>
+  <object id="95" name="type" type="amulet_mushroom" x="1090" y="432"/>
   <object id="96" name="type" type="wisdom_mushroom" x="1309.33" y="533.334"/>
   <object id="97" name="type" type="wisdom_mushroom" x="1334" y="179.333" rotation="358.843"/>
   <object id="98" name="type" type="wisdom_mushroom" x="718.667" y="439.333"/>

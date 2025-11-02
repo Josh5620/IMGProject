@@ -301,6 +301,9 @@ class Game:
             self.update_particles()
             self.update_enemies()
             
+            if hasattr(self, 'powerups'):
+                self.update_powerups()
+            
             # MEMORY LEAK FIX: More efficient arrow cleanup
             active_arrows = []
             for arrow in self.arrows:
@@ -317,6 +320,9 @@ class Game:
 
             for arrow in self.arrows:
                 arrow.draw(self.screen, scroll_offset=self.ground_scroll)
+            
+            if hasattr(self, 'powerups'):
+                self.draw_powerups()
             
             # Check for mushroom collection
             self.check_mushroom_collection()
@@ -357,6 +363,10 @@ class Level1(Game):
         self.load_background('assets/BGL', 11)
         self.load_tilemap("forestMap.tmx")
         self.load_ui_assets()
+        self.powerups = []
+        
+        self.mushroom_sprites = load_mushroom_sprites()
+        print(f"✅ Loaded {len(self.mushroom_sprites)} mushroom powerup sprites")
         
         self.process_tilemap()
         self.initialize_game_objects()
@@ -409,15 +419,36 @@ class Level1(Game):
                     enemy = Warrior(obj.x, obj.y - 32)
                     enemy.level = self
                     self.enemies.append(enemy)
+                elif typ in TILED_OBJECT_TO_POWERUP:
+                    powerup_type = TILED_OBJECT_TO_POWERUP[typ]
+                    powerup = create_level2_powerup_with_sprite(
+                        obj.x - 30, obj.y - 30, powerup_type, self.mushroom_sprites
+                    )
+                    self.powerups.append(powerup)
+                    print(f"Spawned {powerup_type} powerup at ({obj.x - 30}, {obj.y - 30})")
                     
         print(f"Level 1 - Number of obstacles created: {len(self.obstacles)}")
         print(f"Level 1 - Number of enemies spawned: {len(self.enemies)}")
+        print(f"Level 1 - Number of powerups spawned: {len(self.powerups)}")
         
     def initialize_game_objects(self):
         self.player = mainCharacter(self.start_position[0], self.start_position[1])
         self.player.level = self
         self.player.current_level = 1  # Level 1
         self.player.enemies = self.enemies
+    
+    def update_powerups(self):
+        for powerup in self.powerups[:]:
+            if not powerup.collected:
+                powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
+            else:
+                powerup.update(self.player, dt=1.0, scroll_offset=self.ground_scroll)
+                if not powerup.collection_particles:
+                    self.powerups.remove(powerup)
+    
+    def draw_powerups(self):
+        for powerup in self.powerups:
+            powerup.draw(self.screen, self.ground_scroll)
 
 class Level2(Game):
     def __init__(self, width=960, height=640):
