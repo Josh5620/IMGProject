@@ -611,7 +611,7 @@ class MutatedMushroom(Level2Enemy):
         self.name = "Mushroom"
         
         # Stats - Melee with poison
-        self.max_hp = 40
+        self.max_hp = 60
         self.current_hp = self.max_hp
         self.speed = 1.8
         self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
@@ -671,7 +671,7 @@ class Skeleton(Level2Enemy):
         self.name = "Skeleton"
         
         # Stats - Melee warrior
-        self.max_hp = 50
+        self.max_hp = 100
         self.current_hp = self.max_hp
         self.speed = 2.2
         self.attack_damage = 1  # Reduced to 1 for player with 3 hearts
