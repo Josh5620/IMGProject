@@ -454,6 +454,102 @@ def pause_menu(WIDTH, HEIGHT, screen, game_surface):
     return action
 
 
+def level1_completion_menu(WIDTH, HEIGHT, screen, level_name="Level 1"):
+    """
+    Level completion menu that shows when a level is won.
+    Shows congratulations and options to proceed to next level or quit.
+    Returns: 'dungeon' (Level 2), 'quit', or 'main_menu'
+    """
+    music_manager.play('menu')  # Play menu music for completion screen
+    running = True
+    action = 'main_menu'
+    
+    def go_to_dungeon():
+        nonlocal running, action
+        action = 'dungeon'
+        running = False
+    
+    def quit_game():
+        nonlocal running, action
+        action = 'quit'
+        running = False
+    
+    # Create buttons
+    dungeon_button = Button(
+        images=(pygame.image.load('assets/level_2_button.png').convert_alpha(),
+                pygame.image.load('assets/level_2_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 50),
+        text="Dungeon",
+        font=pygame.font.Font(None, 50),
+        on_activate=go_to_dungeon
+    )
+    
+    quit_button = Button(
+        images=(pygame.image.load('assets/quit_button.png').convert_alpha(),
+                pygame.image.load('assets/quit_button_highlighted.png').convert_alpha()),
+        pos=(WIDTH // 2, HEIGHT // 2 + 150),
+        text="Quit",
+        font=pygame.font.Font(None, 50),
+        on_activate=quit_game
+    )
+    
+    # Create menu with buttons
+    completion_menu_obj = baseMenu([dungeon_button, quit_button],
+                                  pygame.image.load('assets/wontitle.png').convert_alpha(),
+                                  pygame.image.load('assets/arrow_pointer.png').convert_alpha())
+    
+    # Load fonts for completion message
+    try:
+        font_title = pygame.font.Font("assets/yoster.ttf", 56)
+        font_subtitle = pygame.font.Font("assets/yoster.ttf", 32)
+    except:
+        font_title = pygame.font.Font(None, 60)
+        font_subtitle = pygame.font.Font(None, 36)
+    
+    # Animation variables
+    frame = 0
+    
+    while running:
+        # Draw menu background
+        completion_menu_obj.draw(screen)
+        
+        # Draw "LEVEL COMPLETE!" title with glow effect
+        title_text = f"{level_name.upper()} COMPLETE!"
+        title_surf = font_title.render(title_text, True, (255, 215, 0))  # Gold
+        title_rect = title_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 150))
+        
+        # Draw subtitle
+        subtitle_text = "The forest has been saved!"
+        subtitle_surf = font_subtitle.render(subtitle_text, True, (200, 255, 200))
+        subtitle_rect = subtitle_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 80))
+        screen.blit(subtitle_surf, subtitle_rect)
+        
+        # Draw instructions
+        instruction_text = "Choose your next adventure:"
+        instruction_surf = font_subtitle.render(instruction_text, True, (255, 255, 255))
+        instruction_rect = instruction_surf.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
+        screen.blit(instruction_surf, instruction_rect)
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                action = 'quit'
+                running = False
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    completion_menu_obj.move_selection(-1)
+                if event.key == pygame.K_DOWN:
+                    completion_menu_obj.move_selection(1)
+                if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                    completion_menu_obj.buttons[completion_menu_obj.selected_index].activate()
+        
+        pygame.display.flip()
+        frame += 1
+    
+    return action
+
+
 class DialogueScreen:
 
     def __init__(self, text, font_size, screen_rect, speed, location, text_color=(255, 255, 255)):

@@ -1,6 +1,6 @@
 import pygame
 from game import Level1, Level2, FinalBossLevel
-from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, run_level1_intro, run_level2_intro, run_victory_screen, run_defeat_screen, getLevel, pause_menu, music_manager, run_level2_tutorial
+from menus import retry_menu, start_menu, game_level, run_game_intro, run_BossIntro, run_level1_intro, run_level2_intro, run_victory_screen, run_defeat_screen, getLevel, pause_menu, music_manager, run_level2_tutorial, level1_completion_menu
 from sandbox import sandbox_mode
 
 pygame.init()
@@ -37,7 +37,9 @@ def start_game_wrapper():
     if result == "quit":
         game_state = "quit"
     elif result == "game_over":
-        game_state = "retry"  # Level 1/2 deaths go to retry menu (no defeat screen)
+        game_state = "retry" 
+    elif result == "level1_completion_menu":
+        game_state = "boss_level1"
     elif result == "boss_level_easy":
         game_state = "boss_level_easy"
     elif result == "boss_level_normal":
@@ -71,12 +73,27 @@ while running:
     elif game_state == "quit":
         running = False
     elif game_state == "boss_level1":
-        run_BossIntro(WIDTH, HEIGHT, screen, "normal")
-        music_manager.play('boss')  # Play boss music
-        if result == "quit":
+        # Show level completion menu instead of going straight to boss
+        completion_action = level1_completion_menu(WIDTH, HEIGHT, screen, "Level 1")
+        
+        if completion_action == "dungeon":
+            # Player chose to go to dungeon (Level 2)
+            run_level2_intro(WIDTH, HEIGHT, screen)
+            run_level2_tutorial(WIDTH, HEIGHT, screen)
+            music_manager.play('level2')
+            level2 = Level2(WIDTH, HEIGHT)
+            result = level2.run(screen)
+            
+            if result == "quit":
+                running = False
+            elif result == "game_over":
+                game_state = "retry"
+            elif result in ["boss_level_easy", "boss_level_normal", "boss_level_hard"]:
+                game_state = result
+            else:
+                game_state = "start"
+        elif completion_action == "quit":
             running = False
-        elif result == "game_over":
-            game_state = "retry"
         else:
             game_state = "start"
     elif game_state in ["boss_level_easy", "boss_level_normal", "boss_level_hard"]:

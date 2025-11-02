@@ -252,7 +252,7 @@ class Game:
         if self.player.lives <= 0:
             return "game_over"
         if self.player.won:
-            return "boss_level1"
+            return "level1_completion_menu"
         return "playing"
         
     def run(self, screen):
