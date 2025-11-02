@@ -679,9 +679,7 @@ def run_game_manual(WIDTH, HEIGHT, screen):
             "title": "MOVEMENT BASICS",
             "content": [
                 "Left AND Right Arrow  -  Move left and right",
-                "",
                 "Up Arrow  -  Jump",
-                "",
                 "Up Arrow Twice  -  Double Jump",
                 "",
                 "The double jump can help you reach",
