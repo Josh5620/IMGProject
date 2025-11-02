@@ -13,7 +13,7 @@ import os
 import math
 import random
 import inspect
-from entities import mainCharacter, Enemy
+from entities import mainCharacter
 from Level1Enemies import Level1Enemy
 from Level2Enemies import MutatedMushroom, Skeleton, FlyingEye
 from level2_powerups import Level2Powerup, LEVEL2_POWERUP_TYPES
@@ -686,11 +686,11 @@ class SandboxMode:
                 self.player.rect.y = state["player"]["y"]
                 self.player.lives = state["player"]["lives"]
             
-            # Load enemies
-            for enemy_data in state.get("enemies", []):
-                enemy = Enemy(enemy_data["x"], enemy_data["y"], enemy_data["ai_type"])
-                enemy.health = enemy_data.get("health", 100)
-                self.enemies.append(enemy)
+            # # Load enemies
+            # for enemy_data in state.get("enemies", []):
+            #     enemy = Enemy(enemy_data["x"], enemy_data["y"], enemy_data["ai_type"])
+            #     enemy.health = enemy_data.get("health", 100)
+            #     self.enemies.append(enemy)
             
             # Load powerups
             for powerup_data in state.get("powerups", []):

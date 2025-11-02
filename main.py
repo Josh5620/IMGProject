@@ -39,7 +39,7 @@ def start_game_wrapper():
     elif result == "game_over":
         game_state = "retry" 
     elif result == "level1_completion_menu":
-        game_state = "boss_level1"
+        game_state = "level1_completion_menu"
     elif result == "boss_level_easy":
         game_state = "boss_level_easy"
     elif result == "boss_level_normal":
@@ -72,7 +72,31 @@ while running:
             running = False
     elif game_state == "quit":
         running = False
-    elif game_state == "boss_level1":
+    elif game_state == "level1_completion_menu":
+        # Show level 1 completion menu
+        completion_action = level1_completion_menu(WIDTH, HEIGHT, screen, "Level 1")
+        
+        if completion_action == "dungeon":
+            # Player chose to go to dungeon (Level 2)
+            run_level2_intro(WIDTH, HEIGHT, screen)
+            run_level2_tutorial(WIDTH, HEIGHT, screen)
+            music_manager.play('level2')
+            level2 = Level2(WIDTH, HEIGHT)
+            result = level2.run(screen)
+            
+            if result == "quit":
+                running = False
+            elif result == "game_over":
+                game_state = "retry"
+            elif result in ["boss_level_easy", "boss_level_normal", "boss_level_hard"]:
+                game_state = result
+            else:
+                game_state = "start"
+        elif completion_action == "quit":
+            running = False
+        else:
+            game_state = "start"
+    elif game_state == "level1":
         # Show level completion menu instead of going straight to boss
         completion_action = level1_completion_menu(WIDTH, HEIGHT, screen, "Level 1")
         

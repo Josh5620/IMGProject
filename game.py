@@ -364,6 +364,9 @@ class Level1(Game):
         self.load_tilemap("forestMap.tmx")
         self.load_ui_assets()
         self.powerups = []
+        self.mushroom_count = 0  # Track collected mushrooms
+        self.min_mushrooms = 5  # Minimum required to complete level 1
+        self.level_gate_message_timer = 0  # Timer for showing message
         
         self.mushroom_sprites = load_mushroom_sprites()
         print(f"✅ Loaded {len(self.mushroom_sprites)} mushroom powerup sprites")
@@ -449,6 +452,116 @@ class Level1(Game):
     def draw_powerups(self):
         for powerup in self.powerups:
             powerup.draw(self.screen, self.ground_scroll)
+    
+    def check_mushroom_collection(self):
+        """Override to track mushroom count for Level 1"""
+        if not self.player:
+            return
+        
+        for enemy in self.enemies[:]:
+            if hasattr(enemy, 'is_collectible') and enemy.is_collectible:
+                if enemy.check_player_collision(self.player, self.ground_scroll):
+                    enemy.collect()
+                    self.mushroom_count += 1
+                    self.mushroomCount += 1  # Keep base class counter updated too
+                    if self.player.lives < 5:
+                        self.player.lives += 1
+                        print(f"Mushroom collected! Total: {self.mushroom_count}/{self.min_mushrooms}")
+    
+    def draw_mushroom_count(self):
+        """Draw mushroom counter with requirement indicator for Level 1"""
+        # Load mushroom sprite icon
+        try:
+            mushroom_icon = pygame.image.load("assets/mushroom.png").convert_alpha()
+            mushroom_icon = pygame.transform.scale(mushroom_icon, (40, 40))
+        except Exception as e:
+            print(f"Error loading mushroom icon: {e}")
+            # Fallback: create a simple surface
+            mushroom_icon = pygame.Surface((40, 40), pygame.SRCALPHA)
+            pygame.draw.circle(mushroom_icon, (220, 80, 80), (20, 20), 18)
+        
+        # Position in top-right corner
+        icon_x = self.WIDTH - 150
+        icon_y = 50
+        self.screen.blit(mushroom_icon, (icon_x, icon_y))
+        
+        # Draw count
+        try:
+            font = pygame.font.Font("assets/yoster.ttf", 36)
+        except:
+            font = pygame.font.Font(None, 48)
+        count_text = f"x {self.mushroom_count}"
+        text_surf = font.render(count_text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(left=icon_x + 40, centery=icon_y + 16)
+        
+        # Draw text with shadow for readability
+        shadow_surf = font.render(count_text, True, (0, 0, 0))
+        shadow_rect = text_surf.get_rect(left=icon_x + 42, centery=icon_y + 18)
+        self.screen.blit(shadow_surf, shadow_rect)
+        self.screen.blit(text_surf, text_rect)
+        
+        # Draw requirement indicator if needed
+        if self.mushroom_count < self.min_mushrooms:
+            try:
+                small_font = pygame.font.Font("assets/yoster.ttf", 14)
+            except:
+                small_font = pygame.font.Font(None, 16)
+            req_text = f"Need {self.min_mushrooms} to finish"
+            req_surf = small_font.render(req_text, True, (255, 200, 100))
+            req_rect = req_surf.get_rect(left=icon_x, top=icon_y + 40)
+            self.screen.blit(req_surf, req_rect)
+        else:
+            # Player has enough mushrooms - show "READY!"
+            try:
+                small_font = pygame.font.Font("assets/yoster.ttf", 18)
+            except:
+                small_font = pygame.font.Font(None, 20)
+            ready_text = "READY!"
+            ready_surf = small_font.render(ready_text, True, (100, 255, 100))
+            ready_rect = ready_surf.get_rect(left=icon_x, top=icon_y + 40)
+            self.screen.blit(ready_surf, ready_rect)
+        
+        # Draw warning message if player tried to finish without enough mushrooms
+        if self.level_gate_message_timer > 0:
+            self.level_gate_message_timer -= 1
+            try:
+                warning_font = pygame.font.Font("assets/yoster.ttf", 32)
+            except:
+                warning_font = pygame.font.Font(None, 36)
+            warning_text = f"Need {self.min_mushrooms} mushrooms to finish!"
+            warning_surf = warning_font.render(warning_text, True, (255, 100, 100))
+            warning_rect = warning_surf.get_rect(center=(self.WIDTH // 2, 100))
+            
+            # Draw with pulsing effect
+            pulse = abs(int(self.level_gate_message_timer % 30 - 15)) + 10
+            for i in range(3):
+                glow_surf = warning_font.render(warning_text, True, (255, 50, 50, pulse * (3 - i)))
+                glow_rect = warning_surf.get_rect(center=(self.WIDTH // 2 + i, 100 + i))
+                self.screen.blit(glow_surf, glow_rect)
+            
+            self.screen.blit(warning_surf, warning_rect)
+    
+    def check_win_lose_conditions(self):
+        """Override to check mushroom requirement for Level 1"""
+        if self.player.lives <= 0:
+            return "game_over"
+        if self.player.won:
+            # Check if player has enough mushrooms to finish level
+            if self.mushroom_count < self.min_mushrooms:
+                # Block player from progressing - reset their position back
+                print(f"Not enough mushrooms! {self.mushroom_count}/{self.min_mushrooms}")
+                self.player.won = False
+                # Push player back
+                self.player.rect.x -= 50
+                # Show warning message
+                self.level_gate_message_timer = 180  # 3 seconds at 60fps
+                return "playing"
+            
+            # Player has enough mushrooms - allow level completion
+            print(f"Level 1 complete! Mushrooms collected: {self.mushroom_count}")
+            return "level1_completion_menu"
+        return "playing"
+
 
 class Level2(Game):
     def __init__(self, width=960, height=640):

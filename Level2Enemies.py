@@ -34,7 +34,7 @@ See Level1Enemies.py for working examples.
 import pygame
 import math
 import random
-from entities import build_state_animations_from_manifest, Enemy
+from entities import build_state_animations_from_manifest
 import time
 
 # ============ ANIMATION MANIFESTS ============
