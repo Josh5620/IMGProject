@@ -160,9 +160,6 @@ class mainCharacter(WeaponSystem):
         self.lives = 5
         self.won = False
         
-        # Ammo and shooting system
-        self.max_ammo = 20
-        self.current_ammo = 20
         self.shooting_cooldown = 0
         self.cooldown_time = 30  # 0.5 seconds at 60 FPS
         
@@ -468,7 +465,7 @@ class mainCharacter(WeaponSystem):
                 projectile = self.shoot_projectile()
                 if projectile:
                     self.projectile_manager.add_projectile(projectile)
-                    self.consume_ammo()
+                    self.set_shooting_cooldown()
                     print("Quick Shot fired!")
                     FISH_THROW_SOUND.play()
 
@@ -483,7 +480,7 @@ class mainCharacter(WeaponSystem):
                 
                 if projectile:
                     self.projectile_manager.add_projectile(projectile)
-                    self.consume_ammo()
+                    self.set_shooting_cooldown()
                     print("Charged Shot fired!")
                     FISH_THROW_SOUND.play()
             
@@ -506,22 +503,12 @@ class mainCharacter(WeaponSystem):
         )
     
     def can_shoot(self):
-        """Check if player can shoot (has ammo and not on cooldown)"""
-        return self.current_ammo > 0 and self.shooting_cooldown <= 0
+        """Check if player can shoot (unlimited ammo, only check cooldown)"""
+        return self.shooting_cooldown <= 0
     
-    def consume_ammo(self):
-        """Consume one ammo and set cooldown"""
-        if self.current_ammo > 0:
-            self.current_ammo -= 1
-            self.shooting_cooldown = self.cooldown_time
-            print(f"Ammo: {self.current_ammo}/{self.max_ammo}")
-    
-    def reload_ammo(self, amount=None):
-        """Reload ammo (used by ammo powerups)"""
-        if amount is None:
-            amount = self.max_ammo
-        self.current_ammo = min(self.current_ammo + amount, self.max_ammo)
-        print(f"Ammo reloaded! {self.current_ammo}/{self.max_ammo}")
+    def set_shooting_cooldown(self):
+        """Set cooldown after shooting"""
+        self.shooting_cooldown = self.cooldown_time
     
     def update_powerup_effects(self):
         """Update active powerup effects"""
@@ -570,8 +557,8 @@ class mainCharacter(WeaponSystem):
             # TODO: Play shield activation sound effect
         
         elif powerup_type == "ammo":
-            self.reload_ammo(10)  # Restore 10 ammo
-            print("Ammo powerup collected!")
+            # Ammo is now unlimited, so just print a message
+            print("Ammo powerup collected! (Ammo is unlimited)")
             # TODO: Play ammo reload sound effect
     
     def apply_level2_powerup(self, powerup_type):
@@ -615,7 +602,7 @@ class mainCharacter(WeaponSystem):
             self.powerup_timers["damage"] = 600
             self.powerup_timers["shield"] = 600
             self.lives = min(self.lives + 3, 10)  # Heal 3 lives
-            self.reload_ammo(20)  # Restore ammo
+            # Ammo is now unlimited
             print("FOREST WISDOM activated! All abilities enhanced!")
     
     def take_damage(self, damage_amount=1):

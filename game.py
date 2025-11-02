@@ -62,7 +62,7 @@ class Game:
         
     def reset_game(self):
         if self.player:
-            self.player.lives = 3
+            self.player.lives = 5
             self.player.x = self.start_position[0]
             self.player.y = self.start_position[1]
             self.player.rect.x = self.start_position[0]
@@ -214,6 +214,9 @@ class Game:
                 if enemy.check_player_collision(self.player, self.ground_scroll):
                     enemy.collect()
                     self.mushroomCount += 1
+                    if self.player.lives < 5:
+                        self.player.lives += 1
+                        print(f"Mushroom collected! Health restored: {self.player.lives}/5")
             
     def handle_input(self, keys):
         if keys[pygame.K_w]:
@@ -678,7 +681,6 @@ class Level2(Game):
             self.screen.blit(warning_surf, warning_rect)
     
     def run(self, screen):
-        """Override run method to include Level 2 powerup logic"""
         self.screen = screen
         self.reset_game()
         

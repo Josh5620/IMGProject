@@ -9,10 +9,10 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shroomlight : The Last Bloom")
 game_state = "start"
 
-level1 = Level1(WIDTH, HEIGHT)
-level2 = Level2(WIDTH, HEIGHT)
 
 def start_game_wrapper():
+    level1 = Level1(WIDTH, HEIGHT)
+    level2 = Level2(WIDTH, HEIGHT)
     global game_state
     game_level = getLevel()
     print(f"Starting game with Level {game_level}")
