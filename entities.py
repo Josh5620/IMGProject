@@ -577,7 +577,7 @@ class mainCharacter(WeaponSystem):
         
         elif powerup_type == "speed_wind":
             # Enhanced speed boost - lasts longer
-            self.speed_boost = 2.0  # 2x speed (more than Level 1's 1.5x)
+            self.speed_boost = 2.5  # 2.5x speed (more than Level 1's 1.5x)
             self.powerup_timers["speed"] = 900  # 15 seconds at 60 FPS
             print("SPEED WIND activated! 15 seconds of enhanced speed!")
         
