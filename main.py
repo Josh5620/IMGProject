@@ -37,7 +37,7 @@ def start_game_wrapper():
     if result == "quit":
         game_state = "quit"
     elif result == "game_over":
-        game_state = "retry" 
+        game_state = "retry"
     elif result == "level1_completion_menu":
         game_state = "level1_completion_menu"
     elif result == "boss_level_easy":
@@ -54,7 +54,7 @@ def quit_to_start():
     game_state = "start"
 
 running = True
-while running:    
+while running:
     if game_state == "start":
         start_menu(WIDTH, HEIGHT, screen, start_game_wrapper)
     elif game_state == "retry":
